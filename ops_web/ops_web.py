@@ -191,9 +191,26 @@ def environment_stop(env_name):
 @app.route('/images')
 @login_required
 def images():
+    if 'manage-images' not in config.feature_flags:
+        return flask.redirect(flask.url_for('index'))
     db: ops_web.db.Database = flask.g.db
     flask.g.images = db.get_images(flask.g.email)
     return flask.render_template('images.html')
+
+
+@app.route('/images/create', methods=['POST'])
+@login_required
+def image_create():
+    if 'manage-images' not in config.feature_flags:
+        return flask.redirect(flask.url_for('index'))
+    machine_id = flask.request.values.get('machine-id')
+    app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
+    owner = flask.request.values.get('owner')
+    region = flask.request.values.get('region')
+    name = flask.request.values.get('image-name')
+    ops_web.aws.create_images(machine_id, name)
+    env_name = flask.request.values.get('environment')
+    return flask.redirect(flask.url_for('environments', env_name=env_name))
 
 
 @app.route('/machines/edit', methods=['POST'])
@@ -203,7 +220,7 @@ def machine_edit():
     app.logger.info(f'Got a request from {flask.g.email} to edit machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
-        db.set_tags({
+        db.set_machine_tags({
             'id': machine_id,
             'name': flask.request.values.get('machine-name'),
             'owner': flask.request.values.get('owner'),
@@ -218,7 +235,7 @@ def machine_edit():
                 'OWNEREMAIL': flask.request.values.get('owner'),
                 'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
             }
-            ops_web.aws.update_tags(region, machine_id, aws_tags)
+            ops_web.aws.update_resource_tags(region, machine_id, aws_tags)
         elif cloud == 'az':
             az_tags = {
                 'NAME': flask.request.values.get('machine-name'),
@@ -231,18 +248,6 @@ def machine_edit():
         app.logger.warning(f'{flask.g.email} does not have permission to edit {machine_id}')
     env_name = flask.request.values.get('environment')
     return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
-
-
-@app.route('/machines/image', methods=['POST'])
-@login_required
-def create_image():
-    machine_id = flask.request.values.get('machine-id')
-    app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
-    owner = flask.request.values.get('owner')
-    region = flask.request.values.get('region')
-    name = flask.request.values.get('image-name')
-    ops_web.aws.create_images(machine_id, name)
-    return flask.redirect(flask.url_for('environments'))
 
 
 @app.route('/orphans')
@@ -367,7 +372,7 @@ def sync_now():
 
 
 def sync_machines():
-    app.logger.info('Syncing machines now ...')
+    app.logger.info('Syncing information from cloud providers now ...')
 
     db = ops_web.db.Database(config)
     sync_data = db.get_sync_data()
@@ -410,12 +415,15 @@ def sync_machines():
 
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)
-    app.logger.debug(f'environment-manager {config.version}')
-    app.logger.debug(f'Changing log level to {config.log_level}')
+    app.logger.debug(f'ops-web {config.version}')
+    if not config.log_level == 'DEBUG':
+        app.logger.debug(f'Changing log level to {config.log_level}')
     logging.getLogger().setLevel(config.log_level)
     for logger, level in config.other_log_levels.items():
         app.logger.debug(f'Changing log level for {logger} to {level}')
         logging.getLogger(logger).setLevel(level)
+
+    app.logger.info(f'The following feature flags are set: {config.feature_flags}')
 
     db = ops_web.db.Database(config)
     if config.reset_database:
@@ -429,6 +437,7 @@ def main():
         db.end_sync()
 
     scheduler.start()
+    app.logger.info(f'AUTO_SYNC is {config.auto_sync}')
     if config.auto_sync:
         scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
         scheduler.add_job(sync_machines)

@@ -19,6 +19,7 @@ ENV AUTO_SYNC="true" \
     CLOUDS_TO_SYNC="aws,az" \
     DB="" \
     DEBUG_LAYOUT="false" \
+    FEATURE_FLAGS="" \
     LOG_FORMAT="%(levelname)s [%(name)s] %(message)s" \
     LOG_LEVEL="INFO" \
     OTHER_LOG_LEVELS="adal-python:WARNING/botocore.parsers:INFO" \

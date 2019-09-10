@@ -1,7 +1,7 @@
 import os
 import pathlib
 
-from typing import Dict
+from typing import Dict, List
 
 
 class Config:
@@ -19,6 +19,7 @@ class Config:
     clouds_to_sync: str
     db: str
     debug_layout: bool
+    feature_flags: List
     log_format: str
     log_level: str
     other_log_levels: Dict[str, str] = {}
@@ -35,8 +36,9 @@ class Config:
         """Instantiating a Config object will automatically read the following environment variables:
 
         AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_ACCESS_KEY_ID, AWS_DEFAULT_REGION, AWS_SECRET_ACCESS_KEY, AZ_CLIENT_ID,
-        AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, LOG_FORMAT, LOG_LEVEL,
-        OTHER_LOG_LEVELS, PERMANENT_SESSIONS, REP_SC_PAIRS_DB, RESET_DATABASE, SCHEME, SECRET_KEY, SUPPORT_EMAIL, TZ
+        AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT,
+        LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, REP_SC_PAIRS_DB, RESET_DATABASE, SCHEME, SECRET_KEY,
+        SUPPORT_EMAIL, TZ
 
         Some variables have defaults if they are not found in the environment:
 
@@ -64,6 +66,7 @@ class Config:
         self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws,az')
         self.db = os.getenv('DB')
         self.debug_layout = os.getenv('DEBUG_LAYOUT', 'false').lower() in _true_values
+        self.feature_flags = os.getenv('FEATURE_FLAGS', '').split()
         self.log_format = os.getenv('LOG_FORMAT', '%(levelname)s [%(name)s] %(message)s')
         self.log_level = os.getenv('LOG_LEVEL', 'INFO')
         self.permanent_sessions = os.getenv('PERMANENT_SESSIONS', 'false').lower() in _true_values

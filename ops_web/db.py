@@ -243,7 +243,7 @@ class Database(fort.PostgresDatabase):
         sql = 'UPDATE virtual_machines SET state = %(state)s WHERE id = %(id)s'
         self.u(sql, params)
 
-    def set_tags(self, params: Dict):
+    def set_machine_tags(self, params: Dict):
         sql = '''
             UPDATE virtual_machines
             SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s
@@ -269,6 +269,7 @@ class Database(fort.PostgresDatabase):
         self.u('DROP TABLE IF EXISTS permissions CASCADE')
         self.u('DROP TABLE IF EXISTS schema_versions CASCADE')
         self.u('DROP TABLE IF EXISTS sync_tracking CASCADE')
+        self.u('DROP TABLE IF EXISTS images CASCADE')
 
     def migrate(self):
         self.log.info(f'Database schema version is {self.version}')

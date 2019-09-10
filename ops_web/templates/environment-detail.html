@@ -54,7 +54,7 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine"><span class="oi oi-pencil"></span></button>
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image"><span class="oi oi-hard-drive"></span></button>
+                                {% if 'manage-images' in g.config.feature_flags %}<button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image"><span class="oi oi-hard-drive"></span></button>{% endif %}
                             </div>
                         </td>
                     </tr>
@@ -131,7 +131,8 @@
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-image-{{ loop.index }}" action="{{ url_for('create_image')}}" method="post">
+                    <form id="form-image-{{ loop.index }}" action="{{ url_for('image_create')}}" method="post">
+                        <input type="hidden" name="environment" value="{{ g.env_name }}">
                         <input type="hidden" name="cloud" value="{{ m.cloud }}">
                         <input type="hidden" name="region" value="{{ m.region }}">
                         <input type="hidden" name="machine-id" value="{{ m.id }}">

@@ -14,24 +14,6 @@ def resource_tags_as_dict(resource) -> Dict:
     return {tag['Key']: tag['Value'] for tag in resource.tags}
 
 
-def get_instance_tag(instance, tag_key):
-    if instance.tags is None:
-        return ''
-    for tag in instance.tags:
-        if tag['Key'] == tag_key:
-            return tag['Value']
-    return ''
-
-
-def get_image_tag(tagset, tag_key):
-    if tagset is None:
-        return ''
-    for tag in tagset:
-        if tag['Key'] == tag_key:
-            return tag['Value']
-    return ''
-
-
 def delete_machine(region: str, machine_id: str):
     log.debug(f'Delete machine: {machine_id}')
     ec2 = boto3.resource('ec2', region_name=region)
@@ -53,7 +35,7 @@ def stop_machine(region: str, machine_id: str):
     instance.stop()
 
 
-def update_tags(region: str, resource_id: str, tags: Dict):
+def update_resource_tags(region: str, resource_id: str, tags: Dict):
     log.debug(f'Update tags: {resource_id}')
     ec2 = boto3.resource('ec2', region_name=region)
     ec2.create_tags(
@@ -132,17 +114,18 @@ class AWSClient:
                                  aws_secret_access_key=self.config.aws_secret_access_key)
             try:
                 for instance in ec2.instances.all():
+                    tags = resource_tags_as_dict(instance)
                     params = {
                         'id': instance.id,
                         'cloud': 'aws',
                         'region': region,
-                        'env_group': get_instance_tag(instance, 'machine__environment_group'),
-                        'name': get_instance_tag(instance, 'Name'),
-                        'owner': get_instance_tag(instance, 'OWNEREMAIL'),
+                        'env_group': tags.get('machine__environment_group', ''),
+                        'name': tags.get('NAME', ''),
+                        'owner': tags.get('OWNEREMAIL', ''),
                         'private_ip': instance.private_ip_address,
                         'public_ip': instance.public_ip_address,
                         'type': instance.instance_type,
-                        'running_schedule': get_instance_tag(instance, 'RUNNINGSCHEDULE'),
+                        'running_schedule': tags.get('RUNNINGSCHEDULE', ''),
                         'state': instance.state['Name'],
                         'created': instance.launch_time,
                         'state_transition_time': None

@@ -18,12 +18,16 @@
                         <a href="{{ url_for('environments') }}" class="card-link stretched-link text-light">View your existing environments.</a>
                     </div>
                 </div>
+
+                {% if 'manage-images' in g.config.feature_flags %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Images</h5>
                         <a href="{{ url_for('images') }}" class="card-link stretched-link text-light">View your existing Images/AMI's.</a>
                     </div>
                 </div>
+                {% endif %}
+
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Sync information</h5>
