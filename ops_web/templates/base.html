@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-4.3.1.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='open-iconic/font/css/open-iconic-bootstrap.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='local.css') }}">
+    <title>{% block title %}NA Presales Ops{% endblock %}</title>
+    {% block end_of_head %}{% endblock %}
+</head>
+<body class="bg-dark">
+
+<div class="container-fluid">
+    <div class="row bump-top-padding">
+        <div class="col-8 col-sm-9 col-md-10">
+            <ol class="breadcrumb bg-dark">
+                {% block breadcrumb %}
+                <li class="breadcrumb-item active text-light">
+                    <img src="{{ url_for('static', filename='infa-logo-square.jpg') }}" alt="" class="rounded-circle navbar-logo mr-1 d-none d-sm-inline">
+                    Ops
+                </li>
+                {% endblock %}
+            </ol>
+        </div>
+        <div class="col-4 col-sm-3 col-md-2">
+        {% block sign_in_out %}
+            <a class="btn btn-outline-success float-right" href="{{ url_for('sign_in') }}">Sign in</a>
+        {% endblock %}
+        </div>
+    </div>
+
+    {% block main_content %}{% endblock %}
+
+    {% if g.config.debug_layout %}
+    <div class="row">
+        <div class="col-12">
+            <p class="d-block d-sm-none text-light">xs</p>
+            <p class="d-none d-sm-block d-md-none text-light">sm</p>
+            <p class="d-none d-md-block d-lg-none text-light">md</p>
+            <p class="d-none d-lg-block d-xl-none text-light">lg</p>
+            <p class="d-none d-xl-block text-light">xl</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='jquery-3.4.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap-4.3.1.bundle.min.js') }}"></script>
+    {% block end_of_body %}{% endblock %}
+</div>
+
+</body>
+</html>

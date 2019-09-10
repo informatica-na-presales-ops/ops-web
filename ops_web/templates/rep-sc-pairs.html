@@ -1,0 +1,97 @@
+{% extends 'index.html' %}
+
+{% block title %}Rep/SC pairs{% endblock %}
+
+{% block end_of_head %}
+    {{ super() }}
+    <meta id="sc-candidates-json-url" href="{{ url_for('rep_sc_pairs_sc_candidates_json') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+    {% include 'breadcrumb-root.html' %}
+    <li class="breadcrumb-item active text-light">Rep/SC pairs</li>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-12">
+            <form class="form-inline" action="{{ url_for('rep_sc_pairs_xlsx') }}" method="get">
+                <input class="form-control mr-2 mb-2" placeholder="Filter sales reps..." id="filter-input" name="filter-input" autofocus>
+                <button class="btn btn-outline-light mb-2" title="Active filter applies to downloaded XLSX file">
+                    <span class="oi oi-spreadsheet"></span>
+                    Download XLSX
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <table class="table table-dark table-striped table-sm d-none d-sm-block">
+                <thead>
+                <tr>
+                    <th>Geo</th>
+                    <th>Area</th>
+                    <th>Sub-Area</th>
+                    <th>Region</th>
+                    <th>Sub-Region</th>
+                    <th>Territory Name</th>
+                    <th>Sales Rep</th>
+                    <th>Sales Consultant</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for r in g.sales_reps %}
+                    <tr class="filter-candidate" data-filter-value="{{ r.filter_value }}">
+                        <td>{{ r.geo }}</td>
+                        <td>{{ r.area }}</td>
+                        <td>{{ r.sub_area }}</td>
+                        <td>{{ r.region }}</td>
+                        <td>{{ r.sub_region }}</td>
+                        <td>{{ r.territory_name }}</td>
+                        <td>{{ r.rep_name }}</td>
+                        <td>
+                            <span class="collapse show collapse-{{ loop.index }}">{{ r.sc_name }}</span>
+                            <form class="form-inline collapse collapse-{{ loop.index }}" id="form-edit-{{ loop.index }}" action="{{ url_for('rep_sc_pairs_edit') }}" method="post">
+                                <input type="hidden" name="rep_name" value="{{ r.rep_name }}">
+                                <input type="text" class="form-control form-control-sm sc-candidate-typeahead" name="sc_name" value="{{ r.sc_name }}" placeholder="Type a consultant name">
+                            </form>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-warning collapse show collapse-{{ loop.index }}" data-toggle="collapse" data-target=".collapse-{{ loop.index }}">
+                                <span class="oi oi-pencil"></span>
+                                Edit
+                            </button>
+                            <div class="collapse collapse-{{ loop.index }}">
+                                <button class="btn btn-sm btn-outline-light" data-toggle="collapse" data-target=".collapse-{{ loop.index }}">Cancel</button>
+                                <button class="btn btn-sm btn-outline-success" type="submit" form="form-edit-{{ loop.index }}">Save</button>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="d-block d-sm-none">
+            {% for r in g.sales_reps %}
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ r.filter_value }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ r.rep_name }}</h5>
+                        <p class="card-text">{{ r.geo }} / {{ r.area }} / {{ r.sub_area }} / {{ r.region }} / {{ r.sub_region }} / {{ r.territory_name }}</p>
+                        <p class="card-text">Sales Consultant: {{ r.sc_name }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='filter.js') }}"></script>
+    <script src="{{ url_for('static', filename='typeahead-1.2.0.bundle.js') }}"></script>
+    <script src="{{ url_for('static', filename='rep-sc-pairs.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block end_of_head %}
+    <meta id="signed-in-email" content="{{ g.email }}">
+{% endblock %}
+
+{% block sign_in_out %}
+    <a class="btn btn-outline-danger float-right" href="{{ url_for('sign_out') }}" title="Signed in as {{ g.email }}">Sign out</a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card-columns">
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Environments</h5>
+                        <a href="{{ url_for('environments') }}" class="card-link stretched-link text-light">View your existing environments.</a>
+                    </div>
+                </div>
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Images</h5>
+                        <a href="{{ url_for('images') }}" class="card-link stretched-link text-light">View your existing Images/AMI's.</a>
+                    </div>
+                </div>
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Sync information</h5>
+                        <a href="{{ url_for('sync_info') }}" class="card-link stretched-link text-light">Check the status of data synchronization with cloud providers.</a>
+                    </div>
+                </div>
+
+                {% if 'rep-sc-pairs' in g.permissions %}
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Rep/SC pairs</h5>
+                        <a href="{{ url_for('rep_sc_pairs') }}" class="card-link stretched-link text-light">View and manage Sales Consultant assignments to Sales Reps.</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if 'admin' in g.permissions %}
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Orphans</h5>
+                        <a href="{{ url_for('orphans') }}" class="card-link stretched-link text-light">Machines that do not belong to any environment.</a>
+                    </div>
+                </div>
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Administration</h5>
+                        <a href="{{ url_for('admin') }}" class="card-link stretched-link text-light">Change user permissions.</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key=ee0991fe-3e04-4d3b-b16e-3c5ab9cfbe1d"></script>
+    <script src="{{ url_for('static', filename='zendesk-widget-setup.js') }}"></script>
+{% endblock %}

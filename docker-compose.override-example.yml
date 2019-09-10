@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  ops-web:
+    environment:
+      AUTO_SYNC: 'false'
+      AWS_ACCESS_KEY_ID: [required]
+      AWS_DEFAULT_REGION: us-west-2
+      AWS_SECRET_ACCESS_KEY: [required]
+      AZ_CLIENT_ID: [required]
+      AZ_CLIENT_SECRET: [required]
+      AZ_TENANT_ID: [required]
+      BOOTSTRAP_ADMIN: email@example.com
+      CLOUDS_TO_SYNC: aws,az
+      DEBUG_LAYOUT: 'true'
+      LOG_LEVEL: DEBUG
+      OAUTHLIB_INSECURE_TRANSPORT: 1
+      REP_SC_PAIRS_DB: [required]
+      RESET_DATABASE: 'false'
+      SECRET_KEY: [required]
+      SUPPORT_EMAIL: email@example.com
+    volumes:
+      - D:/projects/na-presales-ops/ops-web:/ops-web

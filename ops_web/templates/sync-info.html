@@ -1,0 +1,75 @@
+{% extends 'index.html' %}
+
+{% block end_of_head %}
+    {{ super() }}
+    <meta http-equiv="refresh" content="60">
+{% endblock %}
+
+{% block breadcrumb %}
+    {% include 'breadcrumb-root.html' %}
+    <li class="breadcrumb-item active text-light">Sync information</li>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-12">
+            <p class="text-light">The information in this tool is synced from cloud providers (Amazon Web Services, Azure, &c.) periodically.</p>
+            <p class="text-light">
+            {% if g.sync_start_human == 'never' %}
+                No sync has occurred.
+            {% else %}
+                The most recent sync started <strong>{{ g.sync_start_human }}</strong> ({{ '{:%H:%M:%S}'.format(g.sync_data.last_sync_start) }} UTC) and
+                {% if g.sync_data.syncing_now %}
+                    is still in progress.
+                {% else %}
+                    ended <strong>{{ g.sync_end_human }}</strong> ({{ '{:%H:%M:%S}'.format(g.sync_data.last_sync_end) }} UTC).
+                {% endif %}
+            {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if 'admin' in g.permissions %}
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <form action="{{ url_for('sync_now') }}" method="post">
+                <button type="submit" class="btn btn-outline-success" {% if g.sync_data.syncing_now %}disabled{% endif %}>
+                    {% if g.sync_data.syncing_now %}
+                        <span class="spinner-border spinner-border-sm"></span>
+                    {% else %}
+                        <span class="oi oi-cloud-download"></span>
+                    {% endif %}
+                    Sync now
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <p class="text-light">The following settings affect the sync process:</p>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12 col-sm-6 col-md-5 col-lg-4 col-xl-3">
+            <table class="table table-dark table-striped">
+                <tbody>
+                <tr>
+                    <td><code>AUTO_SYNC</code></td>
+                    <td><code>{{ g.config.auto_sync }}</code></td>
+                </tr>
+                <tr>
+                    <td><code>AUTO_SYNC_INTERVAL</code></td>
+                    <td><code>{{ g.config.auto_sync_interval }}</code></td>
+                </tr>
+                <tr>
+                    <td><code>CLOUDS_TO_SYNC</code></td>
+                    <td><code>{{ g.config.clouds_to_sync }}</code></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

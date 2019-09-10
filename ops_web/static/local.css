@@ -1,0 +1,14 @@
+.bump-top-padding {
+    padding-top: 10px;
+}
+
+.navbar-logo {
+    max-width: 24px;
+    max-height: 24px;
+}
+
+.collapsing {
+    -webkit-transition: none;
+    transition: none;
+    display: none;
+}

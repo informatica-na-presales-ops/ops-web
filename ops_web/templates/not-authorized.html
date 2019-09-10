@@ -1,0 +1,14 @@
+{% extends 'index.html' %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-light">Not authorized</h1>
+            <p class="lead text-light">You are not authorized to view this page.</p>
+            <p class="text-light">Permission required: <code>{{ g.required_permission }}</code>.</p>
+            <p class="text-light">
+                Contact <a href="mailto:{{ g.config.support_email }}?subject=Help with {{ request.url }}">{{ g.config.support_email }}</a> with questions.
+            </p>
+        </div>
+    </div>
+{% endblock %}

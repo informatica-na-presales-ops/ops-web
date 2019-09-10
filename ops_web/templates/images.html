@@ -1,0 +1,50 @@
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    {% include 'breadcrumb-root.html' %}
+    <li class="breadcrumb-item active text-light">Images</li>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="form-inline">
+                <input class="form-control" placeholder="Filter images..." id="filter-input" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <table class="table table-dark table-striped table-sm d-none d-sm-block">
+                <thead>
+                <tr>
+                    <th>Cloud</th>
+                    <th>Region</th>
+                    <th>Name</th>
+                    <th>Owner</th>
+                    <th>Created</th>
+                    <th>State</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for i in g.images %}
+                    <tr class="filter-candidate" data-filter-value="{{ i.filter_value }}">
+                        <td>{{ i.cloud }}</td>
+                        <td>{{ i.region }}</td>
+                        <td>{{ i.name }}</td>
+                        <td>{{ i.owner }}</td>
+                        <td>{{ i.created }}</td>
+                        <td>{{ i.state }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='filter.js') }}"></script>
+{% endblock %}
