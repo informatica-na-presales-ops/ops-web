@@ -36,6 +36,6 @@ ENTRYPOINT ["/usr/local/bin/python"]
 CMD ["/ops-web/run.py"]
 
 LABEL org.opencontainers.image.authors="William Jackson <wjackson@informatica.com>" \
-      org.opencontainers.image.version=0.7.0
+      org.opencontainers.image.version=0.8.0
 
 COPY . /ops-web
