@@ -20,4 +20,4 @@ services:
       SECRET_KEY: [required]
       SUPPORT_EMAIL: email@example.com
     volumes:
-      - D:/projects/na-presales-ops/ops-web:/ops-web
+      - D:/projects/ops-web:/ops-web
