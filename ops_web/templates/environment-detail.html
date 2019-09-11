@@ -113,6 +113,14 @@
                             <label for="form-edit-{{ loop.index }}-owner" class="text-light">Owner</label>
                             <input type="text" class="form-control" id="form-edit-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}">
                         </div>
+                        <div class="form-group">
+                            <label for="form-edit-{{ loop.index }}-application-env" class="text-light">Application environment</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-env" name="application-env" value="{{ m.application_env }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-edit-{{ loop.index }}-business-unit" class="text-light">Business unit</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-business-unit" name="business-unit" value="{{ m.business_unit }}">
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">

@@ -117,7 +117,9 @@ class AWSClient:
                         'running_schedule': tags.get('RUNNINGSCHEDULE', ''),
                         'state': instance.state['Name'],
                         'created': instance.launch_time,
-                        'state_transition_time': None
+                        'state_transition_time': None,
+                        'application_env': tags.get('APPLICATIONENV', ''),
+                        'business_unit': tags.get('BUSINESSUNIT', '')
                     }
                     if instance.state_transition_reason.endswith('GMT)'):
                         _, _, state_transition_time = instance.state_transition_reason.partition('(')

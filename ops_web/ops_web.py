@@ -237,7 +237,9 @@ def machine_edit():
             'id': machine_id,
             'name': flask.request.values.get('machine-name'),
             'owner': flask.request.values.get('owner'),
-            'running_schedule': flask.request.values.get('running-schedule')
+            'running_schedule': flask.request.values.get('running-schedule'),
+            'application_env': flask.request.values.get('application-env'),
+            'business_unit': flask.request.values.get('business-unit')
         })
         cloud = flask.request.values.get('cloud')
         if cloud == 'aws':
@@ -246,14 +248,18 @@ def machine_edit():
                 'NAME': flask.request.values.get('machine-name'),
                 'Name': flask.request.values.get('machine-name'),
                 'OWNEREMAIL': flask.request.values.get('owner'),
-                'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
+                'RUNNINGSCHEDULE': flask.request.values.get('running-schedule'),
+                'APPLICATIONENV': flask.request.values.get('application-env'),
+                'BUSINESSUNIT': flask.request.values.get('business-unit')
             }
             ops_web.aws.update_resource_tags(region, machine_id, aws_tags)
         elif cloud == 'az':
             az_tags = {
                 'NAME': flask.request.values.get('machine-name'),
                 'OWNEREMAIL': flask.request.values.get('owner'),
-                'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
+                'RUNNINGSCHEDULE': flask.request.values.get('running-schedule'),
+                'APPLICATIONENV': flask.request.values.get('application-env'),
+                'BUSINESSUNIT': flask.request.values.get('business-unit')
             }
             az = ops_web.az.AZClient(config)
             az.update_machine_tags(machine_id, az_tags)

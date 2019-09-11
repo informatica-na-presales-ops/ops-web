@@ -111,7 +111,9 @@ class Database(fort.PostgresDatabase):
     def get_machines_for_env(self, email: str, env_group: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule
+                SELECT
+                    id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
+                    application_env, business_unit
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s
@@ -119,7 +121,9 @@ class Database(fort.PostgresDatabase):
             '''
         else:
             sql = '''
-                SELECT id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule
+                SELECT
+                    id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
+                    application_env, business_unit
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s
@@ -194,7 +198,8 @@ class Database(fort.PostgresDatabase):
     def add_machine(self, params: Dict):
         # params = {
         #   'id': '', 'cloud': '', 'region': '', 'env_group': '', 'name': '', 'owner': '', 'private_ip': '',
-        #   'public_ip': '', 'state': '', 'type': '', 'running_schedule': '', 'created': '', 'state_transition_time': ''
+        #   'public_ip': '', 'state': '', 'type': '', 'running_schedule': '', 'created': '',
+        #   'state_transition_time': '', 'application_env': '', 'business_unit': ''
         # }
         sql = 'SELECT id FROM virtual_machines WHERE id = %(id)s'
         if self.q(sql, params):
@@ -203,17 +208,19 @@ class Database(fort.PostgresDatabase):
                 SET cloud = %(cloud)s, region = %(region)s, env_group = %(env_group)s, name = %(name)s,
                     owner = %(owner)s, state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s,
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
-                    state_transition_time = %(state_transition_time)s, visible = TRUE, synced = TRUE
+                    state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
+                    business_unit = %(business_unit)s, visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
             sql = '''
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    created, state_transition_time, visible, synced
+                    created, state_transition_time, application_env, business_unit, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(env_group)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
-                    %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s, TRUE, TRUE
+                    %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
+                    %(application_env)s, %(business_unit)s, TRUE, TRUE
                 )
             '''
         self.u(sql, params)
@@ -244,9 +251,13 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
 
     def set_machine_tags(self, params: Dict):
+        # params = {
+        #   'id': '', 'running_schedule': '', 'name': '', 'owner': '', 'application_env': '', 'business_unit': ''
+        # }
         sql = '''
             UPDATE virtual_machines
-            SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s
+            SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
+                application_env = %(application_env)s, business_unit = %(business_unit)s
             WHERE id = %(id)s
         '''
         self.u(sql, params)
@@ -349,6 +360,14 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(4)
+        if self.version < 5:
+            self.log.info('Migrating database to schema version 5')
+            self.u('''
+                ALTER TABLE virtual_machines
+                ADD COLUMN application_env text,
+                ADD COLUMN business_unit text
+            ''')
+            self.add_schema_version(5)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'

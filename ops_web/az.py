@@ -77,7 +77,9 @@ class AZClient:
                     'type': vm.hardware_profile.vm_size,
                     'running_schedule': vm.tags.get('RUNNINGSCHEDULE', ''),
                     'state': 'unknown',
-                    'state_transition_time': None
+                    'state_transition_time': None,
+                    'application_env': vm.tags.get('APPLICATIONENV', ''),
+                    'business_unit': vm.tags.get('BUSINESSUNIT', '')
                 }
 
                 # request virtual machine creation date and status (is it stopped, running, &c.)
