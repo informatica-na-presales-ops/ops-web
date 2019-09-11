@@ -205,12 +205,25 @@ def image_create():
         return flask.redirect(flask.url_for('index'))
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
+    cloud = flask.request.values.get('cloud')
     owner = flask.request.values.get('owner')
     region = flask.request.values.get('region')
     name = flask.request.values.get('image-name')
-    ops_web.aws.create_images(machine_id, name)
+    if cloud == 'aws':
+        image_id = ops_web.aws.create_image(region, machine_id, name, owner)
+    db: ops_web.db.Database = flask.g.db
+    params = {
+        'id': image_id,
+        'cloud': cloud,
+        'region': region,
+        'name': name,
+        'owner': owner,
+        'state': 'pending',
+        'created': datetime.datetime.utcnow()
+    }
+    db.add_image(params)
     env_name = flask.request.values.get('environment')
-    return flask.redirect(flask.url_for('environments', env_name=env_name))
+    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
 
 
 @app.route('/machines/edit', methods=['POST'])

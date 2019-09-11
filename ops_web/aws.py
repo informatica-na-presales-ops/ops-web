@@ -52,29 +52,18 @@ def get_instance_tags(machine_id):
             return i['Tags']
 
 
-def create_images(machine_id: str, name: str):
-    ec2 = boto3.client('ec2')
-    response = ec2.create_image(InstanceId=machine_id, Name=name)
-    tags = get_instance_tags(machine_id)
-    t = []
-    for i in tags:
-        t.append(i['Key'])
-    log.info(t)
-    if 'machine__description' in t:
-        log.info('present')
-    else:
-        tags.append({'Key': 'machine__description'})
-
-    for i in tags:
-        log.info(i)
-        if i['Key'] == 'machine__description':
-            i['Value'] = machine_id
-    image_id = response['ImageId']
-    ec2.create_tags(Resources=[image_id], Tags=tags)
-    image_details = ec2.describe_images(ImageIds=[image_id])
-    log.info(image_details['Images'])
-    log.info(image_details['Images'][0]['Name'])
-    return image_details['Images'][0]['Name']
+def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
+    log.debug(f'Creating image from {machine_id} for {owner}')
+    ec2 = boto3.resource('ec2', region_name=region)
+    instance = ec2.Instance(machine_id)
+    image = instance.create_image(Name=name)
+    image_tags = {
+        'NAME': name,
+        'OWNEREMAIL': owner,
+        'machine__description': machine_id
+    }
+    image.create_tags(Tags=[{'Key': k, 'Value': v} for k, v in image_tags.items()])
+    return image.id
 
 
 class AWSClient:
