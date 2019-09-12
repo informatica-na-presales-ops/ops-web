@@ -18,7 +18,7 @@ To clean up containers at the end of the day:
 
 To publish a new version:
 
-1. Update the value for `org.opencontainers.image.version` in `Dockerfile`.
+1. Update the value for `APP_VERSION` in `Dockerfile`.
 2. Run `docker-compose build` to build the image.
 3. Run `docker image tag informaticanapresalesops.azurecr.io/ops-web:latest
    informaticanapresalesops.azurecr.io/ops-web:<version>` to apply the new version tag to the image.
