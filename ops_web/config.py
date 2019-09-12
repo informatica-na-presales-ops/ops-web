@@ -1,5 +1,4 @@
 import os
-import pathlib
 
 from typing import Dict, List
 
@@ -31,14 +30,15 @@ class Config:
     secret_key: str
     support_email: str
     tz: str
+    version: str
 
     def __init__(self):
         """Instantiating a Config object will automatically read the following environment variables:
 
-        AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_ACCESS_KEY_ID, AWS_DEFAULT_REGION, AWS_SECRET_ACCESS_KEY, AZ_CLIENT_ID,
-        AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT,
-        LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, REP_SC_PAIRS_DB, RESET_DATABASE, SCHEME, SECRET_KEY,
-        SUPPORT_EMAIL, TZ
+        APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_ACCESS_KEY_ID, AWS_DEFAULT_REGION, AWS_SECRET_ACCESS_KEY,
+        AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS,
+        LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, REP_SC_PAIRS_DB, RESET_DATABASE, SCHEME,
+        SECRET_KEY, SUPPORT_EMAIL, TZ
 
         Some variables have defaults if they are not found in the environment:
 
@@ -76,19 +76,10 @@ class Config:
         self.secret_key = os.getenv('SECRET_KEY')
         self.support_email = os.getenv('SUPPORT_EMAIL')
         self.tz = os.getenv('TZ', 'Etc/UTC')
+        self.version = os.getenv('APP_VERSION', 'unknown')
 
         for log_spec in os.getenv('OTHER_LOG_LEVELS').split('/'):
             logger, level = log_spec.split(':', maxsplit=1)
             self.other_log_levels[logger] = level
 
         self.az_auth_endpoint = f'https://login.microsoftonline.com/{self.az_tenant_id}/oauth2/v2.0/authorize'
-
-    @property
-    def version(self) -> str:
-        """Read version from Dockerfile"""
-        dockerfile = pathlib.Path(__file__).resolve().parent.parent / 'Dockerfile'
-        with open(dockerfile) as f:
-            for line in f:
-                if 'org.opencontainers.image.version' in line:
-                    return line.strip().split('=', maxsplit=1)[1]
-        return 'unknown'

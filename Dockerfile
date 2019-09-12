@@ -7,7 +7,8 @@ RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev musl-dev postgresql-
  && /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt \
  && /sbin/apk del --no-cache .deps
 
-ENV AUTO_SYNC="true" \
+ENV APP_VERSION="0.8.0" \
+    AUTO_SYNC="true" \
     AUTO_SYNC_INTERVAL="10" \
     AWS_ACCESS_KEY_ID="" \
     AWS_DEFAULT_REGION="us-west-2" \
@@ -36,6 +37,6 @@ ENTRYPOINT ["/usr/local/bin/python"]
 CMD ["/ops-web/run.py"]
 
 LABEL org.opencontainers.image.authors="William Jackson <wjackson@informatica.com>" \
-      org.opencontainers.image.version=0.8.0
+      org.opencontainers.image.version=${APP_VERSION}
 
 COPY . /ops-web
