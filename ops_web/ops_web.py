@@ -226,6 +226,25 @@ def image_create():
     return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
 
 
+@app.route('/machines/delete', methods=['POST'])
+@login_required
+def machine_delete():
+    machine_id = flask.request.values.get('machine-id')
+    app.logger.info(f'Got a request from {flask.g.email} to delete machine {machine_id}')
+    db: ops_web.db.Database = flask.g.db
+    if db.can_control_machine(flask.g.email, machine_id):
+        db.set_machine_state({'id': machine_id, 'state': 'terminating'})
+        cloud = flask.request.values.get('cloud')
+        if cloud == 'aws':
+            region = flask.request.values.get('region')
+            ops_web.aws.delete_machine(region, machine_id)
+        elif cloud == 'az':
+            az = ops_web.az.AZClient(config)
+            scheduler.add_job(ops_web.az.delete_machine, args=[az, machine_id])
+    env_name = flask.request.values.get('environment')
+    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+
+
 @app.route('/machines/edit', methods=['POST'])
 @login_required
 def machine_edit():
