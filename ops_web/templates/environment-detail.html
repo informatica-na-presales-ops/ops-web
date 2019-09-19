@@ -125,6 +125,11 @@
                             <input type="text" class="form-control" id="form-edit-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}">
                         </div>
                         <div class="form-group">
+                            <label for="form-edit-{{ loop.index }}-contributors" class="text-light">Contributors</label>
+                            <textarea class="form-control" id="form-edit-{{ loop.index }}-contributors" name="contributors" maxlength="255">{{ m.contributors }}</textarea>
+                            <small class="form-text text-muted">Contributors can start, stop, edit, and delete a machine. Separate multiple email addresses with a space.</small>
+                        </div>
+                        <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-application-env" class="text-light">Application environment</label>
                             <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-env" name="application-env" value="{{ m.application_env }}">
                         </div>

@@ -72,6 +72,7 @@ class AZClient:
                     'env_group': (vm.tags.get('machine__environment_group', '')),
                     'name': vm.tags.get('NAME', vm.name),
                     'owner': vm.tags.get('OWNEREMAIL', ''),
+                    'contributors': vm.tags.get('CONTRIBUTORS', ''),
                     'private_ip': None,
                     'public_ip': None,
                     'type': vm.hardware_profile.vm_size,

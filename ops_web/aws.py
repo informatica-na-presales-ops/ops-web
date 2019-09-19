@@ -65,55 +65,52 @@ def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
     image.create_tags(Tags=[{'Key': k, 'Value': v} for k, v in image_tags.items()])
     return image.id
 
-def create_instance(imageid: str,instanceid: str):
+
+def create_instance(imageid: str, instanceid: str):
     log.debug(f'Creating instance')
     ec2client = boto3.client('ec2')
     response = ec2client.describe_instances(InstanceIds=[instanceid])
+    security_groups = []
+    instance_type = None
+    subnet_id = None
+    tags = None
     for reservation in response["Reservations"]:
         for instance in reservation["Instances"]:
             log.info(instance['InstanceType'])
-            instanceType=instance['InstanceType']
-            securitygroups=instance['SecurityGroups']
-            subnetid=instance['SubnetId']
-            tags=instance['Tags']
-    securitygrplist=[]
-    for i in securitygroups:
+            instance_type = instance['InstanceType']
+            security_groups = instance['SecurityGroups']
+            subnet_id = instance['SubnetId']
+            tags = instance['Tags']
+    security_group_ids = []
+    for i in security_groups:
         log.debug(i['GroupName'])
-        securitygrplist.append(i['GroupId'])
-    log.debug(securitygrplist)
-    ec2=boto3.resource('ec2')
-    response=ec2.create_instances(
-        ImageId= imageid,
+        security_group_ids.append(i['GroupId'])
+    log.debug(security_group_ids)
+    ec2 = boto3.resource('ec2')
+    ec2.create_instances(
+        ImageId=imageid,
         MinCount=1,
         MaxCount=1,
-        InstanceType=instanceType,
-        SubnetId=subnetid,
-        SecurityGroupIds=securitygrplist,
-
-
+        InstanceType=instance_type,
+        SubnetId=subnet_id,
+        SecurityGroupIds=security_group_ids,
         BlockDeviceMappings=[
             {
                 'VirtualName': "BootDrive",
                 'DeviceName': "/dev/sda1",
                 'Ebs': {
-
-                'VolumeType': "gp2",
-                'DeleteOnTermination': True
+                    'VolumeType': "gp2",
+                    'DeleteOnTermination': True
                 }
             }
         ],
         TagSpecifications=[
-
             {
-                'ResourceType':'instance',
-                'Tags':tags
+                'ResourceType': 'instance',
+                'Tags': tags
             }
         ]
     )
-
-
-
-
 
 
 class AWSClient:
@@ -140,7 +137,7 @@ class AWSClient:
                         'owner': tags.get('OWNEREMAIL', ''),
                         'state': image.state,
                         'created': image.creation_date,
-                        'instanceid': tags.get('machine__description','')
+                        'instanceid': tags.get('machine__description', '')
                     }
                     yield params
             except botocore.exceptions.ClientError as e:
@@ -176,6 +173,17 @@ class AWSClient:
                         _, _, state_transition_time = instance.state_transition_reason.partition('(')
                         state_transition_time, _, _ = state_transition_time.partition(')')
                         params['state_transition_time'] = state_transition_time
+
+                    # Convert power_control tag value to contributors
+                    contributors = set()
+                    power_control = tags.get('power_control', '')
+                    power_control = power_control.replace(';', ' ')
+                    power_control_list = power_control.strip().split()
+                    contributors.update([f'{i}@{self.config.power_control_domain}' for i in power_control_list])
+                    contributors_tag = tags.get('CONTRIBUTORS', '')
+                    contributors.update(contributors_tag.strip().split())
+                    params['contributors'] = ' '.join(sorted(contributors))
+
                     yield params
 
             except botocore.exceptions.ClientError as e:

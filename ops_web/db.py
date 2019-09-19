@@ -101,7 +101,7 @@ class Database(fort.PostgresDatabase):
                     lower(coalesce(env_group, '')) || ' ' || lower(coalesce(owner, '')) filter_value
                 FROM virtual_machines
                 WHERE NULLIF(env_group, '') IS NOT NULL
-                  AND owner = %(email)s
+                  AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
                   AND visible IS TRUE
                 GROUP BY cloud, env_group, owner
                 ORDER BY env_group
@@ -112,8 +112,8 @@ class Database(fort.PostgresDatabase):
         if self.has_permission(email, 'admin'):
             sql = '''
                 SELECT
-                    id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    application_env, business_unit
+                    id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
+                    running_schedule, application_env, business_unit
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s
@@ -122,12 +122,12 @@ class Database(fort.PostgresDatabase):
         else:
             sql = '''
                 SELECT
-                    id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    application_env, business_unit
+                    id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
+                    running_schedule, application_env, business_unit
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s
-                  AND owner = %(email)s
+                  AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
                 ORDER BY name
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
@@ -154,8 +154,13 @@ class Database(fort.PostgresDatabase):
     def can_control_machine(self, email: str, machine_id: str) -> bool:
         if self.has_permission(email, 'admin'):
             return True
-        sql = 'SELECT id FROM virtual_machines WHERE id = %(id)s AND owner = %(owner)s'
-        controllable = self.q_one(sql, {'id': machine_id, 'owner': email})
+        sql = '''
+            SELECT id
+            FROM virtual_machines
+            WHERE id = %(id)s
+              AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
+        '''
+        controllable = self.q_one(sql, {'id': machine_id, 'email': email})
         return controllable is not None
 
     def start_sync(self):
@@ -197,8 +202,8 @@ class Database(fort.PostgresDatabase):
 
     def add_machine(self, params: Dict):
         # params = {
-        #   'id': '', 'cloud': '', 'region': '', 'env_group': '', 'name': '', 'owner': '', 'private_ip': '',
-        #   'public_ip': '', 'state': '', 'type': '', 'running_schedule': '', 'created': '',
+        #   'id': '', 'cloud': '', 'region': '', 'env_group': '', 'name': '', 'owner': '', 'contributors': '',
+        #   'private_ip': '', 'public_ip': '', 'state': '', 'type': '', 'running_schedule': '', 'created': '',
         #   'state_transition_time': '', 'application_env': '', 'business_unit': ''
         # }
         sql = 'SELECT id FROM virtual_machines WHERE id = %(id)s'
@@ -209,18 +214,18 @@ class Database(fort.PostgresDatabase):
                     owner = %(owner)s, state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s,
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
-                    business_unit = %(business_unit)s,visible = TRUE, synced = TRUE
+                    business_unit = %(business_unit)s, contributors = %(contributors)s, visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
             sql = '''
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    created, state_transition_time, application_env, business_unit, visible, synced
+                    created, state_transition_time, application_env, business_unit, contributors, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(env_group)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
-                    %(application_env)s, %(business_unit)s,TRUE, TRUE
+                    %(application_env)s, %(business_unit)s, %(contributors)s, TRUE, TRUE
                 )
             '''
         self.u(sql, params)
@@ -232,15 +237,16 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 UPDATE images 
                 SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
-                    created = %(created)s,  instanceid=%(instanceid)s, visible = TRUE, synced = TRUE
+                    created = %(created)s, instanceid = %(instanceid)s, visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
             sql = '''
                 INSERT INTO images (
-                    id, cloud, region, name, owner, state, created, instanceid,visible, synced,
+                    id, cloud, region, name, owner, state, created, instanceid, visible, synced
                 ) VALUES (
-                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(state)s, %(created)s, %(instanceid)s,TRUE, TRUE
+                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(state)s, %(created)s, %(instanceid)s, TRUE,
+                    TRUE
                 )
             '''
         self.u(sql, params)
@@ -252,12 +258,14 @@ class Database(fort.PostgresDatabase):
 
     def set_machine_tags(self, params: Dict):
         # params = {
-        #   'id': '', 'running_schedule': '', 'name': '', 'owner': '', 'application_env': '', 'business_unit': ''
+        #   'id': '', 'running_schedule': '', 'name': '', 'owner': '', 'contributors': '', 'application_env': '',
+        #   'business_unit': ''
         # }
         sql = '''
             UPDATE virtual_machines
             SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
-                application_env = %(application_env)s, business_unit = %(business_unit)s
+                contributors = %(contributors)s, application_env = %(application_env)s,
+                business_unit = %(business_unit)s
             WHERE id = %(id)s
         '''
         self.u(sql, params)
@@ -368,6 +376,17 @@ class Database(fort.PostgresDatabase):
                 ADD COLUMN business_unit text
             ''')
             self.add_schema_version(5)
+        if self.version < 6:
+            self.log.info('Migrating database to schema version 6')
+            self.u('''
+                ALTER TABLE virtual_machines
+                ADD COLUMN contributors text
+            ''')
+            self.u('''
+                ALTER TABLE images
+                ADD COLUMN instanceid text
+            ''')
+            self.add_schema_version(6)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'

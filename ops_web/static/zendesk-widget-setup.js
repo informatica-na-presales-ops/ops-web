@@ -10,7 +10,8 @@ zE("webWidget", "updateSettings", {
             label: {
                 "*": "Open a ticket"
             }
-        }
+        },
+        zIndex: 1000
     }
 });
 

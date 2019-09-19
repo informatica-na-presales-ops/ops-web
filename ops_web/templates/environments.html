@@ -43,7 +43,7 @@
                     <div class="card-body">
                         <h5 class="card-title"><a href="{{ url_for('environment_detail', env_name=e.env_group) }}" class="card-link stretched-link text-light">{{ e.env_group }}</a></h5>
                         <p class="card-text">{{ e.owner }}</p>
-                        <p class="card-text"><span class="badge badge-pill badge-light">{{ e.cloud }}</span> {{ e.instance_count }} host{{ 's' if e.instance_count > 1 }}</p>
+                        <p class="card-text"><span class="badge badge-pill badge-light">{{ e.cloud }}</span> {{ e.instance_count }} machine{{ 's' if e.instance_count > 1 }}</p>
                     </div>
                 </div>
             {% endfor %}

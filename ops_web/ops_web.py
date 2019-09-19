@@ -197,14 +197,14 @@ def images():
     flask.g.images = db.get_images(flask.g.email)
     return flask.render_template('images.html')
 
-@app.route('/images/instcreate' ,methods=['POST'])
+
+@app.route('/images/instcreate', methods=['POST'])
 @login_required
 def instance_create():
-    imageid=flask.request.values.get('imageid')
-    instanceid=flask.request.values.get('instanceid')
-    ops_web.aws.create_instance(imageid,instanceid)
+    imageid = flask.request.values.get('imageid')
+    instanceid = flask.request.values.get('instanceid')
+    ops_web.aws.create_instance(imageid, instanceid)
     return flask.render_template('images.html')
-
 
 
 @app.route('/images/create', methods=['POST'])
@@ -212,6 +212,7 @@ def instance_create():
 def image_create():
     if 'manage-images' not in config.feature_flags:
         return flask.redirect(flask.url_for('index'))
+    env_name = flask.request.values.get('environment')
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
     cloud = flask.request.values.get('cloud')
@@ -220,6 +221,8 @@ def image_create():
     name = flask.request.values.get('image-name')
     if cloud == 'aws':
         image_id = ops_web.aws.create_image(region, machine_id, name, owner)
+    else:
+        return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
     db: ops_web.db.Database = flask.g.db
     params = {
         'id': image_id,
@@ -231,7 +234,6 @@ def image_create():
         'created': datetime.datetime.utcnow()
     }
     db.add_image(params)
-    env_name = flask.request.values.get('environment')
     return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
 
 
@@ -265,32 +267,26 @@ def machine_edit():
             'id': machine_id,
             'name': flask.request.values.get('machine-name'),
             'owner': flask.request.values.get('owner'),
+            'contributors': flask.request.values.get('contributors'),
             'running_schedule': flask.request.values.get('running-schedule'),
             'application_env': flask.request.values.get('application-env'),
             'business_unit': flask.request.values.get('business-unit')
         })
+        tags = {
+            'APPLICATIONENV': flask.request.values.get('application-env'),
+            'BUSINESSUNIT': flask.request.values.get('business-unit'),
+            'CONTRIBUTORS': flask.request.values.get('contributors'),
+            'NAME': flask.request.values.get('machine-name'),
+            'OWNEREMAIL': flask.request.values.get('owner'),
+            'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
+        }
         cloud = flask.request.values.get('cloud')
         if cloud == 'aws':
             region = flask.request.values.get('region')
-            aws_tags = {
-                'NAME': flask.request.values.get('machine-name'),
-                'Name': flask.request.values.get('machine-name'),
-                'OWNEREMAIL': flask.request.values.get('owner'),
-                'RUNNINGSCHEDULE': flask.request.values.get('running-schedule'),
-                'APPLICATIONENV': flask.request.values.get('application-env'),
-                'BUSINESSUNIT': flask.request.values.get('business-unit')
-            }
-            ops_web.aws.update_resource_tags(region, machine_id, aws_tags)
+            ops_web.aws.update_resource_tags(region, machine_id, tags)
         elif cloud == 'az':
-            az_tags = {
-                'NAME': flask.request.values.get('machine-name'),
-                'OWNEREMAIL': flask.request.values.get('owner'),
-                'RUNNINGSCHEDULE': flask.request.values.get('running-schedule'),
-                'APPLICATIONENV': flask.request.values.get('application-env'),
-                'BUSINESSUNIT': flask.request.values.get('business-unit')
-            }
             az = ops_web.az.AZClient(config)
-            az.update_machine_tags(machine_id, az_tags)
+            az.update_machine_tags(machine_id, tags)
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit {machine_id}')
     env_name = flask.request.values.get('environment')
@@ -425,6 +421,7 @@ def sync_machines():
     sync_data = db.get_sync_data()
     if sync_data['syncing_now']:
         app.logger.warning('Aborting because there is another sync happening right now')
+        return
 
     db.start_sync()
     sync_start = datetime.datetime.utcnow()

@@ -11,10 +11,11 @@ services:
       AZ_CLIENT_SECRET: [required]
       AZ_TENANT_ID: [required]
       BOOTSTRAP_ADMIN: email@example.com
-      CLOUDS_TO_SYNC: aws,az
+      CLOUDS_TO_SYNC: aws az
       DEBUG_LAYOUT: 'true'
       LOG_LEVEL: DEBUG
       OAUTHLIB_INSECURE_TRANSPORT: 1
+      POWER_CONTROL_DOMAIN: example.com
       REP_SC_PAIRS_DB: [required]
       RESET_DATABASE: 'false'
       SECRET_KEY: [required]
