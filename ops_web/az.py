@@ -47,7 +47,8 @@ class AZClient:
                     'name': image.tags.get('NAME', image.name),
                     'owner': image.tags.get('OWNEREMAIL', ''),
                     'state': IMAGE_STATE_MAP.get(image.provisioning_state, image.provisioning_state),
-                    'created': None
+                    'created': None,
+                    'instanceid': None
                 }
                 yield params
 
