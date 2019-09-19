@@ -65,6 +65,56 @@ def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
     image.create_tags(Tags=[{'Key': k, 'Value': v} for k, v in image_tags.items()])
     return image.id
 
+def create_instance(imageid: str,instanceid: str):
+    log.debug(f'Creating instance')
+    ec2client = boto3.client('ec2')
+    response = ec2client.describe_instances(InstanceIds=[instanceid])
+    for reservation in response["Reservations"]:
+        for instance in reservation["Instances"]:
+            log.info(instance['InstanceType'])
+            instanceType=instance['InstanceType']
+            securitygroups=instance['SecurityGroups']
+            subnetid=instance['SubnetId']
+            tags=instance['Tags']
+    securitygrplist=[]
+    for i in securitygroups:
+        log.debug(i['GroupName'])
+        securitygrplist.append(i['GroupId'])
+    log.debug(securitygrplist)
+    ec2=boto3.resource('ec2')
+    response=ec2.create_instances(
+        ImageId= imageid,
+        MinCount=1,
+        MaxCount=1,
+        InstanceType=instanceType,
+        SubnetId=subnetid,
+        SecurityGroupIds=securitygrplist,
+
+
+        BlockDeviceMappings=[
+            {
+                'VirtualName': "BootDrive",
+                'DeviceName': "/dev/sda1",
+                'Ebs': {
+
+                'VolumeType': "gp2",
+                'DeleteOnTermination': True
+                }
+            }
+        ],
+        TagSpecifications=[
+
+            {
+                'ResourceType':'instance',
+                'Tags':tags
+            }
+        ]
+    )
+
+
+
+
+
 
 class AWSClient:
     def __init__(self, config: ops_web.config.Config):
@@ -89,7 +139,8 @@ class AWSClient:
                         'name': tags.get('NAME', image.name),
                         'owner': tags.get('OWNEREMAIL', ''),
                         'state': image.state,
-                        'created': image.creation_date
+                        'created': image.creation_date,
+                        'instanceid': tags.get('machine__description','')
                     }
                     yield params
             except botocore.exceptions.ClientError as e:

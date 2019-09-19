@@ -135,7 +135,7 @@ class Database(fort.PostgresDatabase):
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT id, cloud, region, name, owner, state, created,
+                SELECT id, cloud, region, name, owner, state, created,instanceid,
                     lower(coalesce(name, '')) || ' ' || lower(coalesce(owner, '')) filter_value 
                 FROM images
                 WHERE visible IS TRUE
@@ -143,7 +143,7 @@ class Database(fort.PostgresDatabase):
             '''
         else:
             sql = '''
-                SELECT id, cloud, region, name, owner, state, created,
+                SELECT id, cloud, region, name, owner, state, created,instanceid,
                     lower(coalesce(name, '')) || ' ' || lower(coalesce(owner, '')) filter_value
                 FROM images
                 WHERE visible IS TRUE
@@ -209,7 +209,7 @@ class Database(fort.PostgresDatabase):
                     owner = %(owner)s, state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s,
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
-                    business_unit = %(business_unit)s, visible = TRUE, synced = TRUE
+                    business_unit = %(business_unit)s,visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
@@ -220,7 +220,7 @@ class Database(fort.PostgresDatabase):
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(env_group)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
-                    %(application_env)s, %(business_unit)s, TRUE, TRUE
+                    %(application_env)s, %(business_unit)s,TRUE, TRUE
                 )
             '''
         self.u(sql, params)
@@ -232,15 +232,15 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 UPDATE images 
                 SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
-                    created = %(created)s, visible = TRUE, synced = TRUE
+                    created = %(created)s,  instanceid=%(instanceid)s, visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
             sql = '''
                 INSERT INTO images (
-                    id, cloud, region, name, owner, state, created, visible, synced
+                    id, cloud, region, name, owner, state, created, instanceid,visible, synced,
                 ) VALUES (
-                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(state)s, %(created)s, TRUE, TRUE
+                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(state)s, %(created)s, %(instanceid)s,TRUE, TRUE
                 )
             '''
         self.u(sql, params)

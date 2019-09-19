@@ -197,6 +197,15 @@ def images():
     flask.g.images = db.get_images(flask.g.email)
     return flask.render_template('images.html')
 
+@app.route('/images/instcreate' ,methods=['POST'])
+@login_required
+def instance_create():
+    imageid=flask.request.values.get('imageid')
+    instanceid=flask.request.values.get('instanceid')
+    ops_web.aws.create_instance(imageid,instanceid)
+    return flask.render_template('images.html')
+
+
 
 @app.route('/images/create', methods=['POST'])
 @login_required

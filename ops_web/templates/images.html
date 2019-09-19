@@ -25,6 +25,8 @@
                     <th>Owner</th>
                     <th>Created</th>
                     <th>State</th>
+                    <th>InstanceId</th>
+
                 </tr>
                 </thead>
                 <tbody>
@@ -36,10 +38,41 @@
                         <td>{{ i.owner }}</td>
                         <td>{{ i.created }}</td>
                         <td>{{ i.state }}</td>
+                        <td>{{ i.instanceid }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}" title="Create Instance"><span class="oi oi-pencil"></span></button>
+
+                            </div>
+                        </td>
+
                     </tr>
+
                 {% endfor %}
                 </tbody>
             </table>
+
+            {% for i in g.images %}
+            <div class="modal" id="modal-instcreate-{{ loop.index }}">
+              <div class="modal-dialog">
+               <div class="modal-content bg-dark">
+                <div class="modal-body">
+                    <form id="form-instcreate-{{ loop.index }}" action="{{ url_for('instance_create')}}" method="post">
+                      <p class="text-light">Are you sure you want to create machines from this ami </p>
+                        <input type="hidden" name="imageid" value="{{i.id}}">
+                        <input type="hidden" name="instanceid" value="{{i.instanceid}}">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-outline-success" form="form-instcreate-{{ loop.index }}">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+         {% endfor %}
+
+
         </div>
     </div>
 {% endblock %}
