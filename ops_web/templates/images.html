@@ -61,6 +61,10 @@
                       <p class="text-light">Are you sure you want to create machines from this ami </p>
                         <input type="hidden" name="imageid" value="{{i.id}}">
                         <input type="hidden" name="instanceid" value="{{i.instanceid}}">
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-name" class="text-light">Name</label>
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name" value="{{ i.name }}">
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">

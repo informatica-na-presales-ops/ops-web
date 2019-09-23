@@ -203,8 +203,13 @@ def images():
 def instance_create():
     imageid = flask.request.values.get('imageid')
     instanceid = flask.request.values.get('instanceid')
-    ops_web.aws.create_instance(imageid, instanceid)
-    return flask.render_template('images.html')
+    name = flask.request.values.get('name')
+    response = ops_web.aws.create_instance(imageid, instanceid, name)
+    aws = ops_web.aws.AWSClient(config)
+    instance = aws.getsingleinstance(response[0].id)
+    db: ops_web.db.Database = flask.g.db
+    db.add_machine(instance)
+    return flask.redirect(flask.url_for('environments'))
 
 
 @app.route('/images/create', methods=['POST'])

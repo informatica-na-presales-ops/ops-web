@@ -66,34 +66,28 @@ def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
     return image.id
 
 
-def create_instance(imageid: str, instanceid: str):
-    log.debug(f'Creating instance')
-    ec2client = boto3.client('ec2')
-    response = ec2client.describe_instances(InstanceIds=[instanceid])
-    security_groups = []
-    instance_type = None
-    subnet_id = None
-    tags = None
-    for reservation in response["Reservations"]:
-        for instance in reservation["Instances"]:
-            log.info(instance['InstanceType'])
-            instance_type = instance['InstanceType']
-            security_groups = instance['SecurityGroups']
-            subnet_id = instance['SubnetId']
-            tags = instance['Tags']
-    security_group_ids = []
-    for i in security_groups:
-        log.debug(i['GroupName'])
-        security_group_ids.append(i['GroupId'])
-    log.debug(security_group_ids)
+def create_instance(imageid: str, instanceid: str, name: str):
     ec2 = boto3.resource('ec2')
-    ec2.create_instances(
+    instance = ec2.Instance(instanceid)
+
+    securitygroupids = []
+    securitygroups = instance.security_groups
+    for i in securitygroups:
+        for t, v in i.items():
+            if t == 'GroupId':
+                securitygroupids.append(v)
+
+    for t in instance.tags:
+        if t["Key"] == 'Name' or t["Key"] == 'NAME':
+            t["Value"] = name
+
+    response=ec2.create_instances(
         ImageId=imageid,
         MinCount=1,
         MaxCount=1,
-        InstanceType=instance_type,
-        SubnetId=subnet_id,
-        SecurityGroupIds=security_group_ids,
+        InstanceType=instance.instance_type,
+        SubnetId=instance.subnet_id,
+        SecurityGroupIds=securitygroupids,
         BlockDeviceMappings=[
             {
                 'VirtualName': "BootDrive",
@@ -107,10 +101,12 @@ def create_instance(imageid: str, instanceid: str):
         TagSpecifications=[
             {
                 'ResourceType': 'instance',
-                'Tags': tags
+                'Tags': instance.tags
             }
         ]
     )
+    return response
+
 
 
 class AWSClient:
@@ -189,3 +185,42 @@ class AWSClient:
             except botocore.exceptions.ClientError as e:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
+
+    def getsingleinstance(self,instanceid: str):
+        ec2 = boto3.resource('ec2')
+        instance = ec2.Instance(instanceid)
+        tags = resource_tags_as_dict(instance)
+
+        params = {
+            'id': instance.id,
+            'cloud': 'aws',
+            'region': 'us-west-2',
+            'env_group': tags.get('machine__environment_group', ''),
+            'name': tags.get('NAME', ''),
+            'owner': tags.get('OWNEREMAIL', ''),
+            'private_ip': instance.private_ip_address,
+            'public_ip': instance.public_ip_address,
+            'type': instance.instance_type,
+            'running_schedule': tags.get('RUNNINGSCHEDULE', ''),
+            'state': instance.state['Name'],
+            'created': instance.launch_time,
+            'state_transition_time': None,
+            'application_env': tags.get('APPLICATIONENV', ''),
+            'business_unit': tags.get('BUSINESSUNIT', '')
+        }
+
+        if instance.state_transition_reason.endswith('GMT)'):
+            _, _, state_transition_time = instance.state_transition_reason.partition('(')
+            state_transition_time, _, _ = state_transition_time.partition(')')
+            params['state_transition_time'] = state_transition_time
+
+        # Convert power_control tag value to contributors
+        contributors = set()
+        power_control = tags.get('power_control', '')
+        power_control = power_control.replace(';', ' ')
+        power_control_list = power_control.strip().split()
+        contributors.update([f'{i}@{self.config.power_control_domain}' for i in power_control_list])
+        contributors_tag = tags.get('CONTRIBUTORS', '')
+        contributors.update(contributors_tag.strip().split())
+        params['contributors'] = ' '.join(sorted(contributors))
+        return params
