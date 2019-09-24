@@ -65,6 +65,10 @@
                             <label for="form-image-{{ loop.index }}-name" class="text-light">Name</label>
                             <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name" value="{{ i.name }}">
                         </div>
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ i.owner }}">
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">

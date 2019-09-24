@@ -66,7 +66,7 @@ def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
     return image.id
 
 
-def create_instance(imageid: str, instanceid: str, name: str):
+def create_instance(imageid: str, instanceid: str, name: str, owner: str):
     ec2 = boto3.resource('ec2')
     instance = ec2.Instance(instanceid)
 
@@ -80,6 +80,10 @@ def create_instance(imageid: str, instanceid: str, name: str):
     for t in instance.tags:
         if t["Key"] == 'Name' or t["Key"] == 'NAME':
             t["Value"] = name
+
+    for o in instance.tags:
+        if o["Key"] == 'OWNEREMAIL':
+            o["Value"] = owner
 
     response=ec2.create_instances(
         ImageId=imageid,

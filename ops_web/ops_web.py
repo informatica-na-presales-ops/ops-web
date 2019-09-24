@@ -204,7 +204,8 @@ def instance_create():
     imageid = flask.request.values.get('imageid')
     instanceid = flask.request.values.get('instanceid')
     name = flask.request.values.get('name')
-    response = ops_web.aws.create_instance(imageid, instanceid, name)
+    owner=flask.request.values.get('owner')
+    response = ops_web.aws.create_instance(imageid, instanceid, name,owner)
     aws = ops_web.aws.AWSClient(config)
     instance = aws.getsingleinstance(response[0].id)
     db: ops_web.db.Database = flask.g.db
