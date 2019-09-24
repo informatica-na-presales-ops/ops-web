@@ -1,6 +1,7 @@
 import datetime
-import ops_web.config
 import fort
+import ops_web.config
+import uuid
 
 from typing import Dict, List
 
@@ -33,6 +34,8 @@ class Database(fort.PostgresDatabase):
     def __init__(self, config: ops_web.config.Config):
         super().__init__(config.db)
         self.config = config
+
+    # users and permissions
 
     def bootstrap_admin(self):
         if self.config.bootstrap_admin in (None, ''):
@@ -75,6 +78,35 @@ class Database(fort.PostgresDatabase):
 
     def has_permission(self, email: str, permission: str) -> bool:
         return permission in self.get_permissions({'email': email})
+
+    def can_control_machine(self, email: str, machine_id: str) -> bool:
+        if self.has_permission(email, 'admin'):
+            return True
+        sql = '''
+            SELECT id
+            FROM virtual_machines
+            WHERE id = %(id)s
+              AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
+        '''
+        controllable = self.q_one(sql, {'id': machine_id, 'email': email})
+        return controllable is not None
+
+    # logging
+
+    def add_log_entry(self, actor: str, action: str):
+        params = {
+            'id': uuid.uuid4(),
+            'log_time': datetime.datetime.utcnow(),
+            'actor': actor,
+            'action': action
+        }
+        sql = '''
+            INSERT INTO log_entries (id, log_time, actor, action)
+            VALUES (%(id)s, %(log_time)s, %(actor)s, %(action)s)
+        '''
+        self.u(sql, params)
+
+    # environments and machines
 
     def get_environments(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
@@ -132,6 +164,27 @@ class Database(fort.PostgresDatabase):
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
 
+    def set_machine_state(self, params: Dict):
+        # params = {'id': '', 'state': ''}
+        sql = 'UPDATE virtual_machines SET state = %(state)s WHERE id = %(id)s'
+        self.u(sql, params)
+
+    def set_machine_tags(self, params: Dict):
+        # params = {
+        #   'id': '', 'running_schedule': '', 'name': '', 'owner': '', 'contributors': '', 'application_env': '',
+        #   'business_unit': ''
+        # }
+        sql = '''
+            UPDATE virtual_machines
+            SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
+                contributors = %(contributors)s, application_env = %(application_env)s,
+                business_unit = %(business_unit)s
+            WHERE id = %(id)s
+        '''
+        self.u(sql, params)
+
+    # images
+
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
@@ -151,17 +204,7 @@ class Database(fort.PostgresDatabase):
             '''
         return self.q(sql, {'email': email})
 
-    def can_control_machine(self, email: str, machine_id: str) -> bool:
-        if self.has_permission(email, 'admin'):
-            return True
-        sql = '''
-            SELECT id
-            FROM virtual_machines
-            WHERE id = %(id)s
-              AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
-        '''
-        controllable = self.q_one(sql, {'id': machine_id, 'email': email})
-        return controllable is not None
+    # syncing
 
     def start_sync(self):
         sql = '''
@@ -249,25 +292,6 @@ class Database(fort.PostgresDatabase):
                     TRUE
                 )
             '''
-        self.u(sql, params)
-
-    def set_machine_state(self, params: Dict):
-        # params = {'id': '', 'state': ''}
-        sql = 'UPDATE virtual_machines SET state = %(state)s WHERE id = %(id)s'
-        self.u(sql, params)
-
-    def set_machine_tags(self, params: Dict):
-        # params = {
-        #   'id': '', 'running_schedule': '', 'name': '', 'owner': '', 'contributors': '', 'application_env': '',
-        #   'business_unit': ''
-        # }
-        sql = '''
-            UPDATE virtual_machines
-            SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
-                contributors = %(contributors)s, application_env = %(application_env)s,
-                business_unit = %(business_unit)s
-            WHERE id = %(id)s
-        '''
         self.u(sql, params)
 
     def add_schema_version(self, schema_version: int):
@@ -387,6 +411,17 @@ class Database(fort.PostgresDatabase):
                 ADD COLUMN instanceid text
             ''')
             self.add_schema_version(6)
+        if self.version < 7:
+            self.log.info('Migrating database ot schema version 7')
+            self.u('''
+                CREATE TABLE log_entries (
+                    id uuid PRIMARY KEY,
+                    log_time timestamp,
+                    actor text,
+                    action text
+                )
+            ''')
+            self.add_schema_version(7)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
