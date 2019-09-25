@@ -12,7 +12,8 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build the Docker image
       run: docker build --file Dockerfile --tag docker.pkg.github.com/informatica-na-presales-ops/ops-web/ops-web:$(date +%s) .
-    - run: docker login --password ${GITHUB_TOKEN} --username williamjacksn docker.pkg.github.com
+    - run: docker login --password ${DOCKER_PASSWORD} --username ${DOCKER_USERNAME} docker.pkg.github.com
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
     - run: docker image push docker.pkg.github.com/informatica-na-presales-ops/ops-web/ops-web:$(date +%s)
