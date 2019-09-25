@@ -45,39 +45,29 @@ class Database(fort.PostgresDatabase):
 
     def get_users(self):
         sql = 'SELECT email, permissions FROM permissions ORDER BY email'
-        return self.q(sql)
+        for record in self.q(sql):
+            yield {'email': record['email'], 'permissions': record['permissions'].split()}
 
     def add_permission(self, email: str, permission: str):
-        current_permissions = self.get_permissions({'email': email})
+        current_permissions = set(self.get_permissions(email))
         current_permissions.add(permission)
-        self._set_permissions({'email': email, 'permissions': ','.join(current_permissions)})
+        self.set_permissions(email, sorted(current_permissions))
 
-    def drop_permission(self, email: str, permission: str):
-        current_permissions = self.get_permissions({'email': email})
-        current_permissions.discard(permission)
-        self._set_permissions({'email': email, 'permissions': ','.join(current_permissions)})
-
-    def get_permissions(self, params: Dict) -> set:
-        # params = {'email': 'me@example.com'}
+    def get_permissions(self, email: str) -> List[str]:
         sql = 'SELECT permissions FROM permissions WHERE email = %(email)s'
-        for record in self.q(sql, params):
-            return set(record['permissions'].split(','))
-        return set()
+        permissions = self.q_val(sql, {'email': email})
+        if permissions is None:
+            return []
+        return sorted(set(permissions.replace(',', ' ').split()))
 
-    def _set_permissions(self, params: Dict):
-        # params = {'email': '', 'permissions': ''}
-        if params['permissions'] == '':
-            sql = 'DELETE FROM permissions WHERE email = %(email)s'
-        else:
-            sql = 'SELECT email FROM permissions WHERE email = %(email)s'
-            if self.q(sql, params):
-                sql = 'UPDATE permissions SET permissions = %(permissions)s WHERE email = %(email)s'
-            else:
-                sql = 'INSERT INTO permissions (email, permissions) VALUES (%(email)s, %(permissions)s)'
-        self.u(sql, params)
+    def set_permissions(self, email: str, permissions: List[str]):
+        params = {'email': email, 'permissions': ' '.join(sorted(set(permissions)))}
+        self.u('DELETE FROM permissions WHERE email = %(email)s', params)
+        if permissions:
+            self.u('INSERT INTO permissions (email, permissions) VALUES (%(email)s, %(permissions)s)', params)
 
     def has_permission(self, email: str, permission: str) -> bool:
-        return permission in self.get_permissions({'email': email})
+        return permission in self.get_permissions(email)
 
     def can_control_machine(self, email: str, machine_id: str) -> bool:
         if self.has_permission(email, 'admin'):

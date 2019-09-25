@@ -10,19 +10,29 @@
         <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
             <h2 class="text-light">User permissions</h2>
             <p class="text-light">The following users have custom permissions. If a user does not appear in this list, they still have default permissions.</p>
-            <p><button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-add-user">Add user permissions</button></p>
+            <p><button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-add-user" data-permissions="none">Add user permissions</button></p>
             <table class="table table-dark table-striped">
                 <thead>
                 <tr>
                     <th>Email</th>
                     <th>Permissions</th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for u in g.users %}
                     <tr>
-                        <td><a href="#" class="text-light">{{ u.email }}</a></td>
-                        <td>{{ u.permissions }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                        {% for p in u.permissions %}
+                            <span class="badge badge-pill badge-light">{{ p }}</span>
+                        {% endfor %}
+                        </td>
+                        <td class="text-right">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-add-user" data-email="{{ u.email }}" data-permissions="{{ ' '.join(u.permissions) }}" title="Edit user permissions">
+                                <span class="oi oi-pencil"></span>
+                            </button>
+                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -34,7 +44,7 @@
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Add user permissions</h5>
+                    <h5 class="modal-title text-light">User permissions</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -43,16 +53,13 @@
                             <label for="add-user-email" class="text-light">Email address</label>
                             <input type="email" name="email" class="form-control bg-dark text-light" id="add-user-email" placeholder="example@informatica.com" required>
                         </div>
+                        {% for p, d in g.available_permissions.items() %}
                         <div class="form-group form-check">
-                            <input type="checkbox" name="permission-admin" class="form-check-input" id="add-user-admin">
-                            <label class="form-check-label text-light" for="add-user-admin">admin</label>
-                            <small class="form-text text-muted">view and manage all environments, launch sync manually, grant permissions to other users</small>
+                            <input type="checkbox" class="form-check-input" id="permission-{{ p }}" name="permissions" value="{{ p }}">
+                            <label class="form-check-label text-light" for="permission-{{ p }}">{{ p }}</label>
+                            <small class="form-text text-muted">{{ d }}</small>
                         </div>
-                        <div class="form-group form-check">
-                            <input type="checkbox" name="permission-rep-sc-pairs" class="form-check-input" id="add-user-rep-sc-pairs">
-                            <label class="form-check-label text-light" for="add-user-rep-sc-pairs">rep-sc-pairs</label>
-                            <small class="form-text text-muted">view and manage pairings between Sales Reps and SCs</small>
-                        </div>
+                        {% endfor %}
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -62,4 +69,9 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='admin.js') }}"></script>
 {% endblock %}

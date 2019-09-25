@@ -70,7 +70,7 @@ def load_user():
     flask.g.config = config
     flask.g.db = ops_web.db.Database(config)
     flask.g.email = flask.session.get('email')
-    flask.g.permissions = flask.g.db.get_permissions({'email': flask.g.email})
+    flask.g.permissions = flask.g.db.get_permissions(flask.g.email)
 
 
 @app.route('/')
@@ -83,20 +83,22 @@ def index():
 @app.route('/admin')
 @permission_required('admin')
 def admin():
-    flask.g.users = flask.g.db.get_users()
+    db: ops_web.db.Database = flask.g.db
+    flask.g.users = db.get_users()
+    flask.g.available_permissions = {
+        'admin': 'view and manage all environments, launch sync manually, grant permissions to other users',
+        'rep-sc-pairs': 'view and manage pairings between Sales Reps and SCs'
+    }
     return flask.render_template('admin.html')
 
 
 @app.route('/admin/edit-user', methods=['POST'])
 @permission_required('admin')
 def admin_edit_user():
+    db: ops_web.db.Database = flask.g.db
     email = flask.request.values.get('email')
-    for p_name in ('admin', 'rep-sc-pairs'):
-        p_on_off = flask.request.values.get(f'permission-{p_name}', 'off')
-        if p_on_off == 'on':
-            flask.g.db.add_permission(email, p_name)
-        else:
-            flask.g.db.drop_permission(email, p_name)
+    permissions = flask.request.values.getlist('permissions')
+    db.set_permissions(email, permissions)
     return flask.redirect(flask.url_for('admin'))
 
 
