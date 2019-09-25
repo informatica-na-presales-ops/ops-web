@@ -1,4 +1,4 @@
-let sc_candidates_json_url = $("#sc-candidates-json-url").attr("href");
+let sc_candidates_json_url = $('#sc-candidates-json-url').attr('href');
 
 let sc_candidates_source = new Bloodhound({
     datumTokenizer: Bloodhound.tokenizers.whitespace,
@@ -14,6 +14,6 @@ $('.sc-candidate-typeahead').typeahead({
     highlight: true
 }, {
     limit: 10,
-    name: "sc-candidates-source",
+    name: 'sc-candidates-source',
     source: sc_candidates_source
 });
