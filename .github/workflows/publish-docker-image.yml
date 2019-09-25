@@ -9,11 +9,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - name: Check out the repository
+      uses: actions/checkout@v1
     - name: Build the Docker image
       run: docker build --file Dockerfile --tag docker.pkg.github.com/informatica-na-presales-ops/ops-web/ops-web:$(date +%s) .
-    - run: docker login --password ${DOCKER_PASSWORD} --username ${DOCKER_USERNAME} docker.pkg.github.com
+    - name: Log in to the registry
+      run: docker login --password ${DOCKER_PASSWORD} --username ${DOCKER_USERNAME} docker.pkg.github.com
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-    - run: docker image push docker.pkg.github.com/informatica-na-presales-ops/ops-web/ops-web:$(date +%s)
+    - name: Push the image to the registry
+      run: docker image push docker.pkg.github.com/informatica-na-presales-ops/ops-web/ops-web
