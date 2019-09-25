@@ -19,7 +19,6 @@ To clean up containers at the end of the day:
 To publish a new version:
 
 1. Update the value for `APP_VERSION` in `Dockerfile`.
-2. Run `docker-compose build` to build the image.
-3. Run `docker image tag informaticanapresalesops.azurecr.io/ops-web:latest
-   informaticanapresalesops.azurecr.io/ops-web:<version>` to apply the new version tag to the image.
-4. Run `docker image push informaticanapresalesops.azurecr.io/ops-web:<version>` to push the new image to the registry.
+2. Push all changes to GitHub.
+3. Create a new release on GitHub for that version.
+4. GitHub Actions will build a new container image.
