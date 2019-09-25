@@ -25,8 +25,8 @@
                     <th>Owner</th>
                     <th>Created</th>
                     <th>State</th>
-                    <th>InstanceId</th>
-
+                    <th>Source machine ID</th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -40,46 +40,46 @@
                         <td>{{ i.state }}</td>
                         <td>{{ i.instanceid }}</td>
                         <td>
+                        {% if i.state == 'available' %}
                             <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}" title="Create Instance"><span class="oi oi-pencil"></span></button>
-
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}" title="Create Instance">
+                                    <span class="oi oi-media-play"></span>
+                                </button>
                             </div>
+                        {% endif %}
                         </td>
-
                     </tr>
-
                 {% endfor %}
                 </tbody>
             </table>
 
             {% for i in g.images %}
             <div class="modal" id="modal-instcreate-{{ loop.index }}">
-              <div class="modal-dialog">
-               <div class="modal-content bg-dark">
-                <div class="modal-body">
-                    <form id="form-instcreate-{{ loop.index }}" action="{{ url_for('instance_create')}}" method="post">
-                      <p class="text-light">Are you sure you want to create machines from this ami </p>
-                        <input type="hidden" name="imageid" value="{{i.id}}">
-                        <input type="hidden" name="instanceid" value="{{i.instanceid}}">
-                        <div class="form-group">
-                            <label for="form-image-{{ loop.index }}-name" class="text-light">Name</label>
-                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name" value="{{ i.name }}">
+                <div class="modal-dialog">
+                    <div class="modal-content bg-dark">
+                        <div class="modal-body">
+                            <form id="form-instcreate-{{ loop.index }}" action="{{ url_for('instance_create')}}" method="post">
+                                <p class="text-light">Are you sure you want to create machines from this ami </p>
+                                <input type="hidden" name="imageid" value="{{i.id}}">
+                                <input type="hidden" name="instanceid" value="{{i.instanceid}}">
+                                <div class="form-group">
+                                    <label for="form-image-{{ loop.index }}-name" class="text-light">Name</label>
+                                    <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name" value="{{ i.name }}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
+                                    <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ i.owner }}">
+                                </div>
+                            </form>
                         </div>
-                        <div class="form-group">
-                            <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
-                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ i.owner }}">
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-outline-success" form="form-instcreate-{{ loop.index }}">Create</button>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-outline-success" form="form-instcreate-{{ loop.index }}">Create</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
          {% endfor %}
-
 
         </div>
     </div>
