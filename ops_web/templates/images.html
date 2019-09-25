@@ -9,6 +9,7 @@
     <div class="row">
         <div class="col-12">
             <div class="form-inline">
+                <label class="sr-only" for="filter-input"></label>
                 <input class="form-control" placeholder="Filter images..." id="filter-input" autofocus>
             </div>
         </div>
@@ -21,9 +22,9 @@
                 <tr>
                     <th>Cloud</th>
                     <th>Region</th>
-                    <th>Name</th>
+                    <th>Image name</th>
                     <th>Owner</th>
-                    <th>Created</th>
+                    <th class="date-column">Created</th>
                     <th>State</th>
                     <th>Source machine ID</th>
                     <th></th>
@@ -34,15 +35,15 @@
                     <tr class="filter-candidate" data-filter-value="{{ i.filter_value }}">
                         <td>{{ i.cloud }}</td>
                         <td>{{ i.region }}</td>
-                        <td>{{ i.name }}</td>
+                        <td class="text-truncate mw-800px" title="{{ i.name }}">{{ i.name }}</td>
                         <td>{{ i.owner }}</td>
-                        <td>{{ i.created }}</td>
+                        <td>{{ i.created.date() if i.created }}</td>
                         <td>{{ i.state }}</td>
-                        <td>{{ i.instanceid }}</td>
+                        <td class="text-truncate">{{ i.instanceid if i.instanceid.startswith('i-') }}</td>
                         <td>
-                        {% if i.state == 'available' %}
+                        {% if i.cloud == 'aws' and i.state == 'available' %}
                             <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}" title="Create Instance">
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}" title="Launch image">
                                     <span class="oi oi-media-play"></span>
                                 </button>
                             </div>
@@ -53,36 +54,65 @@
                 </tbody>
             </table>
 
+            <div class="d-block d-sm-none">
             {% for i in g.images %}
-            <div class="modal" id="modal-instcreate-{{ loop.index }}">
-                <div class="modal-dialog">
-                    <div class="modal-content bg-dark">
-                        <div class="modal-body">
-                            <form id="form-instcreate-{{ loop.index }}" action="{{ url_for('instance_create')}}" method="post">
-                                <p class="text-light">Are you sure you want to create machines from this ami </p>
-                                <input type="hidden" name="imageid" value="{{i.id}}">
-                                <input type="hidden" name="instanceid" value="{{i.instanceid}}">
-                                <div class="form-group">
-                                    <label for="form-image-{{ loop.index }}-name" class="text-light">Name</label>
-                                    <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name" value="{{ i.name }}">
-                                </div>
-                                <div class="form-group">
-                                    <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
-                                    <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ i.owner }}">
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-outline-success" form="form-instcreate-{{ loop.index }}">Create</button>
-                        </div>
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ i.filter_value }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ i.name }}</h5>
+                        <p class="card-text">
+                            <span class="badge badge-light">Cloud: {{ i.cloud }}</span>
+                            <span class="badge badge-light">Region: {{ i.region }}</span>
+                            <span class="badge badge-light">Owner: {{ i.owner }}</span>
+                            <span class="badge badge-light">Created: {{ i.created.date() if i.created }}</span>
+                            <span class="badge badge-light">State: {{ i.state }}</span>
+                            <span class="badge badge-light">Source machine ID: {{ i.instanceid if i.instanceid.startswith('i-') }}</span>
+                        </p>
+                        {% if i.cloud == 'aws' and i.state == 'available' %}
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}">
+                            <span class="oi oi-media-play"></span>
+                            Launch image
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
+            {% endfor %}
             </div>
-         {% endfor %}
 
         </div>
     </div>
+
+    {% for i in g.images %}
+    <div class="modal" id="modal-instcreate-{{ loop.index }}">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title text-light">Launch image</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light">Do you want to launch a new machine from this image?</p>
+                    <form id="form-instcreate-{{ loop.index }}" action="{{ url_for('instance_create')}}" method="post">
+                        <input type="hidden" name="imageid" value="{{i.id}}">
+                        <input type="hidden" name="instanceid" value="{{i.instanceid}}">
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-name" class="text-light">New machine name</label>
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name" value="{{ i.name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ i.owner }}">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-outline-success" form="form-instcreate-{{ loop.index }}">Launch</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
 {% endblock %}
 
 {% block end_of_body %}

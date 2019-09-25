@@ -12,3 +12,7 @@
     transition: none;
     display: none;
 }
+
+.date-column { width: 92px; }
+
+.mw-800px { max-width: 800px; }

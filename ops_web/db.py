@@ -188,16 +188,16 @@ class Database(fort.PostgresDatabase):
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT id, cloud, region, name, owner, state, created,instanceid,
-                    lower(coalesce(name, '')) || ' ' || lower(coalesce(owner, '')) filter_value 
+                SELECT id, cloud, region, name, owner, state, created, coalesce(instanceid, '') instanceid,
+                    lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
                 FROM images
                 WHERE visible IS TRUE
                 ORDER BY name
             '''
         else:
             sql = '''
-                SELECT id, cloud, region, name, owner, state, created,instanceid,
-                    lower(coalesce(name, '')) || ' ' || lower(coalesce(owner, '')) filter_value
+                SELECT id, cloud, region, name, owner, state, created, coalesce(instanceid, '') instanceid,
+                    lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
                 FROM images
                 WHERE visible IS TRUE
                 AND owner = %(email)s
