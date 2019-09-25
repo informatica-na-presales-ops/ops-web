@@ -5,10 +5,14 @@ on: [push]
 jobs:
 
   build:
- 
+
     runs-on: ubuntu-latest
- 
+
     steps:
     - uses: actions/checkout@v1
     - name: Build the Docker image
       run: docker build --file Dockerfile --tag docker.pkg.github.com/informatica-na-presales-ops/ops-web/ops-web:$(date +%s) .
+    - run: docker login --password ${GITHUB_TOKEN} --username williamjacksn
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - run: docker image push docker.pkg.github.com/informatica-na-presales-ops/ops-web/ops-web:$(date +%s)
