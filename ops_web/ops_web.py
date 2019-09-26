@@ -193,8 +193,6 @@ def environment_stop(env_name):
 @app.route('/images')
 @login_required
 def images():
-    if 'manage-images' not in config.feature_flags:
-        return flask.redirect(flask.url_for('index'))
     db: ops_web.db.Database = flask.g.db
     flask.g.images = db.get_images(flask.g.email)
     return flask.render_template('images.html')
@@ -220,8 +218,6 @@ def instance_create():
 @app.route('/images/create', methods=['POST'])
 @login_required
 def image_create():
-    if 'manage-images' not in config.feature_flags:
-        return flask.redirect(flask.url_for('index'))
     env_name = flask.request.values.get('environment')
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
