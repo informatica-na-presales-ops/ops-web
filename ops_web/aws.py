@@ -66,8 +66,8 @@ def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
     return image.id
 
 
-def create_instance(imageid: str, instanceid: str, name: str, owner: str):
-    ec2 = boto3.resource('ec2')
+def create_instance(region: str,imageid: str, instanceid: str, name: str, owner: str):
+    ec2 = boto3.resource('ec2',region_name=region)
     instance = ec2.Instance(instanceid)
 
     securitygroupids = []
@@ -190,7 +190,7 @@ class AWSClient:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
 
-    def getsingleinstance(self,instanceid: str):
+    def getsingleinstance(self,region: str,instanceid: str):
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instanceid)
         tags = resource_tags_as_dict(instance)
@@ -198,7 +198,7 @@ class AWSClient:
         params = {
             'id': instance.id,
             'cloud': 'aws',
-            'region': 'us-west-2',
+            'region': region,
             'env_group': tags.get('machine__environment_group', ''),
             'name': tags.get('NAME', ''),
             'owner': tags.get('OWNEREMAIL', ''),

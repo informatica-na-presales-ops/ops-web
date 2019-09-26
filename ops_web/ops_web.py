@@ -206,13 +206,15 @@ def instance_create():
     imageid = flask.request.values.get('imageid')
     instanceid = flask.request.values.get('instanceid')
     name = flask.request.values.get('name')
-    owner=flask.request.values.get('owner')
-    response = ops_web.aws.create_instance(imageid, instanceid, name,owner)
+    owner = flask.request.values.get('owner')
+    region = flask.request.values.get('region')
+    response = ops_web.aws.create_instance(region, imageid, instanceid, name, owner)
     aws = ops_web.aws.AWSClient(config)
-    instance = aws.getsingleinstance(response[0].id)
+    instance = aws.getsingleinstance(region, response[0].id)
+    env_name = instance['env_group']
     db: ops_web.db.Database = flask.g.db
     db.add_machine(instance)
-    return flask.redirect(flask.url_for('environments'))
+    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
 
 
 @app.route('/images/create', methods=['POST'])
