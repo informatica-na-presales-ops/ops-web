@@ -54,7 +54,7 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine"><span class="oi oi-pencil"></span></button>
-                                {% if 'manage-images' in g.config.feature_flags %}<button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image"><span class="oi oi-hard-drive"></span></button>{% endif %}
+                                {% if 'manage-images' in g.config.feature_flags %}<button type="button" class="btn btn-sm btn-outline-light"  {% if m.state != 'stopped' %}disabled title="cannot create image when the instance is running."{% endif %} data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image"><span class="oi oi-hard-drive"></span></button>{% endif %}
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine"><span class="oi oi-trash"></span></button>
                             </div>
                         </td>
@@ -82,9 +82,9 @@
                             Edit machine
                         </button>
                         {% if 'manage-images' in g.config.feature_flags %}
-                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-image-{{ loop.index }}">
-                            <span class="oi oi-hard-drive"></span>
-                            Create image
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" >
+                                <span class="oi oi-hard-drive"></span>
+                                 Create image
                         </button>
                         {% endif %}
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}">
@@ -147,12 +147,12 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-image-{{ loop.index }}">
+     <div class="modal" id="modal-image-{{ loop.index }}">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
                     <h5 class="modal-title text-light">Create image</h5>
-                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                    <button type="button" class="close text-light" data-dismiss="modal" >&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="form-image-{{ loop.index }}" action="{{ url_for('image_create')}}" method="post">
@@ -176,7 +176,7 @@
                 </div>
             </div>
         </div>
-    </div>
+     </div>
 
     <div class="modal" id="modal-delete-{{ loop.index }}">
         <div class="modal-dialog">
