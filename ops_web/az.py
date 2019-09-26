@@ -81,12 +81,14 @@ class AZClient:
                     'state': 'unknown',
                     'state_transition_time': None,
                     'application_env': vm.tags.get('APPLICATIONENV', ''),
-                    'business_unit': vm.tags.get('BUSINESSUNIT', '')
+                    'business_unit': vm.tags.get('BUSINESSUNIT', ''),
+                    'created': None
                 }
 
                 # request virtual machine creation date and status (is it stopped, running, &c.)
                 iv = compute_client.virtual_machines.instance_view(vm_rg, vm.name)
                 for status in iv.statuses:
+                    log.debug(f'Found a status: {status.code} {status.time}')
                     if status.code == 'ProvisioningState/succeeded':
                         params['created'] = status.time
                     elif status.code.startswith('PowerState/'):
