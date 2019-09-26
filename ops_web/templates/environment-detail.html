@@ -55,7 +55,7 @@
                             <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine"><span class="oi oi-pencil"></span></button>
                                 {% if 'manage-images' in g.config.feature_flags %}
-                                    <button type="button" class="btn btn-sm btn-outline-light" {% if m.state != 'stopped' %}disabled title="Cannot create image when the machine is running"{% endif %} data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image">
+                                    <button type="button" class="btn btn-sm btn-outline-light" {% if m.state != 'stopped' %}disabled title="Please stop the instance before creating an image."{% endif %} data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image">
                                         <span class="oi oi-hard-drive"></span>
                                     </button>
                                 {% endif %}
