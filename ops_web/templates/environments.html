@@ -29,7 +29,7 @@
                 {% for e in g.environments %}
                     <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}">
                         <td>{{ e.cloud }}</td>
-                        <td><a href="{{ url_for('environment_detail', env_name=e.env_group) }}">{{ e.env_group }}</a></td>
+                        <td><a href="{{ url_for('environment_detail', environment=e.env_group) }}">{{ e.env_group }}</a></td>
                         <td>{{ e.owner }}</td>
                         <td class="text-right">{{ e.instance_count }}</td>
                     </tr>
@@ -41,7 +41,7 @@
             {% for e in g.environments %}
                 <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ e.filter_value }}">
                     <div class="card-body">
-                        <h5 class="card-title"><a href="{{ url_for('environment_detail', env_name=e.env_group) }}" class="card-link stretched-link text-light">{{ e.env_group }}</a></h5>
+                        <h5 class="card-title"><a href="{{ url_for('environment_detail', environment=e.env_group) }}" class="card-link stretched-link text-light">{{ e.env_group }}</a></h5>
                         <p class="card-text">{{ e.owner }}</p>
                         <p class="card-text"><span class="badge badge-pill badge-light">{{ e.cloud }}</span> {{ e.instance_count }} machine{{ 's' if e.instance_count > 1 }}</p>
                     </div>

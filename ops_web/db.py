@@ -162,13 +162,13 @@ class Database(fort.PostgresDatabase):
     def set_machine_tags(self, params: Dict):
         # params = {
         #   'id': '', 'running_schedule': '', 'name': '', 'owner': '', 'contributors': '', 'application_env': '',
-        #   'business_unit': ''
+        #   'business_unit': '', 'environment': ''
         # }
         sql = '''
             UPDATE virtual_machines
             SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
                 contributors = %(contributors)s, application_env = %(application_env)s,
-                business_unit = %(business_unit)s
+                business_unit = %(business_unit)s, env_group = %(environment)s
             WHERE id = %(id)s
         '''
         self.u(sql, params)

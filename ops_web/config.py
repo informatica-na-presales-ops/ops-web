@@ -80,7 +80,7 @@ class Config:
         self.tz = os.getenv('TZ', 'Etc/UTC')
         self.version = os.getenv('APP_VERSION', 'unknown')
 
-        for log_spec in os.getenv('OTHER_LOG_LEVELS').split():
+        for log_spec in os.getenv('OTHER_LOG_LEVELS', '').split():
             logger, level = log_spec.split(':', maxsplit=1)
             self.other_log_levels[logger] = level
 

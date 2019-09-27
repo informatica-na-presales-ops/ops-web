@@ -133,6 +133,7 @@ class AZClient:
         compute_client = self.get_compute_client(subscription_id)
         vm = compute_client.virtual_machines.get(resource_group_name, vm_name)
         vm.tags.update(tags)
+        vm.plan = None
         compute_client.virtual_machines.update(resource_group_name, vm_name, vm)
 
 

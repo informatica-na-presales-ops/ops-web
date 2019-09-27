@@ -127,12 +127,14 @@ def environments():
     return flask.render_template('environments.html')
 
 
-@app.route('/environments/<env_name>')
+@app.route('/environments/<environment>')
 @login_required
-def environment_detail(env_name):
-    app.logger.debug(f'Getting information for environment {env_name!r}')
-    flask.g.env_name = env_name
-    flask.g.machines = flask.g.db.get_machines_for_env(flask.g.email, env_name)
+def environment_detail(environment):
+    app.logger.debug(f'Getting information for environment {environment!r}')
+    db: ops_web.db.Database = flask.g.db
+    flask.g.environment = environment
+    flask.g.machines = db.get_machines_for_env(flask.g.email, environment)
+    flask.g.environments = db.get_environments(flask.g.email)
     return flask.render_template('environment-detail.html')
 
 
@@ -151,7 +153,7 @@ def environment_delete(env_name):
         elif machine['cloud'] == 'az':
             az = ops_web.az.AZClient(config)
             scheduler.add_job(ops_web.az.delete_machine, args=[az, machine_id])
-    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
 
 
 @app.route('/environments/<env_name>/start', methods=['POST'])
@@ -169,7 +171,7 @@ def environment_start(env_name):
         elif machine['cloud'] == 'az':
             az = ops_web.az.AZClient(config)
             az.start_machine(machine['id'])
-    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
 
 
 @app.route('/environments/<env_name>/stop', methods=['POST'])
@@ -187,7 +189,7 @@ def environment_stop(env_name):
         elif machine['cloud'] == 'az':
             az = ops_web.az.AZClient(config)
             az.stop_machine(machine['id'])
-    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
 
 
 @app.route('/images')
@@ -212,7 +214,7 @@ def instance_create():
     env_name = instance['env_group']
     db: ops_web.db.Database = flask.g.db
     db.add_machine(instance)
-    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
 
 
 @app.route('/images/create', methods=['POST'])
@@ -228,7 +230,7 @@ def image_create():
     if cloud == 'aws':
         image_id = ops_web.aws.create_image(region, machine_id, name, owner)
     else:
-        return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+        return flask.redirect(flask.url_for('environment_detail', environment=env_name))
     db: ops_web.db.Database = flask.g.db
     params = {
         'id': image_id,
@@ -240,7 +242,7 @@ def image_create():
         'created': datetime.datetime.utcnow()
     }
     db.add_image(params)
-    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
 
 
 @app.route('/machines/delete', methods=['POST'])
@@ -259,7 +261,7 @@ def machine_delete():
             az = ops_web.az.AZClient(config)
             scheduler.add_job(ops_web.az.delete_machine, args=[az, machine_id])
     env_name = flask.request.values.get('environment')
-    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
 
 
 @app.route('/machines/edit', methods=['POST'])
@@ -270,18 +272,20 @@ def machine_edit():
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
         db.set_machine_tags({
+            'application_env': flask.request.values.get('application-env'),
+            'business_unit': flask.request.values.get('business-unit'),
+            'contributors': flask.request.values.get('contributors'),
+            'environment': flask.request.values.get('environment'),
             'id': machine_id,
             'name': flask.request.values.get('machine-name'),
             'owner': flask.request.values.get('owner'),
-            'contributors': flask.request.values.get('contributors'),
-            'running_schedule': flask.request.values.get('running-schedule'),
-            'application_env': flask.request.values.get('application-env'),
-            'business_unit': flask.request.values.get('business-unit')
+            'running_schedule': flask.request.values.get('running-schedule')
         })
         tags = {
             'APPLICATIONENV': flask.request.values.get('application-env'),
             'BUSINESSUNIT': flask.request.values.get('business-unit'),
             'CONTRIBUTORS': flask.request.values.get('contributors'),
+            'machine__environment_group': flask.request.values.get('environment'),
             'NAME': flask.request.values.get('machine-name'),
             'OWNEREMAIL': flask.request.values.get('owner'),
             'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
@@ -296,15 +300,18 @@ def machine_edit():
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit {machine_id}')
     env_name = flask.request.values.get('environment')
-    return flask.redirect(flask.url_for('environment_detail', env_name=env_name))
+    if env_name:
+        return flask.redirect(flask.url_for('environment_detail', environment=env_name))
+    return flask.redirect(flask.url_for('environments'))
 
 
 @app.route('/orphans')
 @permission_required('admin')
 def orphans():
     db: ops_web.db.Database = flask.g.db
-    flask.g.env_name = 'Orphans'
+    flask.g.environment = 'Orphans'
     flask.g.machines = db.get_machines_for_env(flask.g.email, '')
+    flask.g.environments = db.get_environments(flask.g.email)
     return flask.render_template('environment-detail.html')
 
 

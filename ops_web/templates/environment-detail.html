@@ -3,23 +3,32 @@
 {% block breadcrumb %}
     {% include 'breadcrumb-root.html' %}
     <li class="breadcrumb-item text-light"><a href="{{ url_for('environments') }}">Environments</a></li>
-    <li class="breadcrumb-item active text-light">{{ g.env_name }}</li>
+    <li class="breadcrumb-item active text-light">{{ g.environment }}</li>
 {% endblock %}
 
 {% block main_content %}
     <div class="row">
         <div class="col-12">
-            <h2 class="text-light">{{ g.env_name }}</h2>
+            <h2 class="text-light">{{ g.environment }}</h2>
         </div>
     </div>
 
-    {% if not g.env_name == 'Orphans' %}
+    {% if not g.environment == 'Orphans' %}
     <div class="row bump-top-padding">
         <div class="col-12">
             <form class="form-inline" method="post" id="form-power-control"></form>
-            <button type="submit" class="btn btn-outline-success" form="form-power-control" formaction="{{ url_for('environment_start', env_name=g.env_name) }}"><span class="oi oi-media-play"></span> Start</button>
-            <button type="submit" class="btn btn-outline-warning" form="form-power-control" formaction="{{ url_for('environment_stop', env_name=g.env_name) }}"><span class="oi oi-media-stop"></span> Stop</button>
-            <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-delete-env"><span class="oi oi-trash"></span> Delete</button>
+            <button type="submit" class="btn btn-outline-success" form="form-power-control" formaction="{{ url_for('environment_start', env_name=g.environment) }}" title="Start all machines in this environment">
+                <span class="oi oi-media-play"></span>
+                Start
+            </button>
+            <button type="submit" class="btn btn-outline-warning" form="form-power-control" formaction="{{ url_for('environment_stop', env_name=g.environment) }}" title="Stop all machines in this environment">
+                <span class="oi oi-media-stop"></span>
+                Stop
+            </button>
+            <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-delete-env" title="Delete all machines in this environment">
+                <span class="oi oi-trash"></span>
+                Delete
+            </button>
         </div>
     </div>
     {% endif %}
@@ -53,8 +62,10 @@
                         <td>{{ m.owner }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine"><span class="oi oi-pencil"></span></button>
-                                <button type="button" class="btn btn-sm btn-outline-light" {% if m.state != 'stopped' %}disabled title="Please stop the instance before creating an image."{% endif %} data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image">
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine">
+                                    <span class="oi oi-pencil"></span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-light" {% if m.state != 'stopped' %}disabled title="Please stop the machine before creating an image."{% endif %} data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image">
                                     <span class="oi oi-hard-drive"></span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine"><span class="oi oi-trash"></span></button>
@@ -108,17 +119,21 @@
                 </div>
                 <div class="modal-body">
                     <form id="form-edit-{{ loop.index }}" action="{{ url_for('machine_edit')}}" method="post">
-                        <input type="hidden" name="environment" value="{{ g.env_name }}">
                         <input type="hidden" name="machine-id" value="{{ m.id }}">
                         <input type="hidden" name="cloud" value="{{ m.cloud }}">
                         <input type="hidden" name="region" value="{{ m.region }}">
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-name" class="text-light">Machine name</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-name" name="machine-name" value="{{ m.name }}">
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-name" name="machine-name" value="{{ m.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-edit-{{ loop.index }}-environment" class="text-light">Environment name</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-environment" name="environment" value="{{ g.environment }}" list="environment-list" required>
+                            <small class="form-text text-muted">To group this machine with a different environment, choose an existing environment or enter a new environment name.</small>
                         </div>
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-schedule" class="text-light">Running schedule</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-schedule" name="running-schedule" value="{{ m.running_schedule }}">
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-schedule" name="running-schedule" value="{{ m.running_schedule if m.running_schedule else '00:00:20:00:1-5' }}" required>
                         </div>
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-owner" class="text-light">Owner</label>
@@ -131,11 +146,12 @@
                         </div>
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-application-env" class="text-light">Application environment</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-env" name="application-env" value="{{ m.application_env }}">
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-env" name="application-env" value="{{ m.application_env if m.application_env else 'PROD' }}" list="application-env-list">
+                            <small class="form-text text-muted">One of PROD, PREVIEW, QA, DEV, or TEST.</small>
                         </div>
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-business-unit" class="text-light">Business unit</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-business-unit" name="business-unit" value="{{ m.business_unit }}">
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-business-unit" name="business-unit" value="{{ m.business_unit if m.business_unit else 'presales' }}">
                         </div>
                     </form>
                 </div>
@@ -147,7 +163,7 @@
         </div>
     </div>
 
-     <div class="modal" id="modal-image-{{ loop.index }}">
+    <div class="modal" id="modal-image-{{ loop.index }}">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
@@ -156,17 +172,17 @@
                 </div>
                 <div class="modal-body">
                     <form id="form-image-{{ loop.index }}" action="{{ url_for('image_create')}}" method="post">
-                        <input type="hidden" name="environment" value="{{ g.env_name }}">
+                        <input type="hidden" name="environment" value="{{ g.environment }}">
                         <input type="hidden" name="cloud" value="{{ m.cloud }}">
                         <input type="hidden" name="region" value="{{ m.region }}">
                         <input type="hidden" name="machine-id" value="{{ m.id }}">
                         <div class="form-group">
                             <label for="form-image-{{ loop.index }}-name" class="text-light">Image name</label>
-                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="image-name" value="{{ m.name }}">
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="image-name" value="{{ m.name }}" required>
                         </div>
-                         <div class="form-group">
+                        <div class="form-group">
                             <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
-                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}">
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}" required>
                         </div>
                     </form>
                 </div>
@@ -176,7 +192,7 @@
                 </div>
             </div>
         </div>
-     </div>
+    </div>
 
     <div class="modal" id="modal-delete-{{ loop.index }}">
         <div class="modal-dialog">
@@ -193,7 +209,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
                     <form class="form-inline" action="{{ url_for('machine_delete') }}" method="post">
-                        <input type="hidden" name="environment" value="{{ g.env_name }}">
+                        <input type="hidden" name="environment" value="{{ g.environment }}">
                         <input type="hidden" name="cloud" value="{{ m.cloud }}">
                         <input type="hidden" name="region" value="{{ m.region }}">
                         <input type="hidden" name="machine-id" value="{{ m.id }}">
@@ -214,9 +230,20 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-outline-danger" form="form-power-control" formaction="{{ url_for('environment_delete', env_name=g.env_name) }}">Delete</button>
+                    <button type="submit" class="btn btn-outline-danger" form="form-power-control" formaction="{{ url_for('environment_delete', env_name=g.environment) }}">Delete</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <datalist id="environment-list">
+        {% for e in g.environments %}<option value="{{ e.env_group }}">{% endfor %}
+    </datalist>
+    <datalist id="application-env-list">
+        <option value="PROD">
+        <option value="PREVIEW">
+        <option value="QA">
+        <option value="DEV">
+        <option value="TEST">
+    </datalist>
 {% endblock %}
