@@ -103,13 +103,12 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     cloud,
-                    coalesce(env_group, '') env_group,
+                    env_group,
                     owner,
                     count(*) instance_count,
-                    lower(coalesce(env_group, '')) || ' ' || lower(coalesce(owner, '')) filter_value 
+                    lower(env_group || ' ' || owner) filter_value
                 FROM virtual_machines
-                WHERE coalesce(env_group, '') <> ''
-                  AND visible IS TRUE
+                WHERE visible IS TRUE
                 GROUP BY cloud, env_group, owner
                 ORDER BY env_group
             '''
@@ -117,13 +116,12 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     cloud,
-                    coalesce(env_group, '') env_group,
+                    env_group,
                     owner,
                     count(*) instance_count,
-                    lower(coalesce(env_group, '')) || ' ' || lower(coalesce(owner, '')) filter_value
+                    lower(env_group || ' ' || owner) filter_value
                 FROM virtual_machines
-                WHERE NULLIF(env_group, '') IS NOT NULL
-                  AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
+                WHERE (owner = %(email)s OR position(%(email)s in contributors) > 0)
                   AND visible IS TRUE
                 GROUP BY cloud, env_group, owner
                 ORDER BY env_group
@@ -235,7 +233,7 @@ class Database(fort.PostgresDatabase):
 
     def add_machine(self, params: Dict):
         # params = {
-        #   'id': '', 'cloud': '', 'region': '', 'env_group': '', 'name': '', 'owner': '', 'contributors': '',
+        #   'id': '', 'cloud': '', 'region': '', 'environment': '', 'name': '', 'owner': '', 'contributors': '',
         #   'private_ip': '', 'public_ip': '', 'state': '', 'type': '', 'running_schedule': '', 'created': '',
         #   'state_transition_time': '', 'application_env': '', 'business_unit': ''
         # }
@@ -243,7 +241,7 @@ class Database(fort.PostgresDatabase):
         if self.q(sql, params):
             sql = '''
                 UPDATE virtual_machines
-                SET cloud = %(cloud)s, region = %(region)s, env_group = %(env_group)s, name = %(name)s,
+                SET cloud = %(cloud)s, region = %(region)s, env_group = %(environment)s, name = %(name)s,
                     owner = %(owner)s, state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s,
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
@@ -256,7 +254,7 @@ class Database(fort.PostgresDatabase):
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     created, state_transition_time, application_env, business_unit, contributors, visible, synced
                 ) VALUES (
-                    %(id)s, %(cloud)s, %(region)s, %(env_group)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
+                    %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
                     %(application_env)s, %(business_unit)s, %(contributors)s, TRUE, TRUE
                 )
@@ -303,6 +301,7 @@ class Database(fort.PostgresDatabase):
         self.u('DROP TABLE IF EXISTS schema_versions CASCADE')
         self.u('DROP TABLE IF EXISTS sync_tracking CASCADE')
         self.u('DROP TABLE IF EXISTS images CASCADE')
+        self.u('DROP TABLE IF EXISTS log_entries CASCADE ')
 
     def migrate(self):
         self.log.info(f'Database schema version is {self.version}')
@@ -402,7 +401,7 @@ class Database(fort.PostgresDatabase):
             ''')
             self.add_schema_version(6)
         if self.version < 7:
-            self.log.info('Migrating database ot schema version 7')
+            self.log.info('Migrating database to schema version 7')
             self.u('''
                 CREATE TABLE log_entries (
                     id uuid PRIMARY KEY,
@@ -412,6 +411,12 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(7)
+        if self.version < 8:
+            self.log.info('Migrating database to schema version 8')
+            self.u('''
+                UPDATE virtual_machines SET env_group = %(environment)s WHERE env_group IS NULL OR env_group = ''
+            ''', {'environment': 'default-environment'})
+            self.add_schema_version(8)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'

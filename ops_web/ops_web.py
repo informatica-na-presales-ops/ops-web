@@ -211,10 +211,10 @@ def instance_create():
     response = ops_web.aws.create_instance(region, imageid, instanceid, name, owner)
     aws = ops_web.aws.AWSClient(config)
     instance = aws.getsingleinstance(region, response[0].id)
-    env_name = instance['env_group']
+    environment = instance['environment']
     db: ops_web.db.Database = flask.g.db
     db.add_machine(instance)
-    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/images/create', methods=['POST'])
@@ -303,16 +303,6 @@ def machine_edit():
     if env_name:
         return flask.redirect(flask.url_for('environment_detail', environment=env_name))
     return flask.redirect(flask.url_for('environments'))
-
-
-@app.route('/orphans')
-@permission_required('admin')
-def orphans():
-    db: ops_web.db.Database = flask.g.db
-    flask.g.environment = 'Orphans'
-    flask.g.machines = db.get_machines_for_env(flask.g.email, '')
-    flask.g.environments = db.get_environments(flask.g.email)
-    return flask.render_template('environment-detail.html')
 
 
 @app.route('/rep-sc-pairs')
