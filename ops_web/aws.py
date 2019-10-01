@@ -169,6 +169,8 @@ class AWSClient:
                         'application_env': tags.get('APPLICATIONENV', ''),
                         'business_unit': tags.get('BUSINESSUNIT', '')
                     }
+                    if params['environment'] == '':
+                        params['environment'] = 'default-environment'
                     if instance.state_transition_reason.endswith('GMT)'):
                         _, _, state_transition_time = instance.state_transition_reason.partition('(')
                         state_transition_time, _, _ = state_transition_time.partition(')')
