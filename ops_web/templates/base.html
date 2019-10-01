@@ -46,6 +46,13 @@
     </div>
     {% endif %}
 
+    <div class="row">
+        <div class="col-12">
+            <hr>
+            <small class="text-muted">{{ g.config.version }}</small>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='jquery-3.4.1.js') }}"></script>
     <script src="{{ url_for('static', filename='bootstrap-4.3.1.bundle.min.js') }}"></script>
     {% block end_of_body %}{% endblock %}
