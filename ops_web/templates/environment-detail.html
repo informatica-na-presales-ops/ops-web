@@ -28,6 +28,10 @@
                 <span class="oi oi-trash"></span>
                 Delete
             </button>
+            <button type="button" class="btn btn-outline-light" data-toggle="modal" data-target="#modal-hosts-file" title="Generate hosts file entries for this environment">
+                <span class="oi oi-document"></span>
+                Hosts
+            </button>
         </div>
     </div>
 
@@ -130,6 +134,11 @@
                             <small class="form-text text-muted">To group this machine with a different environment, choose an existing environment or enter a new environment name.</small>
                         </div>
                         <div class="form-group">
+                            <label for="form-edit-{{ loop.index }}-dns-names" class="text-light">Hosts file names</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-dns-names" name="dns-names" value="{{ m.dns_names }}">
+                            <small class="form-text text-muted">These names are used when generating hosts file entries on this page. Editing this <em>does not</em> update hosts files on the machine itself.</small>
+                        </div>
+                        <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-schedule" class="text-light">Running schedule</label>
                             <input type="text" class="form-control" id="form-edit-{{ loop.index }}-schedule" name="running-schedule" value="{{ m.running_schedule if m.running_schedule else '00:00:20:00:1-5' }}" required>
                         </div>
@@ -229,6 +238,34 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-outline-danger" form="form-power-control" formaction="{{ url_for('environment_delete', env_name=g.environment) }}">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-hosts-file">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title text-light">Hosts file entries</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light select-all">
+                        <code>
+                            # Public IP definitions for environment {{ g.environment }}<br>
+                            # Generated {{ g.today }}
+                            {% for m in g.machines %}<br>{{ m.public_ip }} {{ m.dns_names }}{% endfor %}
+                        </code>
+                    </p>
+                    <hr class="border-light">
+                    <p class="text-light select-all">
+                        <code>
+                            # Private IP definitions for environment {{ g.environment }}<br>
+                            # Generated {{ g.today }}
+                            {% for m in g.machines %}<br>{{ m.private_ip }} {{ m.dns_names }}{% endfor %}
+                        </code>
+                    </p>
                 </div>
             </div>
         </div>

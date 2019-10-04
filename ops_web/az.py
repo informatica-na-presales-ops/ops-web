@@ -82,8 +82,12 @@ class AZClient:
                     'state_transition_time': None,
                     'application_env': vm.tags.get('APPLICATIONENV', ''),
                     'business_unit': vm.tags.get('BUSINESSUNIT', ''),
-                    'created': None
+                    'created': None,
+                    'dns_names': vm.tags.get('image__dns_names_private', '')
                 }
+
+                if params['dns_names'] == '':
+                    params['dns_names'] = params.get('name')
 
                 # request virtual machine creation date and status (is it stopped, running, &c.)
                 iv = compute_client.virtual_machines.instance_view(vm_rg, vm.name)

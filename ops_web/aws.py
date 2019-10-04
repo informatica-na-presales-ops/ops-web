@@ -66,16 +66,16 @@ def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
     return image.id
 
 
-def create_instance(region: str,imageid: str, instanceid: str, name: str, owner: str):
-    ec2 = boto3.resource('ec2',region_name=region)
+def create_instance(region: str, imageid: str, instanceid: str, name: str, owner: str):
+    ec2 = boto3.resource('ec2', region_name=region)
     instance = ec2.Instance(instanceid)
 
-    securitygroupids = []
-    securitygroups = instance.security_groups
-    for i in securitygroups:
+    security_group_ids = []
+    security_groups = instance.security_groups
+    for i in security_groups:
         for t, v in i.items():
             if t == 'GroupId':
-                securitygroupids.append(v)
+                security_group_ids.append(v)
 
     for t in instance.tags:
         if t["Key"] == 'Name' or t["Key"] == 'NAME':
@@ -85,13 +85,13 @@ def create_instance(region: str,imageid: str, instanceid: str, name: str, owner:
         if o["Key"] == 'OWNEREMAIL':
             o["Value"] = owner
 
-    response=ec2.create_instances(
+    response = ec2.create_instances(
         ImageId=imageid,
         MinCount=1,
         MaxCount=1,
         InstanceType=instance.instance_type,
         SubnetId=instance.subnet_id,
-        SecurityGroupIds=securitygroupids,
+        SecurityGroupIds=security_group_ids,
         BlockDeviceMappings=[
             {
                 'VirtualName': "BootDrive",
@@ -110,7 +110,6 @@ def create_instance(region: str,imageid: str, instanceid: str, name: str, owner:
         ]
     )
     return response
-
 
 
 class AWSClient:
@@ -144,64 +143,13 @@ class AWSClient:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
 
-    def get_all_instances(self):
-        for region in self.get_available_regions():
-            log.info(f'Getting all EC2 instances in {region}')
-            ec2 = boto3.resource('ec2', region_name=region, aws_access_key_id=self.config.aws_access_key_id,
-                                 aws_secret_access_key=self.config.aws_secret_access_key)
-            try:
-                for instance in ec2.instances.all():
-                    tags = resource_tags_as_dict(instance)
-                    params = {
-                        'id': instance.id,
-                        'cloud': 'aws',
-                        'region': region,
-                        'environment': tags.get('machine__environment_group', 'default-environment'),
-                        'name': tags.get('NAME', ''),
-                        'owner': tags.get('OWNEREMAIL', ''),
-                        'private_ip': instance.private_ip_address,
-                        'public_ip': instance.public_ip_address,
-                        'type': instance.instance_type,
-                        'running_schedule': tags.get('RUNNINGSCHEDULE', ''),
-                        'state': instance.state['Name'],
-                        'created': instance.launch_time,
-                        'state_transition_time': None,
-                        'application_env': tags.get('APPLICATIONENV', ''),
-                        'business_unit': tags.get('BUSINESSUNIT', '')
-                    }
-                    if params['environment'] == '':
-                        params['environment'] = 'default-environment'
-                    if instance.state_transition_reason.endswith('GMT)'):
-                        _, _, state_transition_time = instance.state_transition_reason.partition('(')
-                        state_transition_time, _, _ = state_transition_time.partition(')')
-                        params['state_transition_time'] = state_transition_time
-
-                    # Convert power_control tag value to contributors
-                    contributors = set()
-                    power_control = tags.get('power_control', '')
-                    power_control = power_control.replace(';', ' ')
-                    power_control_list = power_control.strip().split()
-                    contributors.update([f'{i}@{self.config.power_control_domain}' for i in power_control_list])
-                    contributors_tag = tags.get('CONTRIBUTORS', '')
-                    contributors.update(contributors_tag.strip().split())
-                    params['contributors'] = ' '.join(sorted(contributors))
-
-                    yield params
-
-            except botocore.exceptions.ClientError as e:
-                log.critical(e)
-                log.critical(f'Skipping {region}')
-
-    def getsingleinstance(self,region: str,instanceid: str):
-        ec2 = boto3.resource('ec2')
-        instance = ec2.Instance(instanceid)
+    def get_instance_dict(self, region, instance) -> Dict:
         tags = resource_tags_as_dict(instance)
-
         params = {
             'id': instance.id,
             'cloud': 'aws',
             'region': region,
-            'environment': tags.get('machine__environment_group', 'default-environment'),
+            'environment': tags.get('machine__environment_group', ''),
             'name': tags.get('NAME', ''),
             'owner': tags.get('OWNEREMAIL', ''),
             'private_ip': instance.private_ip_address,
@@ -212,9 +160,13 @@ class AWSClient:
             'created': instance.launch_time,
             'state_transition_time': None,
             'application_env': tags.get('APPLICATIONENV', ''),
-            'business_unit': tags.get('BUSINESSUNIT', '')
+            'business_unit': tags.get('BUSINESSUNIT', ''),
+            'dns_names': tags.get('image__dns_names_private', '')
         }
-
+        if params['environment'] == '':
+            params['environment'] = 'default-environment'
+        if params['dns_names'] == '':
+            params['dns_names'] = params.get('name')
         if instance.state_transition_reason.endswith('GMT)'):
             _, _, state_transition_time = instance.state_transition_reason.partition('(')
             state_transition_time, _, _ = state_transition_time.partition(')')
@@ -230,3 +182,20 @@ class AWSClient:
         contributors.update(contributors_tag.strip().split())
         params['contributors'] = ' '.join(sorted(contributors))
         return params
+
+    def get_all_instances(self):
+        for region in self.get_available_regions():
+            log.info(f'Getting all EC2 instances in {region}')
+            ec2 = boto3.resource('ec2', region_name=region, aws_access_key_id=self.config.aws_access_key_id,
+                                 aws_secret_access_key=self.config.aws_secret_access_key)
+            try:
+                for instance in ec2.instances.all():
+                    yield self.get_instance_dict(region, instance)
+            except botocore.exceptions.ClientError as e:
+                log.critical(e)
+                log.critical(f'Skipping {region}')
+
+    def get_single_instance(self, region: str, instanceid: str):
+        ec2 = boto3.resource('ec2')
+        instance = ec2.Instance(instanceid)
+        return self.get_instance_dict(region, instance)

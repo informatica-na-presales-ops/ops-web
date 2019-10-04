@@ -135,6 +135,7 @@ def environment_detail(environment):
     flask.g.environment = environment
     flask.g.machines = db.get_machines_for_env(flask.g.email, environment)
     flask.g.environments = db.get_environments(flask.g.email)
+    flask.g.today = datetime.date.today()
     return flask.render_template('environment-detail.html')
 
 
@@ -210,7 +211,7 @@ def instance_create():
     region = flask.request.values.get('region')
     response = ops_web.aws.create_instance(region, imageid, instanceid, name, owner)
     aws = ops_web.aws.AWSClient(config)
-    instance = aws.getsingleinstance(region, response[0].id)
+    instance = aws.get_single_instance(region, response[0].id)
     environment = instance['environment']
     db: ops_web.db.Database = flask.g.db
     db.add_machine(instance)
@@ -279,13 +280,15 @@ def machine_edit():
             'id': machine_id,
             'name': flask.request.values.get('machine-name'),
             'owner': flask.request.values.get('owner'),
-            'running_schedule': flask.request.values.get('running-schedule')
+            'running_schedule': flask.request.values.get('running-schedule'),
+            'dns_names': flask.request.values.get('dns-names')
         })
         tags = {
             'APPLICATIONENV': flask.request.values.get('application-env'),
             'BUSINESSUNIT': flask.request.values.get('business-unit'),
             'CONTRIBUTORS': flask.request.values.get('contributors'),
             'machine__environment_group': flask.request.values.get('environment'),
+            'image__dns_names_private': flask.request.values.get('dns-names'),
             'NAME': flask.request.values.get('machine-name'),
             'OWNEREMAIL': flask.request.values.get('owner'),
             'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
