@@ -107,6 +107,7 @@ class Database(fort.PostgresDatabase):
                     owner,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
+                    max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
                     lower(env_group || ' ' || owner) filter_value
                 FROM virtual_machines
                 WHERE visible IS TRUE
@@ -121,6 +122,7 @@ class Database(fort.PostgresDatabase):
                     owner,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
+                    max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
                     lower(env_group || ' ' || owner) filter_value
                 FROM virtual_machines
                 WHERE (owner = %(email)s OR position(%(email)s in contributors) > 0)
@@ -135,7 +137,8 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names
+                    running_schedule, application_env, business_unit, dns_names,
+                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s
@@ -145,7 +148,8 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names
+                    running_schedule, application_env, business_unit, dns_names,
+                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s

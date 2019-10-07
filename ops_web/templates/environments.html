@@ -24,6 +24,7 @@
                     <th>Cloud</th>
                     <th>Environment</th>
                     <th>Owner</th>
+                    <th>Running Time</th>
                     <th class="text-right">Machines</th>
                 </tr>
                 </thead>
@@ -36,6 +37,7 @@
                         <td>{{ e.cloud }}</td>
                         <td><a href="{{ url_for('environment_detail', environment=e.env_group) }}">{{ e.env_group }}</a></td>
                         <td>{{ e.owner }}</td>
+                        <td>{{ e.running_time_human }}</td>
                         <td class="text-right">{{ e.instance_count }}</td>
                     </tr>
                 {% endfor %}
