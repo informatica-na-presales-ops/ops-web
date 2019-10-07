@@ -54,7 +54,10 @@
                 <tbody>
                 {% for m in g.machines %}
                     <tr>
-                        <td>{{ m.state }}</td>
+                        <td>
+                            <span class="oi oi-media-record {{ g.machine_state_class_map[m.state] }}"></span>
+                            {{ m.state }}
+                        </td>
                         <td title="{{ m.id }}">{{ m.name }}</td>
                         <td>{{ m.public_ip or '' }}</td>
                         <td>{{ m.cloud }}</td>

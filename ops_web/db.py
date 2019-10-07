@@ -106,6 +106,7 @@ class Database(fort.PostgresDatabase):
                     env_group,
                     owner,
                     count(*) instance_count,
+                    bool_or(state = 'running') running,
                     lower(env_group || ' ' || owner) filter_value
                 FROM virtual_machines
                 WHERE visible IS TRUE
@@ -119,6 +120,7 @@ class Database(fort.PostgresDatabase):
                     env_group,
                     owner,
                     count(*) instance_count,
+                    bool_or(state = 'running') running,
                     lower(env_group || ' ' || owner) filter_value
                 FROM virtual_machines
                 WHERE (owner = %(email)s OR position(%(email)s in contributors) > 0)

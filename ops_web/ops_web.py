@@ -136,6 +136,12 @@ def environment_detail(environment):
     flask.g.machines = db.get_machines_for_env(flask.g.email, environment)
     flask.g.environments = db.get_environments(flask.g.email)
     flask.g.today = datetime.date.today()
+    flask.g.machine_state_class_map = {
+        'running': 'text-success',
+        'starting': 'text-warning',
+        'stopped': 'text-danger',
+        'stopping': 'text-warning'
+    }
     return flask.render_template('environment-detail.html')
 
 

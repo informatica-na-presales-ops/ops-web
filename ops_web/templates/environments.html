@@ -20,6 +20,7 @@
             <table class="table table-dark table-striped table-sm d-none d-sm-block">
                 <thead>
                 <tr>
+                    <th></th>
                     <th>Cloud</th>
                     <th>Environment</th>
                     <th>Owner</th>
@@ -29,6 +30,9 @@
                 <tbody>
                 {% for e in g.environments %}
                     <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}">
+                        <td>
+                            <span class="oi oi-media-record {{ 'text-success' if e.running else 'text-danger' }}"></span>
+                        </td>
                         <td>{{ e.cloud }}</td>
                         <td><a href="{{ url_for('environment_detail', environment=e.env_group) }}">{{ e.env_group }}</a></td>
                         <td>{{ e.owner }}</td>
