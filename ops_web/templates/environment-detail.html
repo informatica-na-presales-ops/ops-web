@@ -103,6 +103,7 @@
                             <span class="badge badge-light">Cloud: {{ m.cloud }}</span>
                             <span class="badge badge-light">Region: {{ m.region }}</span>
                             <span class="badge badge-light">Type: {{ m.type }}</span>
+                            {% if m.running_time_human %}<span class="badge badge-light">Running Time: {{ m.running_time_human }}</span>{% endif %}
                             <span class="badge badge-light">Running Schedule: {{ m.running_schedule }}</span>
                             <span class="badge badge-light">Owner: {{ m.owner }}</span>
                         </p>
