@@ -353,6 +353,44 @@ def machine_edit():
     return flask.redirect(flask.url_for('environments'))
 
 
+@app.route('/machines/start', methods=['POST'])
+def machine_start():
+    machine_id = flask.request.values.get('machine-id')
+    cloud = flask.request.values.get('cloud')
+    region = flask.request.values.get('region')
+    app.logger.info(f'Got a request from {flask.g.email} to start machine {machine_id}')
+    db: ops_web.db.Database = flask.g.db
+    if db.can_control_machine(flask.g.email, machine_id):
+        app.logger.debug(f'Attempting to start machine {machine_id}')
+        db.set_machine_state({'id': machine_id, 'state': 'starting'})
+        if cloud == 'aws':
+            ops_web.aws.start_machine(region, machine_id)
+        elif cloud == 'az':
+            az = ops_web.az.AZClient(config)
+            az.start_machine(machine_id)
+    environment = flask.request.values.get('environment')
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+
+@app.route('/machines/stop', methods=['POST'])
+def machine_stop():
+    machine_id = flask.request.values.get('machine-id')
+    cloud = flask.request.values.get('cloud')
+    region = flask.request.values.get('region')
+    app.logger.info(f'Got a request from {flask.g.email} to stop machine {machine_id}')
+    db: ops_web.db.Database = flask.g.db
+    if db.can_control_machine(flask.g.email, machine_id):
+        app.logger.debug(f'Attempting to stop machine {machine_id}')
+        db.set_machine_state({'id': machine_id, 'state': 'stopping'})
+        if cloud == 'aws':
+            ops_web.aws.stop_machine(region, machine_id)
+        elif cloud == 'az':
+            az = ops_web.az.AZClient(config)
+            az.stop_machine(machine_id)
+    environment = flask.request.values.get('environment')
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+
 @app.route('/rep-sc-pairs')
 @permission_required('rep-sc-pairs')
 def rep_sc_pairs():

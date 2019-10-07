@@ -69,13 +69,21 @@
                         <td>{{ m.owner }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
+                                <button type="submit" class="btn btn-sm btn-outline-light" title="Start machine" {{ 'disabled' if m.state != 'stopped' }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_start') }}">
+                                    <span class="oi oi-media-play text-success"></span>
+                                </button>
+                                <button type="submit" class="btn btn-sm btn-outline-light" title="Stop machine" {{ 'disabled' if m.state != 'running' }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_stop') }}">
+                                    <span class="oi oi-media-stop text-warning"></span>
+                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine">
                                     <span class="oi oi-pencil"></span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" {% if m.state != 'stopped' %}disabled title="Please stop the machine before creating an image."{% endif %} data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image">
                                     <span class="oi oi-hard-drive"></span>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine"><span class="oi oi-trash"></span></button>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine" {{ 'disabled' if m.state in ['terminated', 'terminating'] }}>
+                                    <span class="oi oi-trash text-danger"></span>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -117,6 +125,13 @@
     </div>
 
     {% for m in g.machines %}
+    <form id="form-control-{{ loop.index }}" method="post">
+        <input type="hidden" name="machine-id" value="{{ m.id }}">
+        <input type="hidden" name="cloud" value="{{ m.cloud }}">
+        <input type="hidden" name="region" value="{{ m.region }}">
+        <input type="hidden" name="environment" value="{{ g.environment }}">
+    </form>
+
     <div class="modal" id="modal-edit-{{ loop.index }}">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
@@ -220,13 +235,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
-                    <form class="form-inline" action="{{ url_for('machine_delete') }}" method="post">
-                        <input type="hidden" name="environment" value="{{ g.environment }}">
-                        <input type="hidden" name="cloud" value="{{ m.cloud }}">
-                        <input type="hidden" name="region" value="{{ m.region }}">
-                        <input type="hidden" name="machine-id" value="{{ m.id }}">
-                        <button type="submit" class="btn btn-outline-danger">Delete</button>
-                    </form>
+                    <button type="submit" class="btn btn-outline-danger" form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_delete') }}">Delete</button>
                 </div>
             </div>
         </div>
