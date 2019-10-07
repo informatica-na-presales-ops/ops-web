@@ -158,8 +158,8 @@ class Database(fort.PostgresDatabase):
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
 
-    def set_machine_state(self, params: Dict):
-        # params = {'id': '', 'state': ''}
+    def set_machine_state(self, machine_id: str, state: str):
+        params = {'id': machine_id, 'state': state}
         sql = 'UPDATE virtual_machines SET state = %(state)s WHERE id = %(id)s'
         self.u(sql, params)
 

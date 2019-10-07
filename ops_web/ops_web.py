@@ -183,58 +183,61 @@ def environment_detail(environment):
     return flask.render_template('environment-detail.html')
 
 
-@app.route('/environments/<env_name>/delete', methods=['POST'])
+@app.route('/environments/<environment>/delete', methods=['POST'])
 @login_required
-def environment_delete(env_name):
-    app.logger.info(f'Got a request from {flask.g.email} to delete machines in environment {env_name!r}')
+def environment_delete(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to delete machines in environment {environment!r}')
     db: ops_web.db.Database = flask.g.db
-    machines = db.get_machines_for_env(flask.g.email, env_name)
+    machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine['id']
         app.logger.debug(f'Attempting to delete machine {machine_id}')
-        db.set_machine_state({'id': machine_id, 'state': 'terminating'})
-        if machine['cloud'] == 'aws':
-            ops_web.aws.delete_machine(machine['region'], machine_id)
-        elif machine['cloud'] == 'az':
+        db.set_machine_state(machine_id, 'terminating')
+        cloud = machine.get('cloud')
+        if cloud == 'aws':
+            ops_web.aws.delete_machine(machine.get('region'), machine_id)
+        elif cloud == 'az':
             az = ops_web.az.AZClient(config)
             scheduler.add_job(ops_web.az.delete_machine, args=[az, machine_id])
-    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
-@app.route('/environments/<env_name>/start', methods=['POST'])
+@app.route('/environments/<environment>/start', methods=['POST'])
 @login_required
-def environment_start(env_name):
-    app.logger.info(f'Got a request from {flask.g.email} to start machines in environment {env_name!r}')
+def environment_start(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to start machines in environment {environment!r}')
     db: ops_web.db.Database = flask.g.db
-    machines = db.get_machines_for_env(flask.g.email, env_name)
+    machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
-        machine_id = machine['id']
+        machine_id = machine.get('id')
         app.logger.debug(f'Attempting to start machine {machine_id}')
-        db.set_machine_state({'id': machine_id, 'state': 'starting'})
-        if machine['cloud'] == 'aws':
-            ops_web.aws.start_machine(machine['region'], machine_id)
-        elif machine['cloud'] == 'az':
+        db.set_machine_state(machine_id, 'starting')
+        cloud = machine.get('cloud')
+        if cloud == 'aws':
+            ops_web.aws.start_machine(machine.get('region'), machine_id)
+        elif cloud == 'az':
             az = ops_web.az.AZClient(config)
-            az.start_machine(machine['id'])
-    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
+            az.start_machine(machine_id)
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
-@app.route('/environments/<env_name>/stop', methods=['POST'])
+@app.route('/environments/<environment>/stop', methods=['POST'])
 @login_required
-def environment_stop(env_name):
-    app.logger.info(f'Got a request from {flask.g.email} to stop machines in environment {env_name!r}')
+def environment_stop(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to stop machines in environment {environment!r}')
     db: ops_web.db.Database = flask.g.db
-    machines = db.get_machines_for_env(flask.g.email, env_name)
+    machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine['id']
         app.logger.debug(f'Attempting to stop machine {machine_id}')
-        db.set_machine_state({'id': machine_id, 'state': 'stopping'})
-        if machine['cloud'] == 'aws':
-            ops_web.aws.stop_machine(machine['region'], machine_id)
-        elif machine['cloud'] == 'az':
+        db.set_machine_state(machine_id, 'stopping')
+        cloud = machine.get('cloud')
+        if cloud == 'aws':
+            ops_web.aws.stop_machine(machine.get('region'), machine_id)
+        elif cloud == 'az':
             az = ops_web.az.AZClient(config)
-            az.stop_machine(machine['id'])
-    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
+            az.stop_machine(machine_id)
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/images')
@@ -243,23 +246,6 @@ def images():
     db: ops_web.db.Database = flask.g.db
     flask.g.images = db.get_images(flask.g.email)
     return flask.render_template('images.html')
-
-
-@app.route('/images/instcreate', methods=['POST'])
-@login_required
-def instance_create():
-    imageid = flask.request.values.get('imageid')
-    instanceid = flask.request.values.get('instanceid')
-    name = flask.request.values.get('name')
-    owner = flask.request.values.get('owner')
-    region = flask.request.values.get('region')
-    response = ops_web.aws.create_instance(region, imageid, instanceid, name, owner)
-    aws = ops_web.aws.AWSClient(config)
-    instance = aws.get_single_instance(region, response[0].id)
-    environment = instance['environment']
-    db: ops_web.db.Database = flask.g.db
-    db.add_machine(instance)
-    return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/images/create', methods=['POST'])
@@ -291,6 +277,23 @@ def image_create():
     return flask.redirect(flask.url_for('images'))
 
 
+@app.route('/machines/create', methods=['POST'])
+@login_required
+def machine_create():
+    image_id = flask.request.values.get('image-id')
+    instance_id = flask.request.values.get('instance-id')
+    name = flask.request.values.get('name')
+    owner = flask.request.values.get('owner')
+    region = flask.request.values.get('region')
+    response = ops_web.aws.create_instance(region, image_id, instance_id, name, owner)
+    aws = ops_web.aws.AWSClient(config)
+    instance = aws.get_single_instance(region, response[0].id)
+    environment = instance.get('environment')
+    db: ops_web.db.Database = flask.g.db
+    db.add_machine(instance)
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+
 @app.route('/machines/delete', methods=['POST'])
 @login_required
 def machine_delete():
@@ -298,7 +301,7 @@ def machine_delete():
     app.logger.info(f'Got a request from {flask.g.email} to delete machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
-        db.set_machine_state({'id': machine_id, 'state': 'terminating'})
+        db.set_machine_state(machine_id, 'terminating')
         cloud = flask.request.values.get('cloud')
         if cloud == 'aws':
             region = flask.request.values.get('region')
@@ -362,7 +365,7 @@ def machine_start():
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
         app.logger.debug(f'Attempting to start machine {machine_id}')
-        db.set_machine_state({'id': machine_id, 'state': 'starting'})
+        db.set_machine_state(machine_id, 'starting')
         if cloud == 'aws':
             ops_web.aws.start_machine(region, machine_id)
         elif cloud == 'az':
@@ -381,7 +384,7 @@ def machine_stop():
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
         app.logger.debug(f'Attempting to stop machine {machine_id}')
-        db.set_machine_state({'id': machine_id, 'state': 'stopping'})
+        db.set_machine_state(machine_id, 'stopping')
         if cloud == 'aws':
             ops_web.aws.stop_machine(region, machine_id)
         elif cloud == 'az':

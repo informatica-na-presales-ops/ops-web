@@ -87,9 +87,9 @@
                 </div>
                 <div class="modal-body">
                     <p class="text-light">Do you want to launch a new machine from this image?</p>
-                    <form id="form-instcreate-{{ loop.index }}" action="{{ url_for('instance_create')}}" method="post">
-                        <input type="hidden" name="imageid" value="{{i.id}}">
-                        <input type="hidden" name="instanceid" value="{{i.instanceid}}">
+                    <form id="form-instcreate-{{ loop.index }}" action="{{ url_for('machine_create')}}" method="post">
+                        <input type="hidden" name="image-id" value="{{i.id}}">
+                        <input type="hidden" name="instance-id" value="{{i.instanceid}}">
                         <input type="hidden" name="region" value="{{i.region}}">
                         <div class="form-group">
                             <label for="form-image-{{ loop.index }}-name" class="text-light">New machine name</label>
