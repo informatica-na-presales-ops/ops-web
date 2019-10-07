@@ -140,7 +140,9 @@ def environment_detail(environment):
         'running': 'text-success',
         'starting': 'text-warning',
         'stopped': 'text-danger',
-        'stopping': 'text-warning'
+        'stopping': 'text-warning',
+        'terminated': 'text-muted',
+        'terminating': 'text-muted'
     }
     return flask.render_template('environment-detail.html')
 
