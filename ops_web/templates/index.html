@@ -5,7 +5,10 @@
 {% endblock %}
 
 {% block sign_in_out %}
-    <a class="btn btn-outline-danger float-right" href="{{ url_for('sign_out') }}" title="Signed in as {{ g.email }}">Sign out</a>
+    <a class="btn btn-outline-danger float-right" href="{{ url_for('sign_out') }}" title="Signed in as {{ g.email }}">
+        <span class="oi oi-person"></span>
+        Sign out
+    </a>
 {% endblock %}
 
 {% block main_content %}

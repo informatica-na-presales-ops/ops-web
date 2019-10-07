@@ -27,7 +27,10 @@
         </div>
         <div class="col-4 col-sm-3 col-md-2">
         {% block sign_in_out %}
-            <a class="btn btn-outline-success float-right" href="{{ url_for('sign_in') }}">Sign in</a>
+            <a class="btn btn-outline-success float-right" href="{{ url_for('sign_in') }}">
+                <span class="oi oi-person"></span>
+                Sign in
+            </a>
         {% endblock %}
         </div>
     </div>
