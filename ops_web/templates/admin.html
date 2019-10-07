@@ -1,14 +1,9 @@
-{% extends 'index.html' %}
-
-{% block breadcrumb %}
-    {% include 'breadcrumb-root.html' %}
-    <li class="breadcrumb-item active text-light">Administration</li>
-{% endblock %}
+{% extends 'one-up.html' %}
 
 {% block main_content %}
-    <div class="row">
+    <div class="row bump-top-padding">
         <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
-            <h2 class="text-light">User permissions</h2>
+            <h1 class="text-light">Administration</h1>
             <p class="text-light">The following users have custom permissions. If a user does not appear in this list, they still have default permissions.</p>
             <p><button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-add-user" data-permissions="none">Add user permissions</button></p>
             <table class="table table-dark table-striped">

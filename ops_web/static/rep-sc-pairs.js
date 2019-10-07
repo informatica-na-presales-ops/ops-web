@@ -1,4 +1,4 @@
-let sc_candidates_json_url = $('#sc-candidates-json-url').attr('href');
+let sc_candidates_json_url = $('#sc-candidates-json-url').attr('content');
 
 let sc_candidates_source = new Bloodhound({
     datumTokenizer: Bloodhound.tokenizers.whitespace,

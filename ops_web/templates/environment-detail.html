@@ -1,13 +1,14 @@
 {% extends 'index.html' %}
 
 {% block breadcrumb %}
-    {% include 'breadcrumb-root.html' %}
-    <li class="breadcrumb-item text-light"><a href="{{ url_for('environments') }}">Environments</a></li>
-    <li class="breadcrumb-item active text-light">{{ g.environment }}</li>
+    <a class="btn btn-outline-light" href="{{ url_for('environments') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Environments</strong>
+    </a>
 {% endblock %}
 
 {% block main_content %}
-    <div class="row">
+    <div class="row bump-top-padding">
         <div class="col-12">
             <h2 class="text-light">{{ g.environment }}</h2>
         </div>

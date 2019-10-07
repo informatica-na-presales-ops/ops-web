@@ -1,20 +1,16 @@
-{% extends 'index.html' %}
+{% extends 'one-up.html' %}
 
 {% block title %}Rep/SC pairs{% endblock %}
 
 {% block end_of_head %}
     {{ super() }}
-    <meta id="sc-candidates-json-url" href="{{ url_for('rep_sc_pairs_sc_candidates_json') }}">
-{% endblock %}
-
-{% block breadcrumb %}
-    {% include 'breadcrumb-root.html' %}
-    <li class="breadcrumb-item active text-light">Rep/SC pairs</li>
+    <meta id="sc-candidates-json-url" content="{{ url_for('rep_sc_pairs_sc_candidates_json') }}">
 {% endblock %}
 
 {% block main_content %}
-    <div class="row">
+    <div class="row bump-top-padding">
         <div class="col-12">
+            <h1 class="text-light">Rep/SC pairs</h1>
             <form class="form-inline" action="{{ url_for('rep_sc_pairs_xlsx') }}" method="get">
                 <input class="form-control mr-2 mb-2" placeholder="Filter sales reps..." id="filter-input" name="filter-input" autofocus>
                 <button class="btn btn-outline-light mb-2" title="Active filter applies to downloaded XLSX file">

@@ -1,18 +1,14 @@
-{% extends 'index.html' %}
+{% extends 'one-up.html' %}
 
 {% block end_of_head %}
     {{ super() }}
     <meta http-equiv="refresh" content="60">
 {% endblock %}
 
-{% block breadcrumb %}
-    {% include 'breadcrumb-root.html' %}
-    <li class="breadcrumb-item active text-light">Sync information</li>
-{% endblock %}
-
 {% block main_content %}
-    <div class="row">
+    <div class="row bump-top-padding">
         <div class="col-12">
+            <h1 class="text-light">Sync info</h1>
             <p class="text-light">The information in this tool is synced from cloud providers (Amazon Web Services, Azure, &c.) periodically.</p>
             <p class="text-light">
             {% if g.sync_start_human == 'never' %}
