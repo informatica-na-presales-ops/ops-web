@@ -78,33 +78,26 @@ def create_instance(region: str, imageid: str, instanceid: str, name: str, owner
                 security_group_ids.append(v)
 
     for t in instance.tags:
-        if t["Key"] == 'Name' or t["Key"] == 'NAME':
-            t["Value"] = name
-
-    for o in instance.tags:
-        if o["Key"] == 'OWNEREMAIL':
-            o["Value"] = owner
+        if t.get('Key').lower() == 'name':
+            t['Value'] = name
+        elif t.get('Key').lower() == 'owneremail':
+            t['Value'] = owner
 
     response = ec2.create_instances(
         ImageId=imageid,
-        MinCount=1,
-        MaxCount=1,
         InstanceType=instance.instance_type,
-        SubnetId=instance.subnet_id,
+        KeyName=instance.key_name,
+        MaxCount=1,
+        MinCount=1,
         SecurityGroupIds=security_group_ids,
-        BlockDeviceMappings=[
-            {
-                'VirtualName': "BootDrive",
-                'DeviceName': "/dev/sda1",
-                'Ebs': {
-                    'VolumeType': "gp2",
-                    'DeleteOnTermination': True
-                }
-            }
-        ],
+        SubnetId=instance.subnet_id,
         TagSpecifications=[
             {
                 'ResourceType': 'instance',
+                'Tags': instance.tags
+            },
+            {
+                'ResourceType': 'volume',
                 'Tags': instance.tags
             }
         ]

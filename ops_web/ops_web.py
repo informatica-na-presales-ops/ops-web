@@ -240,10 +240,11 @@ def image_create():
         'name': name,
         'owner': owner,
         'state': 'pending',
-        'created': datetime.datetime.utcnow()
+        'created': datetime.datetime.utcnow(),
+        'instanceid': machine_id
     }
     db.add_image(params)
-    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
+    return flask.redirect(flask.url_for('images'))
 
 
 @app.route('/machines/delete', methods=['POST'])

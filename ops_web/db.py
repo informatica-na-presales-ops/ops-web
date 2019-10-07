@@ -264,7 +264,9 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
 
     def add_image(self, params: Dict):
-        # params = {'id': '', 'cloud': '', 'region': '', 'name': '', 'owner': '', 'state': '', 'created': ''}
+        # params = {
+        #   'id': '', 'cloud': '', 'region': '', 'name': '', 'owner': '', 'state': '', 'created': '', 'instanceid': ''
+        # }
         sql = 'SELECT id FROM images WHERE id = %(id)s'
         if self.q(sql, params):
             sql = '''
