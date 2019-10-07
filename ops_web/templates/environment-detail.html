@@ -70,10 +70,10 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button type="submit" class="btn btn-sm btn-outline-light" title="Start machine" {{ 'disabled' if m.state != 'stopped' }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_start') }}">
-                                    <span class="oi oi-media-play text-success"></span>
+                                    <span class="oi oi-media-play"></span>
                                 </button>
                                 <button type="submit" class="btn btn-sm btn-outline-light" title="Stop machine" {{ 'disabled' if m.state != 'running' }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_stop') }}">
-                                    <span class="oi oi-media-stop text-warning"></span>
+                                    <span class="oi oi-media-stop"></span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine">
                                     <span class="oi oi-pencil"></span>
@@ -82,7 +82,7 @@
                                     <span class="oi oi-hard-drive"></span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine" {{ 'disabled' if m.state in ['terminated', 'terminating'] }}>
-                                    <span class="oi oi-trash text-danger"></span>
+                                    <span class="oi oi-trash"></span>
                                 </button>
                             </div>
                         </td>
@@ -105,6 +105,14 @@
                             <span class="badge badge-light">Running Schedule: {{ m.running_schedule }}</span>
                             <span class="badge badge-light">Owner: {{ m.owner }}</span>
                         </p>
+                        <button type="submit" class="btn btn-outline-light mb-2" title="Start machine" {{ 'disabled' if m.state != 'stopped' }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_start') }}">
+                            <span class="oi oi-media-play"></span>
+                            Start machine
+                        </button>
+                        <button type="submit" class="btn btn-outline-light mb-2" title="Stop machine" {{ 'disabled' if m.state != 'running' }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_stop') }}">
+                            <span class="oi oi-media-stop"></span>
+                            Stop machine
+                        </button>
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}">
                             <span class="oi oi-pencil"></span>
                             Edit machine
