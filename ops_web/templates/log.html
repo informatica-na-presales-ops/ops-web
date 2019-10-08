@@ -1,0 +1,61 @@
+{% extends 'one-up.html' %}
+
+{% block end_of_head %}
+    {{ super() }}
+    <meta http-equiv="refresh" content="60">
+{% endblock %}
+
+{% block main_content %}
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <h1 class="text-light">Audit log</h1>
+            <div class="form-inline">
+                <label class="sr-only" for="filter-input">Filter log entries</label>
+                <input class="form-control" placeholder="Filter log entries..." id="filter-input" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <table class="table table-dark table-striped table-sm d-none d-sm-block">
+                <thead>
+                <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for e in g.log_entries %}
+                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}">
+                        <td>{{ e.log_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ e.actor }}</td>
+                        <td>{{ e.action }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="d-block d-sm-none">
+            {% for e in g.log_entries %}
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ e.filter_value }}">
+                    <div class="card-body">
+                        <p class="card-text">
+                            {{ e.log_time.strftime('%Y-%m-%d %H:%M:%S') }}<br>
+                            {{ e.actor }}<br>
+                            {{ e.action }}
+                        </p>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='filter.js') }}"></script>
+{% endblock %}

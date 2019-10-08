@@ -105,6 +105,14 @@ def admin_edit_user():
     return flask.redirect(flask.url_for('admin'))
 
 
+@app.route('/audit-log')
+@permission_required('admin')
+def audit_log():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.log_entries = db.get_log_entries()
+    return flask.render_template('log.html')
+
+
 @app.route('/authorize', methods=['POST'])
 def authorize():
     for key, value in flask.request.values.items():

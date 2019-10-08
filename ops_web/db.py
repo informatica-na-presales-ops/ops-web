@@ -96,6 +96,14 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
+    def get_log_entries(self):
+        sql = '''
+            SELECT id, log_time, actor, action, lower(actor || ' ' || action) filter_value
+            FROM log_entries
+            ORDER BY log_time DESC
+        '''
+        return self.q(sql)
+
     # environments and machines
 
     def get_environments(self, email: str) -> List[Dict]:

@@ -52,6 +52,13 @@
                         <a href="{{ url_for('admin') }}" class="card-link stretched-link text-light">Change user permissions.</a>
                     </div>
                 </div>
+
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Audit log</h5>
+                        <a href="{{ url_for('audit_log') }}" class="card-link stretched-link text-light">View the audit log.</a>
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
