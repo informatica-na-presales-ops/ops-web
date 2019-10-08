@@ -44,6 +44,9 @@
                                 </button>
                             </div>
                         {% endif %}
+                            <a class="btn btn-sm btn-outline-light" href="mailto:{{ g.config.support_email }}?subject=Delete image request&body=Please delete image {{ i.id }}" title="Delete image">
+                                <span class="oi oi-trash"></span>
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -69,6 +72,10 @@
                             Launch image
                         </button>
                         {% endif %}
+                        <a class="btn btn-outline-light mb-2" href="mailto:{{ g.config.support_email }}?subject=Delete image request&body=Please delete image {{ i.id }}">
+                            <span class="oi oi-trash"></span>
+                            Delete image
+                        </a>
                     </div>
                 </div>
             {% endfor %}
