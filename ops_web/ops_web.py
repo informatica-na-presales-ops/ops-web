@@ -373,6 +373,7 @@ def machine_stop():
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
         db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
+        db.set_machine_state(machine_id, 'stopping')
         scheduler.add_job(stop_machine, args=[machine_id])
     environment = flask.request.values.get('environment')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
