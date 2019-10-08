@@ -26,6 +26,7 @@ def start_machine(region: str, machine_id: str):
     ec2 = boto3.resource('ec2', region_name=region)
     instance = ec2.Instance(machine_id)
     instance.start()
+    return instance
 
 
 def stop_machine(region: str, machine_id: str):
@@ -33,6 +34,7 @@ def stop_machine(region: str, machine_id: str):
     ec2 = boto3.resource('ec2', region_name=region)
     instance = ec2.Instance(machine_id)
     instance.stop()
+    return instance
 
 
 def update_resource_tags(region: str, resource_id: str, tags: Dict):

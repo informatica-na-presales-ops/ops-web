@@ -210,14 +210,8 @@ def environment_start(environment):
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
-        app.logger.debug(f'Attempting to start machine {machine_id}')
         db.set_machine_state(machine_id, 'starting')
-        cloud = machine.get('cloud')
-        if cloud == 'aws':
-            ops_web.aws.start_machine(machine.get('region'), machine_id)
-        elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
-            az.start_machine(machine_id)
+        scheduler.add_job(start_machine, args=[machine_id])
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
@@ -228,15 +222,9 @@ def environment_stop(environment):
     db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
-        machine_id = machine['id']
-        app.logger.debug(f'Attempting to stop machine {machine_id}')
+        machine_id = machine.get('id')
         db.set_machine_state(machine_id, 'stopping')
-        cloud = machine.get('cloud')
-        if cloud == 'aws':
-            ops_web.aws.stop_machine(machine.get('region'), machine_id)
-        elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
-            az.stop_machine(machine_id)
+        scheduler.add_job(stop_machine, args=[machine_id])
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
@@ -359,18 +347,11 @@ def machine_edit():
 @app.route('/machines/start', methods=['POST'])
 def machine_start():
     machine_id = flask.request.values.get('machine-id')
-    cloud = flask.request.values.get('cloud')
-    region = flask.request.values.get('region')
     app.logger.info(f'Got a request from {flask.g.email} to start machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
-        app.logger.debug(f'Attempting to start machine {machine_id}')
         db.set_machine_state(machine_id, 'starting')
-        if cloud == 'aws':
-            ops_web.aws.start_machine(region, machine_id)
-        elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
-            az.start_machine(machine_id)
+        scheduler.add_job(start_machine, args=[machine_id])
     environment = flask.request.values.get('environment')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
@@ -378,18 +359,10 @@ def machine_start():
 @app.route('/machines/stop', methods=['POST'])
 def machine_stop():
     machine_id = flask.request.values.get('machine-id')
-    cloud = flask.request.values.get('cloud')
-    region = flask.request.values.get('region')
     app.logger.info(f'Got a request from {flask.g.email} to stop machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
     if db.can_control_machine(flask.g.email, machine_id):
-        app.logger.debug(f'Attempting to stop machine {machine_id}')
-        db.set_machine_state(machine_id, 'stopping')
-        if cloud == 'aws':
-            ops_web.aws.stop_machine(region, machine_id)
-        elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
-            az.stop_machine(machine_id)
+        scheduler.add_job(stop_machine, args=[machine_id])
     environment = flask.request.values.get('environment')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
@@ -504,6 +477,44 @@ def sync_info():
 def sync_now():
     scheduler.add_job(sync_machines)
     return flask.redirect(flask.url_for('sync_info'))
+
+
+def start_machine(machine_id):
+    app.logger.info(f'Attempting to start machine {machine_id}')
+    db = ops_web.db.Database(config)
+    machine = db.get_machine(machine_id)
+    cloud = machine.get('cloud')
+    if cloud == 'aws':
+        region = machine.get('region')
+        instance = ops_web.aws.start_machine(region, machine_id)
+        app.logger.debug(f'Waiting for {machine_id} to be running')
+        instance.wait_until_running()
+        app.logger.debug(f'{machine_id} is now running')
+        db.set_machine_state(machine_id, 'running')
+        db.set_machine_public_ip(machine_id, instance.public_ip_address)
+        db.set_machine_created(machine_id, instance.launch_time)
+    elif cloud == 'az':
+        az = ops_web.az.AZClient(config)
+        az.start_machine(machine_id)
+
+
+def stop_machine(machine_id):
+    app.logger.info(f'Attempting to stop machine {machine_id}')
+    db = ops_web.db.Database(config)
+    machine = db.get_machine(machine_id)
+    cloud = machine.get('cloud')
+    if cloud == 'aws':
+        region = machine.get('region')
+        instance = ops_web.aws.stop_machine(region, machine_id)
+        app.logger.debug(f'Waiting for {machine_id} to be stopped')
+        instance.wait_until_stopped()
+        app.logger.debug(f'{machine_id} is now stopped')
+        db.set_machine_state(machine_id, 'stopped')
+        db.set_machine_public_ip(machine_id, instance.public_ip_address)
+        db.set_machine_created(machine_id, instance.launch_time)
+    elif cloud == 'az':
+        az = ops_web.az.AZClient(config)
+        az.stop_machine(machine_id)
 
 
 def sync_machines():

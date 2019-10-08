@@ -158,6 +158,24 @@ class Database(fort.PostgresDatabase):
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
 
+    def get_machine(self, machine_id: str) -> Dict:
+        sql = '''
+            SELECT
+                id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
+                visible, synced, created, state_transition_time, application_env, business_unit, contributors, dns_names
+            FROM virtual_machines
+            WHERE id = %(id)s
+        '''
+        return self.q_one(sql, {'id': machine_id})
+
+    def set_machine_created(self, machine_id: str, created):
+        sql = 'UPDATE virtual_machines SET created = %(created)s WHERE id = %(id)s'
+        self.u(sql, {'id': machine_id, 'created': created})
+
+    def set_machine_public_ip(self, machine_id: str, public_ip: str):
+        sql = 'UPDATE virtual_machines SET public_ip = %(public_ip)s WHERE id = %(id)s'
+        self.u(sql, {'id': machine_id, 'public_ip': public_ip})
+
     def set_machine_state(self, machine_id: str, state: str):
         params = {'id': machine_id, 'state': state}
         sql = 'UPDATE virtual_machines SET state = %(state)s WHERE id = %(id)s'

@@ -2,8 +2,9 @@ import azure.common.credentials
 import azure.mgmt.compute
 import azure.mgmt.network
 import azure.mgmt.subscription
-import ops_web.config
 import logging
+import msrestazure.azure_exceptions
+import ops_web.config
 
 from typing import Dict
 
@@ -138,7 +139,10 @@ class AZClient:
         vm = compute_client.virtual_machines.get(resource_group_name, vm_name)
         vm.tags.update(tags)
         vm.plan = None
-        compute_client.virtual_machines.update(resource_group_name, vm_name, vm)
+        try:
+            compute_client.virtual_machines.update(resource_group_name, vm_name, vm)
+        except msrestazure.azure_exceptions.CloudError as e:
+            log.critical(e.error)
 
 
 def delete_machine(az: AZClient, machine_id: str):
