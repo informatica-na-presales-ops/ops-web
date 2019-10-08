@@ -117,7 +117,7 @@ def authorize():
         raise ValueError('State does not match')
     flask.session.pop('state')
 
-    email = claim.get('email')
+    email = claim.get('email').lower()
     flask.session['email'] = email
     app.logger.info(f'Successful sign in for {email}')
     return flask.redirect(flask.url_for('index'))
