@@ -258,15 +258,15 @@ def image_create():
     region = flask.request.values.get('region')
     name = flask.request.values.get('image-name')
     owner = flask.request.values.get('owner')
-    image_public=flask.request.values.get('image_public')
-    image_id = ops_web.aws.create_image(region, machine_id, name, owner,image_public)
+    public = 'public' in flask.request.values
+    image_id = ops_web.aws.create_image(region, machine_id, name, owner, public)
     params = {
         'id': image_id,
         'cloud': cloud,
         'region': region,
         'name': name,
         'owner': owner,
-        'image_public':image_public,
+        'public': public,
         'state': 'pending',
         'created': datetime.datetime.utcnow(),
         'instanceid': machine_id
@@ -289,6 +289,36 @@ def image_delete():
         region = image.get('region')
         ops_web.aws.delete_image(region, image_id)
     return flask.redirect(flask.url_for('toolbox'))
+
+
+@app.route('/images/edit', methods=['POST'])
+@login_required
+def image_edit():
+    image_id = flask.request.values.get('image-id')
+    app.logger.info(f'Got a request from {flask.g.email} to edit iamge {image_id}')
+    db: ops_web.db.Database = flask.g.db
+    image = db.get_image(image_id)
+    if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
+        db.add_log_entry(flask.g.email, f'Update tags on image {image_id}')
+        image_name = flask.request.values.get('image-name')
+        owner = flask.request.values.get('owner')
+        public = 'public' in flask.request.values
+        db.set_image_tags(image_id, image_name, owner, public)
+        tags = {
+            'NAME': image_name,
+            'OWNEREMAIL': owner,
+            'image_public': str(public)
+        }
+        cloud = image.get('cloud')
+        if cloud == 'aws':
+            region = image.get('region')
+            ops_web.aws.update_resource_tags(region, image_id, tags)
+        elif cloud == 'az':
+            az = ops_web.az.AZClient(config)
+            az.update_image_tags(image_id, tags)
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to edit {image_id}')
+    return flask.redirect(flask.url_for('images'))
 
 
 @app.route('/machines/create', methods=['POST'])

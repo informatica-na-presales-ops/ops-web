@@ -27,9 +27,9 @@ class AZClient:
             client_id=self.config.az_client_id, secret=self.config.az_client_secret, tenant=self.config.az_tenant_id
         )
         self.subscriptions = {}
-        client = azure.mgmt.subscription.SubscriptionClient(self.credentials)
-        for sub in client.subscriptions.list():
-            self.subscriptions[sub.subscription_id] = sub.display_name
+        with azure.mgmt.subscription.SubscriptionClient(self.credentials) as client:
+            for sub in client.subscriptions.list():
+                self.subscriptions[sub.subscription_id] = sub.display_name
 
     def get_compute_client(self, subscription_id: str) -> azure.mgmt.compute.ComputeManagementClient:
         return azure.mgmt.compute.ComputeManagementClient(credentials=self.credentials, subscription_id=subscription_id)
@@ -47,12 +47,13 @@ class AZClient:
                     'region': image.location,
                     'name': image.tags.get('NAME', image.name),
                     'owner': image.tags.get('OWNEREMAIL', ''),
-                    'image_public':'false',
+                    'public': ops_web.config.as_bool(image.tags.get('image_public', '')),
                     'state': IMAGE_STATE_MAP.get(image.provisioning_state, image.provisioning_state),
                     'created': None,
                     'instanceid': None
                 }
                 yield params
+            compute_client.close()
 
     def get_all_virtual_machines(self):
         for subscription_id in self.subscriptions:
@@ -111,6 +112,20 @@ class AZClient:
                         params['public_ip'] = public_ip.ip_address
 
                 yield params
+            compute_client.close()
+            network_client.close()
+
+    def update_image_tags(self, image_id: str, tags: Dict):
+        log.debug(f'Update tags: {image_id}')
+        tokens = image_id.split('/')
+        subscription_id = tokens[2]
+        resource_group_name = tokens[4]
+        image_name = tokens[8]
+        compute_client = self.get_compute_client(subscription_id)
+        image = compute_client.images.get(resource_group_name, image_name)
+        image.tags.update(tags)
+        compute_client.images.update(resource_group_name, image_name, image)
+        compute_client.close()
 
     def start_machine(self, machine_id: str):
         log.debug(f'Start machine: {machine_id}')
@@ -120,6 +135,7 @@ class AZClient:
         vm_name = tokens[8]
         compute_client = self.get_compute_client(subscription_id)
         compute_client.virtual_machines.start(resource_group_name, vm_name)
+        compute_client.close()
 
     def stop_machine(self, machine_id: str):
         log.debug(f'Stop machine: {machine_id}')
@@ -129,6 +145,7 @@ class AZClient:
         vm_name = tokens[8]
         compute_client = self.get_compute_client(subscription_id)
         compute_client.virtual_machines.deallocate(resource_group_name, vm_name)
+        compute_client.close()
 
     def update_machine_tags(self, machine_id: str, tags: Dict):
         log.debug(f'Update tags: {machine_id}')
@@ -144,6 +161,8 @@ class AZClient:
             compute_client.virtual_machines.update(resource_group_name, vm_name, vm)
         except msrestazure.azure_exceptions.CloudError as e:
             log.critical(e.error)
+        finally:
+            compute_client.close()
 
 
 def delete_machine(az: AZClient, machine_id: str):
@@ -201,3 +220,6 @@ def delete_machine(az: AZClient, machine_id: str):
         ip_name = ip_tokens[8]
         log.debug(f'Delete public IP address: {public_ip_address_id}')
         network_client.public_ip_addresses.delete(ip_resource_group_name, ip_name)
+
+    compute_client.close()
+    network_client.close()

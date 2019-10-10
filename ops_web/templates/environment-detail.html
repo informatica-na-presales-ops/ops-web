@@ -221,9 +221,9 @@
                             <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
                             <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}" required>
                         </div>
-                        <div class="form-group">
-                            <label for="form-image-{{ loop.index }}-image_public" class="text-light">Public</label>
-                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-image_public" name="image_public" value="false" required>
+                        <div class="form-group form-check">
+                            <input type="checkbox" class="form-check-input" id="form-image-{{ loop.index }}-public" name="public">
+                            <label for="form-image-{{ loop.index }}-public" class="form-check-label text-light">Allow any user to launch a machine from this image</label>
                         </div>
                     </form>
                 </div>

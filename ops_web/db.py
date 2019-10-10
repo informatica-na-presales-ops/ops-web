@@ -208,7 +208,18 @@ class Database(fort.PostgresDatabase):
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT id, cloud, region, name, owner,image_public,state, created, coalesce(instanceid, '') instanceid,
+                SELECT
+                    id,
+                    cloud,
+                    region,
+                    name,
+                    owner,
+                    TRUE can_modify,
+                    cloud = 'aws' AND state = 'available' can_launch,
+                    public,
+                    state,
+                    created,
+                    coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
                 FROM images
                 WHERE visible IS TRUE
@@ -216,21 +227,37 @@ class Database(fort.PostgresDatabase):
             '''
         else:
             sql = '''
-                SELECT id, cloud, region, name, owner,image_public, state, created, coalesce(instanceid, '') instanceid,
+                SELECT
+                    id,
+                    cloud,
+                    region,
+                    name,
+                    owner,
+                    owner = %(email)s can_modify,
+                    cloud = 'aws' AND state = 'available' can_launch,
+                    public,
+                    state,
+                    created,
+                    coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
                 FROM images
                 WHERE visible IS TRUE
-                AND owner = %(email)s
+                AND (owner = %(email)s OR public IS TRUE)
             '''
         return self.q(sql, {'email': email})
 
     def get_image(self, image_id: str) -> Dict:
         sql = '''
-            SELECT id, cloud, region, name, owner, image_public, state, created, visible, synced, instanceid
+            SELECT id, cloud, region, name, owner, public, state, created, visible, synced, instanceid
             FROM images
             WHERE id = %(id)s
         '''
         return self.q_one(sql, {'id': image_id})
+
+    def set_image_tags(self, image_id: str, name: str, owner: str, public: bool):
+        sql = 'UPDATE images SET name = %(name)s, owner = %(owner)s, public = %(public)s WHERE id = %(id)s'
+        params = {'id': image_id, 'name': name, 'owner': owner, 'public': public}
+        self.u(sql, params)
 
     def set_image_state(self, image_id: str, state: str):
         sql = 'UPDATE images SET state = %(state)s WHERE id = %(id)s'
@@ -310,23 +337,25 @@ class Database(fort.PostgresDatabase):
 
     def add_image(self, params: Dict):
         # params = {
-        #   'id': '', 'cloud': '', 'region': '', 'name': '', 'owner': '', 'state': '', 'created': '', 'instanceid': ''
+        #   'id': '', 'cloud': '', 'region': '', 'name': '', 'owner': '', 'state': '', 'created': '', 'instanceid': '',
+        #   'public': (bool)
         # }
         sql = 'SELECT id FROM images WHERE id = %(id)s'
         if self.q(sql, params):
             sql = '''
                 UPDATE images 
-                SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, image_public= %(image_public)s, state = %(state)s,
-                    created = %(created)s, instanceid = %(instanceid)s, visible = TRUE, synced = TRUE
+                SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
+                    public = %(public)s, created = %(created)s, instanceid = %(instanceid)s, visible = TRUE,
+                    synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
             sql = '''
                 INSERT INTO images (
-                    id, cloud, region, name, owner,image_public, state, created, instanceid, visible, synced
+                    id, cloud, region, name, owner, public, state, created, instanceid, visible, synced
                 ) VALUES (
-                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s,%(image_public)s,%(state)s, %(created)s, %(instanceid)s, TRUE,
-                    TRUE
+                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(public)s, %(state)s, %(created)s,
+                    %(instanceid)s, TRUE, TRUE
                 )
             '''
         self.u(sql, params)
@@ -473,6 +502,13 @@ class Database(fort.PostgresDatabase):
                 ADD COLUMN dns_names text
             ''')
             self.add_schema_version(9)
+        if self.version < 10:
+            self.log.info('Migrating database to schema version 10')
+            self.u('''
+                ALTER TABLE images
+                ADD COLUMN public boolean
+            ''')
+            self.add_schema_version(10)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'

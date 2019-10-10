@@ -3,6 +3,11 @@ import os
 from typing import Dict, List
 
 
+def as_bool(value: str) -> bool:
+    true_values = ('true', '1', 'yes', 'on')
+    return value.lower() in true_values
+
+
 class Config:
     auto_sync: bool
     auto_sync_interval: int
@@ -54,8 +59,7 @@ class Config:
         TZ=Etc/UTC
         """
 
-        _true_values = ('true', '1', 'yes', 'on')
-        self.auto_sync = os.getenv('AUTO_SYNC').lower() in _true_values
+        self.auto_sync = as_bool(os.getenv('AUTO_SYNC'))
         self.auto_sync_interval = int(os.getenv('SYNC_INTERVAL', '10'))
         self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
         self.aws_default_region = os.getenv('AWS_DEFAULT_REGION', 'us-west-2')
@@ -66,14 +70,14 @@ class Config:
         self.bootstrap_admin = os.getenv('BOOTSTRAP_ADMIN')
         self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws,az')
         self.db = os.getenv('DB')
-        self.debug_layout = os.getenv('DEBUG_LAYOUT', 'false').lower() in _true_values
+        self.debug_layout = as_bool(os.getenv('DEBUG_LAYOUT', 'false'))
         self.feature_flags = os.getenv('FEATURE_FLAGS', '').split()
         self.log_format = os.getenv('LOG_FORMAT', '%(levelname)s [%(name)s] %(message)s')
         self.log_level = os.getenv('LOG_LEVEL', 'INFO')
-        self.permanent_sessions = os.getenv('PERMANENT_SESSIONS', 'false').lower() in _true_values
+        self.permanent_sessions = as_bool(os.getenv('PERMANENT_SESSIONS', 'false'))
         self.power_control_domain = os.getenv('POWER_CONTROL_DOMAIN')
         self.rep_sc_pairs_db = os.getenv('REP_SC_PAIRS_DB')
-        self.reset_database = os.getenv('RESET_DATABASE', 'false').lower() in _true_values
+        self.reset_database = as_bool(os.getenv('RESET_DATABASE', 'false'))
         self.scheme = os.getenv('SCHEME', 'http')
         self.secret_key = os.getenv('SECRET_KEY')
         self.support_email = os.getenv('SUPPORT_EMAIL')
