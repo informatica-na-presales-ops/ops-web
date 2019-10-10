@@ -47,6 +47,7 @@ class AZClient:
                     'region': image.location,
                     'name': image.tags.get('NAME', image.name),
                     'owner': image.tags.get('OWNEREMAIL', ''),
+                    'image_public':'false',
                     'state': IMAGE_STATE_MAP.get(image.provisioning_state, image.provisioning_state),
                     'created': None,
                     'instanceid': None

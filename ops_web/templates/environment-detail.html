@@ -221,6 +221,10 @@
                             <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
                             <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}" required>
                         </div>
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-image_public" class="text-light">Public</label>
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-image_public" name="image_public" value="false" required>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">

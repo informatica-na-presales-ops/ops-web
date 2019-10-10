@@ -208,7 +208,7 @@ class Database(fort.PostgresDatabase):
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT id, cloud, region, name, owner, state, created, coalesce(instanceid, '') instanceid,
+                SELECT id, cloud, region, name, owner,image_public,state, created, coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
                 FROM images
                 WHERE visible IS TRUE
@@ -216,7 +216,7 @@ class Database(fort.PostgresDatabase):
             '''
         else:
             sql = '''
-                SELECT id, cloud, region, name, owner, state, created, coalesce(instanceid, '') instanceid,
+                SELECT id, cloud, region, name, owner,image_public, state, created, coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
                 FROM images
                 WHERE visible IS TRUE
@@ -226,7 +226,7 @@ class Database(fort.PostgresDatabase):
 
     def get_image(self, image_id: str) -> Dict:
         sql = '''
-            SELECT id, cloud, region, name, owner, state, created, visible, synced, instanceid
+            SELECT id, cloud, region, name, owner, image_public, state, created, visible, synced, instanceid
             FROM images
             WHERE id = %(id)s
         '''
@@ -316,16 +316,16 @@ class Database(fort.PostgresDatabase):
         if self.q(sql, params):
             sql = '''
                 UPDATE images 
-                SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
+                SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, image_public= %(image_public)s, state = %(state)s,
                     created = %(created)s, instanceid = %(instanceid)s, visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
             sql = '''
                 INSERT INTO images (
-                    id, cloud, region, name, owner, state, created, instanceid, visible, synced
+                    id, cloud, region, name, owner,image_public, state, created, instanceid, visible, synced
                 ) VALUES (
-                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(state)s, %(created)s, %(instanceid)s, TRUE,
+                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s,%(image_public)s,%(state)s, %(created)s, %(instanceid)s, TRUE,
                     TRUE
                 )
             '''

@@ -66,7 +66,7 @@ def get_instance_tags(machine_id):
             return i['Tags']
 
 
-def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
+def create_image(region: str, machine_id: str, name: str, owner: str, image_public: str) -> str:
     log.debug(f'Creating image from {machine_id} for {owner}')
     ec2 = boto3.resource('ec2', region_name=region)
     instance = ec2.Instance(machine_id)
@@ -74,7 +74,8 @@ def create_image(region: str, machine_id: str, name: str, owner: str) -> str:
     image_tags = {
         'NAME': name,
         'OWNEREMAIL': owner,
-        'machine__description': machine_id
+        'machine__description': machine_id,
+        'image_public':image_public
     }
     image.create_tags(Tags=[{'Key': k, 'Value': v} for k, v in image_tags.items()])
     return image.id
@@ -141,6 +142,7 @@ class AWSClient:
                         'region': region,
                         'name': tags.get('NAME', image.name),
                         'owner': tags.get('OWNEREMAIL', ''),
+                        'image_public':tags.get('image_public'),
                         'state': image.state,
                         'created': image.creation_date,
                         'instanceid': tags.get('machine__description', '')

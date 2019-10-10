@@ -21,6 +21,7 @@
                     <th>Image name</th>
                     <th>Owner</th>
                     <th class="date-column">Created</th>
+                    <th>Public</th>
                     <th>State</th>
                     <th>Source machine ID</th>
                     <th></th>
@@ -34,10 +35,11 @@
                         <td class="text-truncate mw-800px" title="{{ i.name }}">{{ i.name }}</td>
                         <td>{{ i.owner }}</td>
                         <td>{{ i.created.date() if i.created }}</td>
+                        <td>{{ i.image_public }}</td>
                         <td>{{ i.state }}</td>
                         <td class="text-truncate">{{ i.instanceid if i.instanceid.startswith('i-') }}</td>
                         <td>
-                        {% if i.cloud == 'aws' and i.state == 'available' %}
+                        {% if i.cloud == 'aws' and i.state == 'available' and i.image_public =='true'%}
                             <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}" title="Launch image">
                                     <span class="oi oi-media-play"></span>
@@ -66,7 +68,7 @@
                             <span class="badge badge-light">State: {{ i.state }}</span>
                             <span class="badge badge-light">Source machine ID: {{ i.instanceid if i.instanceid.startswith('i-') }}</span>
                         </p>
-                        {% if i.cloud == 'aws' and i.state == 'available' %}
+                        {% if i.cloud == 'aws' and i.state == 'available' and i.image_public=='true' %}
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-instcreate-{{ loop.index }}">
                             <span class="oi oi-media-play"></span>
                             Launch image
@@ -100,7 +102,7 @@
                         <input type="hidden" name="region" value="{{i.region}}">
                         <div class="form-group">
                             <label for="form-image-{{ loop.index }}-name" class="text-light">New machine name</label>
-                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name" value="{{ i.name }}">
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="name">
                         </div>
                         <div class="form-group">
                             <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>

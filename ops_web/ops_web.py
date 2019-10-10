@@ -264,13 +264,15 @@ def image_create():
     region = flask.request.values.get('region')
     name = flask.request.values.get('image-name')
     owner = flask.request.values.get('owner')
-    image_id = ops_web.aws.create_image(region, machine_id, name, owner)
+    image_public=flask.request.values.get('image_public')
+    image_id = ops_web.aws.create_image(region, machine_id, name, owner,image_public)
     params = {
         'id': image_id,
         'cloud': cloud,
         'region': region,
         'name': name,
         'owner': owner,
+        'image_public':image_public,
         'state': 'pending',
         'created': datetime.datetime.utcnow(),
         'instanceid': machine_id
