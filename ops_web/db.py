@@ -180,7 +180,7 @@ class Database(fort.PostgresDatabase):
         sql = 'UPDATE virtual_machines SET created = %(created)s WHERE id = %(id)s'
         self.u(sql, {'id': machine_id, 'created': created})
 
-    def set_machine_public_ip(self, machine_id: str, public_ip: str):
+    def set_machine_public_ip(self, machine_id: str, public_ip: str = None):
         sql = 'UPDATE virtual_machines SET public_ip = %(public_ip)s WHERE id = %(id)s'
         self.u(sql, {'id': machine_id, 'public_ip': public_ip})
 

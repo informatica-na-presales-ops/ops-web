@@ -199,16 +199,10 @@ def environment_delete(environment):
     db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
-        machine_id = machine['id']
+        machine_id = machine.get('id')
         db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
-        app.logger.debug(f'Attempting to delete machine {machine_id}')
         db.set_machine_state(machine_id, 'terminating')
-        cloud = machine.get('cloud')
-        if cloud == 'aws':
-            ops_web.aws.delete_machine(machine.get('region'), machine_id)
-        elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
-            scheduler.add_job(ops_web.az.delete_machine, args=[az, machine_id])
+        scheduler.add_job(delete_machine, args=[machine_id])
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
@@ -322,15 +316,9 @@ def machine_delete():
     if db.can_control_machine(flask.g.email, machine_id):
         db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
         db.set_machine_state(machine_id, 'terminating')
-        cloud = flask.request.values.get('cloud')
-        if cloud == 'aws':
-            region = flask.request.values.get('region')
-            ops_web.aws.delete_machine(region, machine_id)
-        elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
-            scheduler.add_job(ops_web.az.delete_machine, args=[az, machine_id])
-    env_name = flask.request.values.get('environment')
-    return flask.redirect(flask.url_for('environment_detail', environment=env_name))
+        scheduler.add_job(delete_machine, args=[machine_id])
+    environment = flask.request.values.get('environment')
+    return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/machines/edit', methods=['POST'])
@@ -523,6 +511,21 @@ def sync_now():
 @permission_required('admin')
 def toolbox():
     return flask.render_template('toolbox.html')
+
+
+def delete_machine(machine_id):
+    app.logger.info(f'Attempting to delete machine {machine_id}')
+    db = ops_web.db.Database(config)
+    machine = db.get_machine(machine_id)
+    cloud = machine.get('cloud')
+    if cloud == 'aws':
+        region = machine.get('region')
+        ops_web.aws.delete_machine(region, machine_id)
+    elif cloud == 'az':
+        az = ops_web.az.AZClient(config)
+        ops_web.az.delete_machine(az, machine_id)
+    db.set_machine_public_ip(machine_id)
+    db.set_machine_state(machine_id, 'terminated')
 
 
 def start_machine(machine_id):
