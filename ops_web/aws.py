@@ -14,6 +14,18 @@ def resource_tags_as_dict(resource) -> Dict:
     return {tag['Key']: tag['Value'] for tag in resource.tags}
 
 
+def delete_image(region: str, image_id: str):
+    log.debug(f'Delete image: {image_id}')
+    ec2 = boto3.resource('ec2', region_name=region)
+    image = ec2.Image(image_id)
+    snapshots = [ec2.Snapshot(m['Ebs']['SnapshotId']) for m in image.block_device_mappings if 'Ebs' in m]
+    log.debug(f'Deregistering image: {image.id}')
+    image.deregister()
+    for snapshot in snapshots:
+        log.debug(f'Deleting snapshot {snapshot.id}')
+        snapshot.delete()
+
+
 def delete_machine(region: str, machine_id: str):
     log.debug(f'Delete machine: {machine_id}')
     ec2 = boto3.resource('ec2', region_name=region)

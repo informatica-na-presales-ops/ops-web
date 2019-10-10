@@ -224,6 +224,19 @@ class Database(fort.PostgresDatabase):
             '''
         return self.q(sql, {'email': email})
 
+    def get_image(self, image_id: str) -> Dict:
+        sql = '''
+            SELECT id, cloud, region, name, owner, state, created, visible, synced, instanceid
+            FROM images
+            WHERE id = %(id)s
+        '''
+        return self.q_one(sql, {'id': image_id})
+
+    def set_image_state(self, image_id: str, state: str):
+        sql = 'UPDATE images SET state = %(state)s WHERE id = %(id)s'
+        params = {'id': image_id, 'state': state}
+        self.u(sql, params)
+
     # syncing
 
     def start_sync(self):

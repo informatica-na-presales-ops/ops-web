@@ -48,6 +48,13 @@
                 {% if 'admin' in g.permissions %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
+                        <h5 class="card-title">Toolbox</h5>
+                        <a href="{{ url_for('toolbox') }}" class="card-link stretched-link text-light">Various tools for admins.</a>
+                    </div>
+                </div>
+
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
                         <h5 class="card-title">Administration</h5>
                         <a href="{{ url_for('admin') }}" class="card-link stretched-link text-light">Change user permissions.</a>
                     </div>

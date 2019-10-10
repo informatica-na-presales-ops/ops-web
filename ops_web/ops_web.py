@@ -279,6 +279,22 @@ def image_create():
     return flask.redirect(flask.url_for('images'))
 
 
+@app.route('/images/delete', methods=['POST'])
+@permission_required('admin')
+def image_delete():
+    db: ops_web.db.Database = flask.g.db
+    image_id = flask.request.values.get('image-id')
+    app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
+    db.add_log_entry(flask.g.email, f'Delete image {image_id}')
+    db.set_image_state(image_id, 'deleting')
+    image = db.get_image(image_id)
+    cloud = image.get('cloud')
+    if cloud == 'aws':
+        region = image.get('region')
+        ops_web.aws.delete_image(region, image_id)
+    return flask.redirect(flask.url_for('toolbox'))
+
+
 @app.route('/machines/create', methods=['POST'])
 @login_required
 def machine_create():
@@ -501,6 +517,12 @@ def sync_now():
     db.add_log_entry(flask.g.email, 'Manual sync')
     scheduler.add_job(sync_machines)
     return flask.redirect(flask.url_for('sync_info'))
+
+
+@app.route('/toolbox')
+@permission_required('admin')
+def toolbox():
+    return flask.render_template('toolbox.html')
 
 
 def start_machine(machine_id):
