@@ -2,6 +2,7 @@ import boto3
 import botocore.exceptions
 import ops_web.config
 import logging
+import time
 
 from typing import Dict
 
@@ -27,10 +28,40 @@ def delete_image(region: str, image_id: str):
 
 
 def delete_machine(region: str, machine_id: str):
+    """Terminate an EC2 instance in AWS.
+
+    This will terminate the instance and delete all volumes that were attached to the instance, even if the volume was
+    not set to delete on termination.
+
+    Do not call this function during a web request. Use a scheduled job instead."""
+
     log.debug(f'Delete machine: {machine_id}')
     ec2 = boto3.resource('ec2', region_name=region)
     instance = ec2.Instance(machine_id)
+    log.info(f'Looking up volumes for machine {machine_id}')
+    delete_after = []
+    for m in instance.block_device_mappings:
+        volume_id = m.get('Ebs').get('VolumeId')
+        delete_on_termination: bool = m.get('Ebs', {}).get('DeleteOnTermination', False)
+        if delete_on_termination:
+            log.info(f'Volume {volume_id} will delete on termination')
+        else:
+            log.info(f'Volume {volume_id} must be explicitly deleted')
+            delete_after.append(volume_id)
     instance.terminate()
+    instance.wait_until_terminated()
+    for v in delete_after:
+        delete_volume(region, v)
+
+
+def delete_volume(region: str, volume_id: str):
+    ec2 = boto3.resource('ec2', region_name=region)
+    volume = ec2.Volume(volume_id)
+    if volume.state == 'in-use':
+        log.info(f'Volume {volume_id} is {volume.state}, waiting 10 seconds ...')
+        time.sleep(10)
+    log.info(f'Deleting volume {volume_id}')
+    volume.delete()
 
 
 def start_machine(region: str, machine_id: str):
