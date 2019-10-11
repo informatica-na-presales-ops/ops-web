@@ -295,7 +295,7 @@ def image_delete():
 @login_required
 def image_edit():
     image_id = flask.request.values.get('image-id')
-    app.logger.info(f'Got a request from {flask.g.email} to edit iamge {image_id}')
+    app.logger.info(f'Got a request from {flask.g.email} to edit image {image_id}')
     db: ops_web.db.Database = flask.g.db
     image = db.get_image(image_id)
     if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
@@ -324,19 +324,25 @@ def image_edit():
 @app.route('/machines/create', methods=['POST'])
 @login_required
 def machine_create():
-    db: ops_web.db.Database = flask.g.db
     image_id = flask.request.values.get('image-id')
-    db.add_log_entry(flask.g.email, f'Create machine from image {image_id}')
-    instance_id = flask.request.values.get('instance-id')
-    name = flask.request.values.get('name')
-    owner = flask.request.values.get('owner')
-    region = flask.request.values.get('region')
-    response = ops_web.aws.create_instance(region, image_id, instance_id, name, owner)
-    aws = ops_web.aws.AWSClient(config)
-    instance = aws.get_single_instance(region, response[0].id)
-    environment = instance.get('environment')
-    db.add_machine(instance)
-    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+    app.logger.info(f'Got a request from {flask.g.email} to create machine from image {image_id}')
+    db: ops_web.db.Database = flask.g.db
+    image = db.get_image(image_id)
+    if 'admin' in flask.g.permissions or image.get('public') or image.get('owner') == flask.g.email:
+        db.add_log_entry(flask.g.email, f'Create machine from image {image_id}')
+        region = image.get('region')
+        instance_id = image.get('instanceid')
+        name = flask.request.values.get('name')
+        owner = flask.request.values.get('owner')
+        response = ops_web.aws.create_instance(region, image_id, instance_id, name, owner)
+        aws = ops_web.aws.AWSClient(config)
+        instance = aws.get_single_instance(region, response[0].id)
+        environment = instance.get('environment')
+        db.add_machine(instance)
+        return flask.redirect(flask.url_for('environment_detail', environment=environment))
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
+        return flask.redirect(flask.url_for('images'))
 
 
 @app.route('/machines/delete', methods=['POST'])
