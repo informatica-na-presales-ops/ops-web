@@ -35,7 +35,7 @@ def permission_required(permission: str):
             app.logger.debug(f'Checking permission for {flask.g.email}')
             if flask.g.email is None:
                 return flask.redirect(flask.url_for('index'))
-            if flask.g.db.has_permission(flask.g.email, permission):
+            if permission in flask.g.permissions:
                 return f(*args, **kwargs)
             flask.g.required_permission = permission
             return flask.render_template('not-authorized.html')
@@ -168,7 +168,7 @@ def add_running_time_human(col: List[Dict]) -> List[Dict]:
 @login_required
 def environments():
     db: ops_web.db.Database = flask.g.db
-    flask.g.environments = add_running_time_human(db.get_environments(flask.g.email))
+    flask.g.environments = add_running_time_human(db.get_environments())
     return flask.render_template('environments.html')
 
 
@@ -179,7 +179,7 @@ def environment_detail(environment):
     db: ops_web.db.Database = flask.g.db
     flask.g.environment = environment
     flask.g.machines = add_running_time_human(db.get_machines_for_env(flask.g.email, environment))
-    flask.g.environments = db.get_environments(flask.g.email)
+    flask.g.environments = db.get_environments()
     flask.g.today = datetime.date.today()
     flask.g.machine_state_class_map = {
         'running': 'text-success',
@@ -200,9 +200,12 @@ def environment_delete(environment):
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
-        db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
-        db.set_machine_state(machine_id, 'terminating')
-        scheduler.add_job(delete_machine, args=[machine_id])
+        if machine.get('can_modify'):
+            db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
+            db.set_machine_state(machine_id, 'terminating')
+            scheduler.add_job(delete_machine, args=[machine_id])
+        else:
+            app.logger.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
@@ -214,9 +217,12 @@ def environment_start(environment):
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
-        db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
-        db.set_machine_state(machine_id, 'starting')
-        scheduler.add_job(start_machine, args=[machine_id])
+        if machine.get('can_control'):
+            db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
+            db.set_machine_state(machine_id, 'starting')
+            scheduler.add_job(start_machine, args=[machine_id])
+        else:
+            app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
@@ -228,9 +234,12 @@ def environment_stop(environment):
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
-        db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
-        db.set_machine_state(machine_id, 'stopping')
-        scheduler.add_job(stop_machine, args=[machine_id])
+        if machine.get('can_control'):
+            db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
+            db.set_machine_state(machine_id, 'stopping')
+            scheduler.add_job(stop_machine, args=[machine_id])
+        else:
+            app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
@@ -245,34 +254,40 @@ def images():
 @app.route('/images/create', methods=['POST'])
 @login_required
 def image_create():
-    db: ops_web.db.Database = flask.g.db
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
-    db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
-    cloud = flask.request.values.get('cloud')
+    db: ops_web.db.Database = flask.g.db
+    machine = db.get_machine(machine_id, flask.g.email)
+    if machine.get('can_modify'):
+        db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
+        cloud = flask.request.values.get('cloud')
 
-    if not cloud == 'aws':
-        environment = flask.request.values.get('environment')
-        return flask.redirect(flask.url_for('environment_detail', environment=environment))
+        if not cloud == 'aws':
+            app.logger.warning(f'Unable to create images for cloud {cloud}')
+            environment = flask.request.values.get('environment')
+            return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
-    region = flask.request.values.get('region')
-    name = flask.request.values.get('image-name')
-    owner = flask.request.values.get('owner')
-    public = 'public' in flask.request.values
-    image_id = ops_web.aws.create_image(region, machine_id, name, owner, public)
-    params = {
-        'id': image_id,
-        'cloud': cloud,
-        'region': region,
-        'name': name,
-        'owner': owner,
-        'public': public,
-        'state': 'pending',
-        'created': datetime.datetime.utcnow(),
-        'instanceid': machine_id
-    }
-    db.add_image(params)
-    return flask.redirect(flask.url_for('images'))
+        region = flask.request.values.get('region')
+        name = flask.request.values.get('image-name')
+        owner = flask.request.values.get('owner')
+        public = 'public' in flask.request.values
+        image_id = ops_web.aws.create_image(region, machine_id, name, owner, public)
+        params = {
+            'id': image_id,
+            'cloud': cloud,
+            'region': region,
+            'name': name,
+            'owner': owner,
+            'public': public,
+            'state': 'pending',
+            'created': datetime.datetime.utcnow(),
+            'instanceid': machine_id
+        }
+        db.add_image(params)
+        return flask.redirect(flask.url_for('images'))
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to create an image from {machine_id}')
+        return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
 @app.route('/images/delete', methods=['POST'])
@@ -351,12 +366,14 @@ def machine_delete():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to delete machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
-    if db.can_control_machine(flask.g.email, machine_id):
+    machine = db.get_machine(machine_id, flask.g.email)
+    if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
         db.set_machine_state(machine_id, 'terminating')
         scheduler.add_job(delete_machine, args=[machine_id])
-    environment = flask.request.values.get('environment')
-    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
+    return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
 @app.route('/machines/edit', methods=['POST'])
@@ -365,7 +382,8 @@ def machine_edit():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to edit machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
-    if db.can_control_machine(flask.g.email, machine_id):
+    machine = db.get_machine(machine_id, flask.g.email)
+    if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Update tags on machine {machine_id}')
         db.set_machine_tags({
             'application_env': flask.request.values.get('application-env'),
@@ -388,15 +406,15 @@ def machine_edit():
             'OWNEREMAIL': flask.request.values.get('owner'),
             'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
         }
-        cloud = flask.request.values.get('cloud')
+        cloud = machine.get('cloud')
         if cloud == 'aws':
-            region = flask.request.values.get('region')
+            region = machine.get('region')
             ops_web.aws.update_resource_tags(region, machine_id, tags)
         elif cloud == 'az':
             az = ops_web.az.AZClient(config)
             az.update_machine_tags(machine_id, tags)
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to edit {machine_id}')
+        app.logger.warning(f'{flask.g.email} does not have permission to edit machine {machine_id}')
     environment = flask.request.values.get('environment')
     if environment:
         return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -408,12 +426,14 @@ def machine_start():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to start machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
-    if db.can_control_machine(flask.g.email, machine_id):
+    machine = db.get_machine(machine_id, flask.g.email)
+    if machine.get('can_control'):
         db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
         db.set_machine_state(machine_id, 'starting')
         scheduler.add_job(start_machine, args=[machine_id])
-    environment = flask.request.values.get('environment')
-    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
+    return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
 @app.route('/machines/stop', methods=['POST'])
@@ -421,12 +441,14 @@ def machine_stop():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to stop machine {machine_id}')
     db: ops_web.db.Database = flask.g.db
-    if db.can_control_machine(flask.g.email, machine_id):
+    machine = db.get_machine(machine_id, flask.g.email)
+    if machine.get('can_control'):
         db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
         db.set_machine_state(machine_id, 'stopping')
         scheduler.add_job(stop_machine, args=[machine_id])
-    environment = flask.request.values.get('environment')
-    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
+    return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
 @app.route('/rep-sc-pairs')

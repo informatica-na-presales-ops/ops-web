@@ -69,18 +69,6 @@ class Database(fort.PostgresDatabase):
     def has_permission(self, email: str, permission: str) -> bool:
         return permission in self.get_permissions(email)
 
-    def can_control_machine(self, email: str, machine_id: str) -> bool:
-        if self.has_permission(email, 'admin'):
-            return True
-        sql = '''
-            SELECT id
-            FROM virtual_machines
-            WHERE id = %(id)s
-              AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
-        '''
-        controllable = self.q_one(sql, {'id': machine_id, 'email': email})
-        return controllable is not None
-
     # logging
 
     def add_log_entry(self, actor: str, action: str):
@@ -106,39 +94,22 @@ class Database(fort.PostgresDatabase):
 
     # environments and machines
 
-    def get_environments(self, email: str) -> List[Dict]:
-        if self.has_permission(email, 'admin'):
-            sql = '''
-                SELECT
-                    cloud,
-                    env_group,
-                    owner,
-                    count(*) instance_count,
-                    bool_or(state = 'running') running,
-                    max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
-                    lower(env_group || ' ' || owner) filter_value
-                FROM virtual_machines
-                WHERE visible IS TRUE
-                GROUP BY cloud, env_group, owner
-                ORDER BY env_group
-            '''
-        else:
-            sql = '''
-                SELECT
-                    cloud,
-                    env_group,
-                    owner,
-                    count(*) instance_count,
-                    bool_or(state = 'running') running,
-                    max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
-                    lower(env_group || ' ' || owner) filter_value
-                FROM virtual_machines
-                WHERE (owner = %(email)s OR position(%(email)s in contributors) > 0)
-                  AND visible IS TRUE
-                GROUP BY cloud, env_group, owner
-                ORDER BY env_group
-            '''
-        return self.q(sql, {'email': email})
+    def get_environments(self) -> List[Dict]:
+        sql = '''
+            SELECT
+                cloud,
+                env_group,
+                owner,
+                count(*) instance_count,
+                bool_or(state = 'running') running,
+                max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
+                lower(env_group || ' ' || owner) filter_value
+            FROM virtual_machines
+            WHERE visible IS TRUE
+            GROUP BY cloud, env_group, owner
+            ORDER BY env_group
+        '''
+        return self.q(sql)
 
     def get_machines_for_env(self, email: str, env_group: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
@@ -146,7 +117,9 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names,
-                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time
+                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
+                    TRUE can_control,
+                    TRUE can_modify
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s
@@ -157,24 +130,42 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names,
-                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time
+                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
+                    owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
+                    owner = %(email)s can_modify
                 FROM virtual_machines
                 WHERE visible IS TRUE
                   AND env_group = %(env_group)s
-                  AND (owner = %(email)s OR position(%(email)s in contributors) > 0)
                 ORDER BY name
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
 
-    def get_machine(self, machine_id: str) -> Dict:
-        sql = '''
-            SELECT
-                id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                visible, synced, created, state_transition_time, application_env, business_unit, contributors, dns_names
-            FROM virtual_machines
-            WHERE id = %(id)s
-        '''
-        return self.q_one(sql, {'id': machine_id})
+    def get_machine(self, machine_id: str, email: str = None) -> Dict:
+        if email is None or self.has_permission(email, 'admin'):
+            sql = '''
+                SELECT
+                    id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
+                    visible, synced, created, state_transition_time, application_env, business_unit, contributors,
+                    dns_names,
+                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
+                    TRUE can_control,
+                    TRUE can_modify
+                FROM virtual_machines
+                WHERE id = %(id)s
+            '''
+        else:
+            sql = '''
+                SELECT
+                    id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
+                    visible, synced, created, state_transition_time, application_env, business_unit, contributors,
+                    dns_names,
+                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
+                    owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
+                    owner = %(email)s can_modify
+                FROM virtual_machines
+                WHERE id = %(id)s
+            '''
+        return self.q_one(sql, {'id': machine_id, 'email': email})
 
     def set_machine_created(self, machine_id: str, created):
         sql = 'UPDATE virtual_machines SET created = %(created)s WHERE id = %(id)s'
