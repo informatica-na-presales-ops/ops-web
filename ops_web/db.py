@@ -233,8 +233,8 @@ class Database(fort.PostgresDatabase):
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
                 FROM images
                 WHERE visible IS TRUE
-                AND (owner = %(email)s OR public IS TRUE)
-            '''
+                AND (owner = %(email)s  OR (SUBSTRING(owner,1,8) LIKE SUBSTRING(%(email)s,1,8)) OR (public IS TRUE))
+                 '''
         return self.q(sql, {'email': email})
 
     def get_image(self, image_id: str) -> Dict:
