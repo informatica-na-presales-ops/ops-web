@@ -500,6 +500,31 @@ class Database(fort.PostgresDatabase):
                 ADD COLUMN public boolean
             ''')
             self.add_schema_version(10)
+        if self.version < 11:
+            self.log.info('Migrating database to schema version 11')
+            self.u('''
+                CREATE TABLE sf_opportunities (
+                    opportunity_key integer PRIMARY KEY,
+                    id text,
+                    opportunity_number text,
+                    name text,
+                    stage_name text,
+                    close_date date,
+                    last_modified_date timestamp,
+                    technology_ecosystem text,
+                    sales_journey text
+                )
+            ''')
+            self.u('''
+                CREATE TABLE sf_opportunity_team_members (
+                    opportunity_team_member_key integer PRIMARY KEY,
+                    opportunity_key integer,
+                    name text,
+                    email text,
+                    role text
+                )
+            ''')
+            self.add_schema_version(11)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
