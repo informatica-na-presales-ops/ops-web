@@ -365,12 +365,9 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        self.u('DROP TABLE IF EXISTS virtual_machines CASCADE')
-        self.u('DROP TABLE IF EXISTS permissions CASCADE')
-        self.u('DROP TABLE IF EXISTS schema_versions CASCADE')
-        self.u('DROP TABLE IF EXISTS sync_tracking CASCADE')
-        self.u('DROP TABLE IF EXISTS images CASCADE')
-        self.u('DROP TABLE IF EXISTS log_entries CASCADE ')
+        for table in ('images', 'log_entries', 'permissions', 'schema_versions', 'sf_opportunities',
+                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
+            self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
         self.log.info(f'Database schema version is {self.version}')
