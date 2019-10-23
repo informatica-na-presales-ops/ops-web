@@ -365,8 +365,9 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('images', 'log_entries', 'permissions', 'schema_versions', 'sf_opportunities',
-                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
+        for table in ('images', 'log_entries', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
+                      'schema_versions', 'sf_opportunities', 'sf_opportunity_team_members', 'sync_tracking',
+                      'virtual_machines'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -505,6 +506,7 @@ class Database(fort.PostgresDatabase):
                     id text,
                     opportunity_number text,
                     name text,
+                    account_name text,
                     stage_name text,
                     close_date date,
                     last_modified_date timestamp,
@@ -521,6 +523,20 @@ class Database(fort.PostgresDatabase):
                     role text
                 )
             ''')
+            self.u('''
+                CREATE TABLE op_debrief_surveys (
+                    id uuid PRIMARY KEY,
+                    opportunity_number text,
+                    email text
+                )
+            ''')
+            self.u('''
+                CREATE TABLE op_debrief_tracking (
+                    only_row boolean PRIMARY KEY DEFAULT TRUE CONSTRAINT only_row_constraint CHECK (only_row),
+                    last_check timestamp
+                )
+            ''')
+            self.u('''INSERT INTO op_debrief_tracking (last_check) VALUES ('2019-10-01')''')
             self.add_schema_version(11)
 
     def _table_exists(self, table_name: str) -> bool:
