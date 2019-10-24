@@ -11,7 +11,7 @@
     user-select: all;
 }
 
-/* for making just about anything clickable, see op-debrief */
+/* for making just about anything look clickable (used on table rows in op-debrief) */
 [data-href] {
     cursor: pointer;
 }
