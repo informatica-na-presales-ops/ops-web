@@ -111,6 +111,16 @@ def admin_edit_user():
     return flask.redirect(flask.url_for('admin'))
 
 
+@app.route('/admin/impersonate', methods=['POST'])
+@permission_required('admin')
+def admin_impersonate():
+    db: ops_web.db.Database = flask.g.db
+    target = flask.request.form.get('target')
+    db.add_log_entry(flask.g.email, f'Impersonate user {target}')
+    flask.session['email'] = target
+    return flask.redirect(flask.url_for('index'))
+
+
 @app.route('/audit-log')
 @permission_required('admin')
 def audit_log():
