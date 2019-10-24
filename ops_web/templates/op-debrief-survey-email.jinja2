@@ -1,0 +1,13 @@
+Hello!
+
+Our records show that an opportunity you worked on was recently closed:
+
+Account: {{ c.opportunity.account_name }}
+Opportunity: {{ c.opportunity.name }} ({{ c.opportunity.opportunity_number }})
+Your role: {{ c.person.role }}
+
+Will you please complete a short survey to help us improve? You can find the survey here:
+
+{{ url_for('op_debrief_survey', survey_id=c.survey_id) }}
+
+Thanks!

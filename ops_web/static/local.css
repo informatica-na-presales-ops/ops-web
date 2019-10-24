@@ -2,21 +2,16 @@
     padding-top: 10px;
 }
 
-.navbar-logo {
-    max-width: 24px;
-    max-height: 24px;
-}
-
-.collapsing {
-    -webkit-transition: none;
-    transition: none;
-    display: none;
-}
-
 .date-column { width: 100px; }
 
 .mw-800px { max-width: 800px; }
 
+/* for displaying hosts file in environment detail pages */
 .select-all {
     user-select: all;
+}
+
+/* for making just about anything clickable, see op-debrief */
+[data-href] {
+    cursor: pointer;
 }

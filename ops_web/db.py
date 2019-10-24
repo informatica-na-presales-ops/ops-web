@@ -3,7 +3,7 @@ import fort
 import ops_web.config
 import uuid
 
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 
 class RepSCPairsDatabase(fort.PostgresDatabase):
@@ -351,6 +351,96 @@ class Database(fort.PostgresDatabase):
             '''
         self.u(sql, params)
 
+    # opportunity debrief surveys
+
+    def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:
+        self.log.debug(f'Generating a survey for {opportunity_number} / {email}')
+        sql = '''
+            INSERT INTO op_debrief_surveys (id, opportunity_number, email, role, generated)
+            VALUES (%(id)s, %(opportunity_number)s, %(email)s, %(role)s, %(generated)s)
+        '''
+        params = {
+            'id': uuid.uuid4(),
+            'opportunity_number': opportunity_number,
+            'email': email,
+            'role': role,
+            'generated': datetime.datetime.utcnow()
+        }
+        self.u(sql, params)
+        return params.get('id')
+
+    def complete_survey(self, params: Dict):
+        sql = '''
+            UPDATE op_debrief_surveys
+            SET completed = %(completed)s, primary_loss_reason = %(primary_loss_reason)s,
+                competitive_loss_reason = %(competitive_loss_reason)s, technology_gap_type = %(technology_gap_type)s,
+                perceived_poor_fit_reason = %(perceived_poor_fit_reason)s
+            WHERE id = %(survey_id)s
+        '''
+        self.u(sql, params)
+
+    def get_last_op_debrief_check(self) -> datetime.datetime:
+        sql = 'SELECT last_check FROM op_debrief_tracking'
+        return self.q_val(sql)
+
+    def get_modified_opportunities(self, since: datetime.datetime) -> List[Dict]:
+        sql = '''
+            SELECT
+                opportunity_key, id, opportunity_number, name, account_name, stage_name, close_date, last_modified_date,
+                technology_ecosystem, sales_journey
+            FROM sf_opportunities
+            WHERE last_modified_date > %(since)s
+              AND stage_name = 'Closed Lost'
+        '''
+        params = {'since': since}
+        return self.q(sql, params)
+
+    def get_op_numbers_for_existing_surveys(self) -> Set[str]:
+        sql = 'SELECT DISTINCT opportunity_number FROM op_debrief_surveys'
+        return set([r.get('opportunity_number') for r in self.q(sql)])
+
+    def get_op_team_members(self, opportunity_key: int) -> List[Dict]:
+        sql = '''
+            SELECT DISTINCT opportunity_key, name, email, role
+            FROM sf_opportunity_team_members
+            WHERE opportunity_key = %(opportunity_key)s
+        '''
+        params = {'opportunity_key': opportunity_key}
+        return self.q(sql, params)
+
+    def get_survey(self, survey_id: uuid.UUID) -> Optional[Dict]:
+        sql = '''
+            SELECT
+                s.id, s.opportunity_number, o.name opportunity_name, o.account_name, o.close_date,
+                o.technology_ecosystem, o.sales_journey, s.email, s.role, s.primary_loss_reason,
+                s.competitive_loss_reason, s.technology_gap_type, s.perceived_poor_fit_reason, s.generated, s.completed
+            FROM op_debrief_surveys s
+            LEFT JOIN sf_opportunities o ON o.opportunity_number = s.opportunity_number
+            WHERE s.id = %(survey_id)s
+        '''
+        params = {'survey_id': survey_id}
+        return self.q_one(sql, params)
+
+    def get_surveys(self, email: str) -> List[Dict]:
+        sql = '''
+            SELECT
+                s.id, s.opportunity_number, o.name, o.close_date, s.email, s.role, s.generated, s.completed,
+                lower(s.email || ' ' || s.opportunity_number || ' ' || o.name) filter_value
+            FROM op_debrief_surveys s
+            LEFT JOIN sf_opportunities o ON s.opportunity_number = o.opportunity_number
+        '''
+        if not (self.has_permission(email, 'admin') or self.has_permission(email, 'survey-admin')):
+            sql = f'{sql} WHERE email = %(email)s'
+        params = {'email': email}
+        return self.q(sql, params)
+
+    def update_op_debrief_tracking(self, last_check: datetime.datetime):
+        sql = 'UPDATE op_debrief_tracking SET last_check = %(last_check)s WHERE only_row IS TRUE'
+        params = {'last_check': last_check}
+        self.u(sql, params)
+
+    # migrations and metadata
+
     def add_schema_version(self, schema_version: int):
         self._version = schema_version
         sql = '''
@@ -527,7 +617,14 @@ class Database(fort.PostgresDatabase):
                 CREATE TABLE op_debrief_surveys (
                     id uuid PRIMARY KEY,
                     opportunity_number text,
-                    email text
+                    email text,
+                    role text,
+                    primary_loss_reason text,
+                    competitive_loss_reason text,
+                    technology_gap_type text,
+                    perceived_poor_fit_reason text,
+                    generated timestamp,
+                    completed timestamp
                 )
             ''')
             self.u('''
@@ -536,7 +633,8 @@ class Database(fort.PostgresDatabase):
                     last_check timestamp
                 )
             ''')
-            self.u('''INSERT INTO op_debrief_tracking (last_check) VALUES ('2019-10-01')''')
+            params = {'last_check': datetime.datetime.utcnow()}
+            self.u('INSERT INTO op_debrief_tracking (last_check) VALUES (%(last_check)s)', params)
             self.add_schema_version(11)
 
     def _table_exists(self, table_name: str) -> bool:

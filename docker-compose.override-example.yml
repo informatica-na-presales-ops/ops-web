@@ -19,6 +19,7 @@ services:
       REP_SC_PAIRS_DB: [required]
       RESET_DATABASE: 'false'
       SECRET_KEY: [required]
+      SERVER_NAME: localhost:8080
       SUPPORT_EMAIL: email@example.com
     volumes:
       - D:/projects/ops-web:/ops-web

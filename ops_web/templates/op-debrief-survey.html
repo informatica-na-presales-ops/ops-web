@@ -1,0 +1,109 @@
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('op_debrief') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Surveys</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <h1 class="text-light">Opportunity debrief survey</h1>
+            <p class="text-light lead">{{ g.survey.opportunity_number }} / {{ g.survey.email }}</p>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+            {% if g.survey.email != g.email %}
+                <div class="alert alert-warning">You are viewing someone else&#x02bc;s survey.</div>
+            {% endif %}
+            {% if g.survey.completed %}
+                <div class="alert alert-primary">This survey was completed on {{ g.survey.completed.strftime('%Y-%m-%d') }}.</div>
+            {% endif %}
+            <div class="card text-light bg-dark border-light mb-3">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        Opportunity details
+                        <a class="text-light float-right btn btn-sm btn-outline-light" data-toggle="collapse" href="#opportunity-details-body">
+                            <span id="opportunity-details-toggle-text">hide</span>
+                        </a>
+                    </h5>
+                </div>
+                <div class="card-body collapse show" id="opportunity-details-body">
+                    <dl>
+                        <dt>Account name</dt>
+                        <dd>{{ g.survey.account_name }}</dd>
+                        <dt>Opportunity name</dt>
+                        <dd>{{ g.survey.opportunity_name }}</dd>
+                        <dt>Opportunity number</dt>
+                        <dd>{{ g.survey.opportunity_number }}</dd>
+                        <dt>Opportunity closed</dt>
+                        <dd>{{ g.survey.close_date.strftime('%Y-%m-%d') }}</dd>
+                        <dt>Technology ecosystem</dt>
+                        <dd>{{ g.survey.technology_ecosystem }}</dd>
+                        <dt>Sales journey</dt>
+                        <dd>{{ g.survey.sales_journey }}</dd>
+                        <dt>Your role</dt>
+                        <dd>{{ g.survey.role }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <form method="post" class="text-light">
+                <div class="form-group">
+                    <h5>Primary loss reason</h5>
+                    {% for k, v in g.plr_options.items() %}
+                        <div class="custom-control custom-radio">
+                            <input class="custom-control-input" type="radio" name="primary-loss-reason" id="plr-{{ k }}" value="{{ k }}" required {{ 'checked' if g.survey.primary_loss_reason == k }} {{ 'disabled' if g.survey.completed }}>
+                            <label class="custom-control-label" for="plr-{{ k }}">{{ v }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="collapse {{ 'show' if g.survey.primary_loss_reason == 'competitive-loss' }}" id="competitive-loss">
+                    <div class="form-group" id="competitive-loss-reason">
+                        <h5>Competitive loss reason</h5>
+                        {% for k, v in g.clr_options.items() %}
+                            <div class="custom-control custom-radio">
+                                <input class="custom-control-input" type="radio" name="competitive-loss-reason" id="clr-{{ k }}" value="{{ k }}" {{ 'checked' if g.survey.competitive_loss_reason == k }} {{ 'disabled' if g.survey.completed }}>
+                                <label class="custom-control-label" for="clr-{{ k }}">{{ v }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group collapse {{ 'show' if g.survey.competitive_loss_reason == 'technology-gap' }}" id="technology-gap-type">
+                        <h5>Technology gap type</h5>
+                        {% for k, v in g.tgt_options.items() %}
+                            <div class="custom-control custom-radio">
+                                <input class="custom-control-input" type="radio" name="technology-gap-type" id="tgt-{{ k }}" value="{{ k }}" {{ 'checked' if g.survey.technology_gap_type == k }} {{ 'disabled' if g.survey.completed }}>
+                                <label class="custom-control-label" for="tgt-{{ k }}">{{ v }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group collapse {{ 'show' if g.survey.competitive_loss_reason == 'perceived-poor-fit' }}" id="perceived-poor-fit-reason">
+                        <h5>Perceived poor solution fit reason</h5>
+                        {% for k, v in g.ppfr_options.items() %}
+                            <div class="custom-control custom-radio">
+                                <input class="custom-control-input" type="radio" name="perceived-poor-fit-reason" id="ppfr-{{ k }}" value="{{ k }}" {{ 'checked' if g.survey.perceived_poor_fit_reason == k }} {{ 'disabled' if g.survey.complete }}>
+                                <label class="custom-control-label" for="ppfr-{{ k }}">{{ v }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-outline-success" {% if g.survey.completed %}disabled title="This survey was completed on {{ g.survey.completed.strftime('%Y-%m-%d') }}."{% endif %}>
+                    Submit
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='op-debrief-survey.js') }}"></script>
+{% endblock %}

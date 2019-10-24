@@ -4,6 +4,7 @@ import ops_web.aws
 import ops_web.az
 import ops_web.config
 import ops_web.db
+import ops_web.send_email
 import flask
 import functools
 import io
@@ -26,6 +27,10 @@ app = flask.Flask(__name__)
 app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_port=1)
 
 app.secret_key = config.secret_key
+
+# for generating external URLs outside a request context (e.g. automated emails)
+app.config['PREFERRED_URL_SCHEME'] = config.scheme
+app.config['SERVER_NAME'] = config.server_name
 
 
 def permission_required(permission: str):
@@ -89,7 +94,8 @@ def admin():
     flask.g.users = db.get_users()
     flask.g.available_permissions = {
         'admin': 'view and manage all environments, launch sync manually, grant permissions to other users',
-        'rep-sc-pairs': 'view and manage pairings between Sales Reps and SCs'
+        'rep-sc-pairs': 'view and manage pairings between Sales Reps and SCs',
+        'survey-admin': 'view all opportunity debrief surveys'
     }
     return flask.render_template('admin.html')
 
@@ -422,6 +428,7 @@ def machine_edit():
 
 
 @app.route('/machines/start', methods=['POST'])
+@login_required
 def machine_start():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to start machine {machine_id}')
@@ -437,6 +444,7 @@ def machine_start():
 
 
 @app.route('/machines/stop', methods=['POST'])
+@login_required
 def machine_stop():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to stop machine {machine_id}')
@@ -449,6 +457,62 @@ def machine_stop():
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
+
+
+@app.route('/op-debrief')
+@login_required
+def op_debrief():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.surveys = db.get_surveys(flask.g.email)
+    return flask.render_template('op-debrief.html')
+
+
+@app.route('/op-debrief/<uuid:survey_id>', methods=['GET', 'POST'])
+@login_required
+def op_debrief_survey(survey_id: uuid.UUID):
+    db: ops_web.db.Database = flask.g.db
+    survey = db.get_survey(survey_id)
+    if 'admin' in flask.g.permissions or 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
+        if flask.request.method == 'GET':
+            flask.g.survey = survey
+            flask.g.plr_options = {
+                'key-decision-maker-left': 'Key decision maker left',
+                'project-cancelled': 'Project cancelled',
+                'competitive-loss': 'Competitive loss'
+            }
+            flask.g.clr_options = {
+                'relationship-loss': 'Relationship loss',
+                'technology-gap': 'Technology gap',
+                'perceived-poor-fit': 'Perceived poor brand/solution fit',
+                'partner-influenced': 'Partner influenced'
+            }
+            flask.g.tgt_options = {
+                'option-1': 'Option 1',
+                'option-2': 'Option 2',
+                'option-3': 'Option 3'
+            }
+            flask.g.ppfr_options = {
+                'option-1': 'Option 1',
+                'option-2': 'Option 2',
+                'option-3': 'Option 3'
+            }
+            return flask.render_template('op-debrief-survey.html')
+        elif flask.request.method == 'POST':
+            for k, v in flask.request.form.items():
+                app.logger.debug(f'{k}: {v}')
+            params = {
+                'survey_id': survey_id,
+                'completed': datetime.datetime.utcnow(),
+                'primary_loss_reason': flask.request.form.get('primary-loss-reason'),
+                'competitive_loss_reason': flask.request.form.get('competitive-loss-reason'),
+                'technology_gap_type': flask.request.form.get('technology-gap-type'),
+                'perceived_poor_fit_reason': flask.request.form.get('perceived-poor-fit-reason')
+            }
+            db.complete_survey(params)
+            db.add_log_entry(flask.g.email, f'Completed opportunity debrief survey {survey_id}')
+            return flask.redirect(flask.url_for('op_debrief_survey', survey_id=survey_id))
+    # see if there is another survey for this opportunity for the signed-in user
+    return flask.redirect(flask.url_for('op_debrief'))
 
 
 @app.route('/rep-sc-pairs')
@@ -669,6 +733,35 @@ def sync_machines():
     db.end_sync()
 
 
+def generate_op_debrief_surveys():
+    app.logger.info('Generating opportunity debrief surveys')
+    now = datetime.datetime.utcnow()
+    db = ops_web.db.Database(config)
+    last_check = db.get_last_op_debrief_check()
+    app.logger.info(f'Looking for opportunities modified after {last_check}')
+    modified_ops = db.get_modified_opportunities(last_check)
+    existing_survey_op_numbers = db.get_op_numbers_for_existing_surveys()
+    for op in modified_ops:
+        op_number = op.get('opportunity_number')
+        if op_number in existing_survey_op_numbers:
+            app.logger.debug(f'Already sent surveys for {op_number}')
+            continue
+        app.logger.info(f'Generating surveys for {op_number}')
+        team_members = db.get_op_team_members(op.get('opportunity_key'))
+        for t in team_members:
+            email = t.get('email')
+            survey_id = db.add_survey(op_number, email, t.get('role'))
+            c = {
+                'opportunity': op,
+                'person': t,
+                'survey_id': survey_id
+            }
+            with app.app_context():
+                body = flask.render_template('op-debrief-survey-email.jinja2', c=c)
+            ops_web.send_email.send_email(config, email, 'Opportunity debrief survey', body)
+    db.update_op_debrief_tracking(now)
+
+
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)
     app.logger.debug(f'ops-web {config.version}')
@@ -697,5 +790,7 @@ def main():
     if config.auto_sync:
         scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
         scheduler.add_job(sync_machines)
+
+    scheduler.add_job(generate_op_debrief_surveys)
 
     waitress.serve(app, ident=None)
