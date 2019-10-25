@@ -39,7 +39,8 @@ def permission_required(permission: str):
         def decorated_function(*args, **kwargs):
             app.logger.debug(f'Checking permission for {flask.g.email}')
             if flask.g.email is None:
-                return flask.redirect(flask.url_for('index'))
+                flask.session['sign-in-target-url'] = flask.request.url
+                return flask.redirect(flask.url_for('sign_in'))
             if permission in flask.g.permissions:
                 return f(*args, **kwargs)
             flask.g.required_permission = permission
@@ -55,7 +56,8 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         app.logger.debug(f'Checking login, flask.g.email: {flask.g.email}')
         if flask.g.email is None:
-            return flask.redirect(flask.url_for('index'))
+            flask.session['sign-in-target-url'] = flask.request.url
+            return flask.redirect(flask.url_for('sign_in'))
         return f(*args, **kwargs)
 
     return decorated_function
@@ -144,7 +146,9 @@ def authorize():
     email = claim.get('email').lower()
     flask.session['email'] = email
     app.logger.info(f'Successful sign in for {email}')
-    return flask.redirect(flask.url_for('index'))
+    target = flask.session.pop('sign-in-target-url', flask.url_for('index'))
+    app.logger.debug(f'sign-in-target-url: {target}')
+    return flask.redirect(target)
 
 
 def timedelta_human(td: datetime.timedelta) -> str:
