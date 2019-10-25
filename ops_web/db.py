@@ -391,6 +391,7 @@ class Database(fort.PostgresDatabase):
             FROM sf_opportunities
             WHERE last_modified_date > %(since)s
               AND stage_name = 'Closed Lost'
+              AND close_date > current_date - interval '5' day
         '''
         params = {'since': since}
         return self.q(sql, params)
@@ -411,9 +412,10 @@ class Database(fort.PostgresDatabase):
     def get_survey(self, survey_id: uuid.UUID) -> Optional[Dict]:
         sql = '''
             SELECT
-                s.id, s.opportunity_number, o.name opportunity_name, o.account_name, o.close_date,
-                o.technology_ecosystem, o.sales_journey, s.email, s.role, s.primary_loss_reason,
-                s.competitive_loss_reason, s.technology_gap_type, s.perceived_poor_fit_reason, s.generated, s.completed
+                s.id, s.opportunity_number, s.email, s.role, s.primary_loss_reason, s.competitive_loss_reason,
+                s.technology_gap_type, s.perceived_poor_fit_reason, s.generated, s.completed,
+                o.name opportunity_name, o.account_name, o.close_date, o.technology_ecosystem, o.sales_journey,
+                o.competitors
             FROM op_debrief_surveys s
             LEFT JOIN sf_opportunities o ON o.opportunity_number = s.opportunity_number
             WHERE s.id = %(survey_id)s
@@ -424,13 +426,15 @@ class Database(fort.PostgresDatabase):
     def get_surveys(self, email: str) -> List[Dict]:
         sql = '''
             SELECT
-                s.id, s.opportunity_number, o.name, o.close_date, s.email, s.role, s.generated, s.completed,
+                s.id, s.opportunity_number, s.email, s.role, s.generated, s.completed,
+                o.name, o.close_date,
                 lower(s.email || ' ' || s.opportunity_number || ' ' || o.name) filter_value
             FROM op_debrief_surveys s
             LEFT JOIN sf_opportunities o ON s.opportunity_number = o.opportunity_number
         '''
         if not (self.has_permission(email, 'admin') or self.has_permission(email, 'survey-admin')):
-            sql = f'{sql} WHERE email = %(email)s'
+            sql = f'{sql} WHERE email = %(email)s '
+        sql = f'{sql} ORDER BY o.close_date DESC, s.opportunity_number, s.email'
         params = {'email': email}
         return self.q(sql, params)
 
@@ -601,7 +605,8 @@ class Database(fort.PostgresDatabase):
                     close_date date,
                     last_modified_date timestamp,
                     technology_ecosystem text,
-                    sales_journey text
+                    sales_journey text,
+                    competitors text
                 )
             ''')
             self.u('''

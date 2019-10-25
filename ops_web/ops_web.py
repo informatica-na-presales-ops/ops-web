@@ -805,6 +805,8 @@ def main():
         scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
         scheduler.add_job(sync_machines)
 
+    # op debrief survey jobs
     scheduler.add_job(generate_op_debrief_surveys)
+    scheduler.add_job(generate_op_debrief_surveys, 'interval', hours=6)
 
     waitress.serve(app, ident=None)

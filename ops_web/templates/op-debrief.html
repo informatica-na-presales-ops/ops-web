@@ -14,6 +14,7 @@
 
     <div class="row bump-top-padding">
         <div class="col-12">
+
             <table class="table table-dark table-striped table-hover table-sm d-none d-sm-block">
                 <thead>
                 <tr>
@@ -38,6 +39,21 @@
                 {% endfor %}
                 </tbody>
             </table>
+
+            <div class="d-block d-sm-none">
+            {% for s in g.surveys %}
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ s.filter_value }}">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a class="card-link stretched-link text-light" href="{{ url_for('op_debrief_survey', survey_id=s.id) }}">{{ s.opportunity_number }}</a>
+                        </h5>
+                        <p class="card-text">{{ s.name }}</p>
+                        <p class="card-text">{{ s.email }} / {{ s.role }}</p>
+                        <p class="card-text">Opportunity closed {{ s.close_date }}{% if s.completed %}<br>Survey completed {{ s.completed.strftime('%Y-%m-%d') }}{% endif %}</p>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
         </div>
     </div>
 {% endblock %}
