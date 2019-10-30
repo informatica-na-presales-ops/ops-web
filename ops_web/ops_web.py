@@ -583,13 +583,6 @@ def rep_sc_pairs_edit():
     return flask.redirect(flask.url_for('rep_sc_pairs'))
 
 
-@app.route('/rep-sc-pairs/sc-candidates.json')
-@permission_required('rep-sc-pairs')
-def rep_sc_pairs_sc_candidates_json():
-    db = ops_web.db.RepSCPairsDatabase(config.rep_sc_pairs_db)
-    return flask.jsonify([r['sc_name'] for r in db.get_sales_consultants()])
-
-
 @app.route('/sign-in')
 def sign_in():
     state = str(uuid.uuid4())

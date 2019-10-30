@@ -1,19 +1,11 @@
-let sc_candidates_json_url = $('#sc-candidates-json-url').attr('content');
-
-let sc_candidates_source = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.whitespace,
-    prefetch: sc_candidates_json_url,
-    queryTokenizer: Bloodhound.tokenizers.whitespace
-});
-
-$('.sc-candidate-typeahead').typeahead({
-    classNames: {
-        dataset: 'list-group',
-        suggestion: 'list-group-item list-group-item-action list-group-item-dark'
-    },
-    highlight: true
-}, {
-    limit: 10,
-    name: 'sc-candidates-source',
-    source: sc_candidates_source
+$('#modal-edit-rep').on('show.bs.modal', function (e) {
+    let r = $(e.relatedTarget);
+    let rep_name = r.attr('data-rep-name');
+    let rep_territory = r.attr('data-rep-territory');
+    let sc_name = r.attr('data-sc-name');
+    let modal = $(this);
+    modal.find('#edit-rep-name').text(rep_name);
+    modal.find('#form-edit-rep-name').val(rep_name);
+    modal.find('#edit-rep-territory').text(rep_territory);
+    modal.find('#form-edit-rep-sc-name').val(sc_name);
 });
