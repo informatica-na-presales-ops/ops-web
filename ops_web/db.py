@@ -662,6 +662,15 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(12)
+        if self.version < 13:
+            self.log.info('Migrating database to schema version 13')
+            self.u('''
+                UPDATE sales_reps SET territory_name = '(DSG)' WHERE territory_name IS NULL
+            ''')
+            self.u('''
+                ALTER TABLE sales_reps ADD PRIMARY KEY (territory_name, sales_rep)
+            ''')
+            self.add_schema_version(13)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
