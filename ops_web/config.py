@@ -31,7 +31,6 @@ class Config:
     openid_conf_url: str
     permanent_sessions: bool
     power_control_domain: str
-    rep_sc_pairs_db: str
     reset_database: bool
     scheme: str
     secret_key: str
@@ -51,8 +50,8 @@ class Config:
         APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_ACCESS_KEY_ID, AWS_DEFAULT_REGION, AWS_SECRET_ACCESS_KEY,
         AWS_SES_CONFIGURATION_SET, AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB,
         DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN,
-        REP_SC_PAIRS_DB, RESET_DATABASE, SCHEME, SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST,
-        SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ
+        RESET_DATABASE, SCHEME, SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME,
+        SUPPORT_EMAIL, TZ
 
         Some variables have defaults if they are not found in the environment:
 
@@ -87,7 +86,6 @@ class Config:
         self.log_level = os.getenv('LOG_LEVEL', 'INFO')
         self.permanent_sessions = as_bool(os.getenv('PERMANENT_SESSIONS', 'False'))
         self.power_control_domain = os.getenv('POWER_CONTROL_DOMAIN')
-        self.rep_sc_pairs_db = os.getenv('REP_SC_PAIRS_DB')
         self.reset_database = as_bool(os.getenv('RESET_DATABASE', 'False'))
         self.scheme = os.getenv('SCHEME', 'http')
         self.secret_key = os.getenv('SECRET_KEY')

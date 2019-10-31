@@ -28,7 +28,6 @@ ENV APP_VERSION="2019.13" \
     PERMANENT_SESSIONS="false" \
     POWER_CONTROL_DOMAIN="example.com" \
     PYTHONUNBUFFERED="1" \
-    REP_SC_PAIRS_DB="" \
     RESET_DATABASE="false" \
     SCHEME="http" \
     SECRET_KEY="" \

@@ -532,7 +532,7 @@ def op_debrief_survey(survey_id: uuid.UUID):
 @app.route('/rep-sc-pairs')
 @permission_required('rep-sc-pairs')
 def rep_sc_pairs():
-    db = ops_web.db.RepSCPairsDatabase(config.rep_sc_pairs_db)
+    db: ops_web.db.Database = flask.g.db
     flask.g.sales_reps = db.get_rep_sc_pairs()
     flask.g.sales_consultants = db.get_sales_consultants()
     return flask.render_template('rep-sc-pairs.html')
@@ -541,7 +541,7 @@ def rep_sc_pairs():
 @app.route('/rep-sc-pairs.xlsx')
 @permission_required('rep-sc-pairs')
 def rep_sc_pairs_xlsx():
-    db = ops_web.db.RepSCPairsDatabase(config.rep_sc_pairs_db)
+    db: ops_web.db.Database = flask.g.db
     records = db.get_rep_sc_pairs()
     filter_input = flask.request.values.get('filter-input')
     if filter_input is not None:
@@ -579,7 +579,7 @@ def rep_sc_pairs_edit():
     db.add_log_entry(flask.g.email, f'Update Rep/SC pair: {rep_name}/{sc_name}')
     if sc_name == 'none':
         sc_name = None
-    ops_web.db.RepSCPairsDatabase(config.rep_sc_pairs_db).set_rep_sc_pair(rep_name, sc_name)
+    db.set_rep_sc_pair(rep_name, sc_name)
     return flask.redirect(flask.url_for('rep_sc_pairs'))
 
 

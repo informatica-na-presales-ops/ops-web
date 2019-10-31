@@ -6,28 +6,6 @@ import uuid
 from typing import Dict, List, Optional, Set
 
 
-class RepSCPairsDatabase(fort.PostgresDatabase):
-    def get_rep_sc_pairs(self):
-        sql = '''
-            SELECT geo, area, sub_area, region, sub_region, coalesce(territory_name, '') territory_name,
-                   employee_name rep_name, coalesce(assigned_sc, '') sc_name,
-                   lower(geo || ' ' || area || ' ' || sub_area || ' ' || region || ' ' || sub_region || ' ' ||
-                         coalesce(territory_name, '') || ' ' || employee_name) filter_value
-            FROM sales_rep_sc_coverage
-            WHERE geo = 'NA'
-            ORDER BY geo, area, sub_area, region, sub_region, territory_name, rep_name
-        '''
-        return self.q(sql)
-
-    def get_sales_consultants(self):
-        sql = 'SELECT employee_name sc_name FROM presales_users ORDER BY employee_name'
-        return self.q(sql)
-
-    def set_rep_sc_pair(self, rep_name, sc_name):
-        sql = 'UPDATE sales_rep_sc_coverage SET assigned_sc = %(sc_name)s WHERE employee_name = %(rep_name)s'
-        self.u(sql, {'sc_name': sc_name, 'rep_name': rep_name})
-
-
 class Database(fort.PostgresDatabase):
     _version: int = None
 
@@ -350,6 +328,27 @@ class Database(fort.PostgresDatabase):
                 )
             '''
         self.u(sql, params)
+
+    # rep/sc pairs
+
+    def get_rep_sc_pairs(self):
+        sql = '''
+            SELECT geo, area, sub_area, region, sub_region, coalesce(territory_name, '') territory_name,
+                   sales_rep rep_name, coalesce(assigned_sc, '') sc_name,
+                   lower(geo || ' ' || area || ' ' || sub_area || ' ' || region || ' ' || sub_region || ' ' ||
+                         coalesce(territory_name, '') || ' ' || sales_rep) filter_value
+            FROM sales_reps
+            ORDER BY geo, area, sub_area, region, sub_region, territory_name, rep_name
+        '''
+        return self.q(sql)
+
+    def get_sales_consultants(self):
+        sql = 'SELECT name sc_name FROM sales_consultants ORDER BY name'
+        return self.q(sql)
+
+    def set_rep_sc_pair(self, rep_name, sc_name):
+        sql = 'UPDATE sales_reps SET assigned_sc = %(sc_name)s WHERE sales_rep = %(rep_name)s'
+        self.u(sql, {'sc_name': sc_name, 'rep_name': rep_name})
 
     # opportunity debrief surveys
 
