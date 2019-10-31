@@ -460,8 +460,8 @@ class Database(fort.PostgresDatabase):
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
         for table in ('images', 'log_entries', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
-                      'schema_versions', 'sf_opportunities', 'sf_opportunity_team_members', 'sync_tracking',
-                      'virtual_machines'):
+                      'sales_consultants', 'sales_reps', 'schema_versions', 'sf_opportunities',
+                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -641,6 +641,27 @@ class Database(fort.PostgresDatabase):
             params = {'last_check': datetime.datetime.utcnow()}
             self.u('INSERT INTO op_debrief_tracking (last_check) VALUES (%(last_check)s)', params)
             self.add_schema_version(11)
+        if self.version < 12:
+            self.log.info('Migrating database to schema version 12')
+            self.u('''
+                CREATE TABLE sales_reps (
+                    geo text,
+                    area text,
+                    sub_area text,
+                    region text,
+                    sub_region text,
+                    territory_name text,
+                    sales_rep text,
+                    assigned_sc text,
+                    synced boolean
+                )
+            ''')
+            self.u('''
+                CREATE TABLE sales_consultants (
+                    name text PRIMARY KEY
+                )
+            ''')
+            self.add_schema_version(12)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
