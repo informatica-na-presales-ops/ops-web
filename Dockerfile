@@ -7,7 +7,7 @@ RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev musl-dev postgresql-
  && /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt \
  && /sbin/apk del --no-cache .deps
 
-ENV APP_VERSION="2019.14" \
+ENV APP_VERSION="2019.15" \
     AUTO_SYNC="true" \
     AUTO_SYNC_INTERVAL="10" \
     AWS_ACCESS_KEY_ID="" \
