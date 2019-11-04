@@ -21,7 +21,7 @@ jobs:
       id: set-image-name
       run: echo ::set-output name=image-name::docker.pkg.github.com/${GITHUB_REPOSITORY}/${IMAGE_NAME}:${{ steps.get-release-tag.outputs.release-tag }}
       env:
-        IMAGE_NAME: cloud-cli
+        IMAGE_NAME: ops-web
     - name: Build the container image
       run: docker build --file Dockerfile --tag ${{ steps.set-image-name.outputs.image-name }} .
     - name: Push the image to the registry
