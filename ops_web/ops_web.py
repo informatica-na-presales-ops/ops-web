@@ -189,6 +189,7 @@ def add_running_time_human(col: List[Dict]) -> List[Dict]:
 def environments():
     db: ops_web.db.Database = flask.g.db
     flask.g.environments = add_running_time_human(db.get_environments())
+    flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('environments.html')
 
 
@@ -271,6 +272,7 @@ def images():
     flask.g.environments = db.get_env_list()
     username = flask.g.email.split('@')[0]
     flask.g.default_environment = f'{username}-{datetime.datetime.utcnow():%Y%m%d-%H%M%S}'
+    flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('images.html')
 
 
