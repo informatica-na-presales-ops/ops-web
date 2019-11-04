@@ -112,7 +112,7 @@ def create_image(region: str, machine_id: str, name: str, owner: str, public: bo
     return image.id
 
 
-def create_instance(region: str, imageid: str, instanceid: str, name: str, owner: str):
+def create_instance(region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str):
     ec2 = boto3.resource('ec2', region_name=region)
     instance = ec2.Instance(instanceid)
 
@@ -128,6 +128,8 @@ def create_instance(region: str, imageid: str, instanceid: str, name: str, owner
             t['Value'] = name
         elif t.get('Key').lower() == 'owneremail':
             t['Value'] = owner
+        elif t.get('Key').lower() == 'machine__environment_group':
+            t['Value'] = environment
 
     response = ec2.create_instances(
         ImageId=imageid,

@@ -72,6 +72,15 @@ class Database(fort.PostgresDatabase):
 
     # environments and machines
 
+    def get_env_list(self) -> List[str]:
+        sql = '''
+            SELECT DISTINCT env_group
+            FROM virtual_machines
+            WHERE visible IS TRUE
+            ORDER BY env_group
+        '''
+        return [r['env_group'] for r in self.q(sql)]
+
     def get_environments(self) -> List[Dict]:
         sql = '''
             SELECT

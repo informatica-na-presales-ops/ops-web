@@ -40,7 +40,9 @@
                         <td class="text-truncate">{{ i.instanceid if i.instanceid.startswith('i-') }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-launch" title="Launch image" {{ 'disabled' if not i.can_launch }} data-image-id="{{ i.id }}" data-name="{{ i.name }}">
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                        data-target="#modal-image-launch" title="Launch image" data-image-id="{{ i.id }}"
+                                        data-name="{{ i.name }}" {{ 'disabled' if not i.can_launch }}>
                                     <span class="oi oi-media-play"></span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-edit" title="Edit image" {{ 'disabled' if not i.can_modify }} data-image-id="{{ i.id }}" data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}" data-image-public="{{ 'true' if i.public }}">
@@ -111,6 +113,11 @@
                             <label for="form-image-launch-owner" class="text-light">Owner</label>
                             <input type="text" class="form-control" id="form-image-launch-owner" name="owner" value="{{ g.email }}" required>
                         </div>
+                        <div class="form-group">
+                            <label for="form-image-launch-environment" class="text-light">Environment</label>
+                            <input type="text" class="form-control" id="form-image-launch-environment" name="environment" value="{{ g.default_environment }}" list="environment-list" required>
+                            <small class="form-text text-muted">Add this machine to an existing environment or specify a new environment name.</small>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -153,6 +160,9 @@
         </div>
     </div>
 
+    <datalist id="environment-list">
+        {% for e in g.environments %}<option value="{{ e }}">{% endfor %}
+    </datalist>
 {% endblock %}
 
 {% block end_of_body %}

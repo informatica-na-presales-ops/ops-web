@@ -268,6 +268,9 @@ def environment_stop(environment):
 def images():
     db: ops_web.db.Database = flask.g.db
     flask.g.images = db.get_images(flask.g.email)
+    flask.g.environments = db.get_env_list()
+    username = flask.g.email.split('@')[0]
+    flask.g.default_environment = f'{username}-{datetime.datetime.utcnow():%Y%m%d-%H%M%S}'
     return flask.render_template('images.html')
 
 
@@ -369,10 +372,10 @@ def machine_create():
         instance_id = image.get('instanceid')
         name = flask.request.values.get('name')
         owner = flask.request.values.get('owner')
-        response = ops_web.aws.create_instance(region, image_id, instance_id, name, owner)
+        environment = flask.request.values.get('environment')
+        response = ops_web.aws.create_instance(region, image_id, instance_id, name, owner, environment)
         aws = ops_web.aws.AWSClient(config)
         instance = aws.get_single_instance(region, response[0].id)
-        environment = instance.get('environment')
         db.add_machine(instance)
         return flask.redirect(flask.url_for('environment_detail', environment=environment))
     else:
