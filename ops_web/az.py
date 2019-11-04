@@ -155,6 +155,8 @@ class AZClient:
         vm_name = tokens[8]
         compute_client = self.get_compute_client(subscription_id)
         vm = compute_client.virtual_machines.get(resource_group_name, vm_name)
+        if vm.tags is None:
+            vm.tags = {}
         vm.tags.update(tags)
         vm.plan = None
         try:
