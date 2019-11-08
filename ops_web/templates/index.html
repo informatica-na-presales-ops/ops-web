@@ -82,6 +82,8 @@
 {% endblock %}
 
 {% block end_of_body %}
-    <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key=ee0991fe-3e04-4d3b-b16e-3c5ab9cfbe1d"></script>
+    {% if 'zendesk-widget' in g.config.feature_flags %}
+    <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key={{ g.config.zendesk_widget_key }}"></script>
     <script src="{{ url_for('static', filename='zendesk-widget-setup.js') }}"></script>
+    {% endif %}
 {% endblock %}

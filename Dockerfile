@@ -38,7 +38,8 @@ ENV APP_VERSION="2019.15" \
     SMTP_PASSWORD="" \
     SMTP_USERNAME="" \
     SUPPORT_EMAIL="" \
-    TZ="Etc/UTC"
+    TZ="Etc/UTC" \
+    ZENDESK_WIDGET_KEY=""
 
 ENTRYPOINT ["/usr/local/bin/python"]
 CMD ["/ops-web/run.py"]
