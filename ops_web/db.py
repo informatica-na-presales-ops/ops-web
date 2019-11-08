@@ -103,7 +103,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names,
+                    running_schedule, application_env, business_unit, dns_names,whitelistip,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -116,7 +116,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names,
+                    running_schedule, application_env, business_unit, dns_names,whitelistip,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -133,7 +133,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names,
+                    dns_names,whitelistip,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -145,7 +145,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names,
+                    dns_names,whitelistip,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -176,7 +176,7 @@ class Database(fort.PostgresDatabase):
             UPDATE virtual_machines
             SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
                 contributors = %(contributors)s, application_env = %(application_env)s,
-                business_unit = %(business_unit)s, env_group = %(environment)s, dns_names = %(dns_names)s
+                business_unit = %(business_unit)s, env_group = %(environment)s, dns_names = %(dns_names)s,whitelistip = %(whitelistip)s
             WHERE id = %(id)s
         '''
         self.u(sql, params)
@@ -295,7 +295,7 @@ class Database(fort.PostgresDatabase):
                     owner = %(owner)s, state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s,
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
-                    business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,
+                    business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,whitelistip=%(whitelistip)s,
                     visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
@@ -303,12 +303,12 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    created, state_transition_time, application_env, business_unit, contributors, dns_names, visible,
+                    created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelistip ,visible,
                     synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
-                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, TRUE, TRUE
+                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelistip)s, TRUE, TRUE
                 )
             '''
         self.u(sql, params)

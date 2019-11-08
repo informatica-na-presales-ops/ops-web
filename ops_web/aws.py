@@ -152,6 +152,33 @@ def create_instance(region: str, imageid: str, instanceid: str, name: str, owner
     )
     return response
 
+def get_securitygroup(ec2,instance:str):
+    grpidlist=[]
+    finalidlist=[]
+    ipaddress=[]
+    iprng = []
+    sg=(instance.security_groups)
+    for i in sg:
+        for grp, val in i.items():
+            print(grp, ":", val)
+            if(grp == 'GroupId'):
+                grpidlist.append(val)
+    for id in grpidlist:
+        if id not in ['sg-0787d7efcdab27769' , 'sg-0625a656c3abf3c6b', 'sg-1eac0363', 'sg-4dae0130', 'sg-77af000a', 'sg-ffaf0082','sg-0aa57ab804b146114','sg-b3ac03ce','sg-3ea13346','sg-a123c0da','sg-87af00fa','sg-0c8eb88023ffb7c58','sg-0a29a948d4ab5968a','sg-0897eaa966d4d336a','sg-04141e87dcf3dd09a','sg-0712e09d1abb5c6cd','sg-05c23fb7a4e01997e','sg-0bfbf3dc3c4ea981d','sg-016e5770','sg-4dae0130','sg-a531d2de','sg-e790549a','sg-3340954c','sg-59898921','sg-8ef05bf0','sg-0bfa8449edde77faa','sg-02525e6c6a426c479','sg-0390557421507fedc','sg-034fd5b102d918ec0','sg-0b07edc08c78a6c11','sg-b3ac03ce','sg-ffaf0082']:
+            finalidlist.append(id)
+    for s in finalidlist:
+      security_group = ec2.SecurityGroup(s)
+      perm= security_group.ip_permissions
+      for x in perm:
+       for i,v in x.items():
+          if(i=='IpRanges'):
+              iprng.append(v)
+    for r in iprng:
+        for x in r:
+            for y,z in x.items():
+                if(y=='CidrIp'):
+                    ipaddress.append(z)
+    return ipaddress
 
 class AWSClient:
     def __init__(self, config: ops_web.config.Config):
@@ -185,8 +212,10 @@ class AWSClient:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
 
-    def get_instance_dict(self, region, instance) -> Dict:
+    def get_instance_dict(self, ec2, region, instance) -> Dict:
         tags = resource_tags_as_dict(instance)
+
+        log.debug(instance)
         params = {
             'id': instance.id,
             'cloud': 'aws',
@@ -203,7 +232,8 @@ class AWSClient:
             'state_transition_time': None,
             'application_env': tags.get('APPLICATIONENV', ''),
             'business_unit': tags.get('BUSINESSUNIT', ''),
-            'dns_names': tags.get('image__dns_names_private', '')
+            'dns_names': tags.get('image__dns_names_private', ''),
+            'whitelistip': get_securitygroup(ec2,instance)
         }
         if params['environment'] == '':
             params['environment'] = 'default-environment'
@@ -232,7 +262,7 @@ class AWSClient:
                                  aws_secret_access_key=self.config.aws_secret_access_key)
             try:
                 for instance in ec2.instances.all():
-                    yield self.get_instance_dict(region, instance)
+                    yield self.get_instance_dict(ec2,region, instance)
             except botocore.exceptions.ClientError as e:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
@@ -240,4 +270,4 @@ class AWSClient:
     def get_single_instance(self, region: str, instanceid: str):
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instanceid)
-        return self.get_instance_dict(region, instance)
+        return self.get_instance_dict(ec2,region, instance)

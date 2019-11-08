@@ -82,6 +82,9 @@
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
                                     <span class="oi oi-hard-drive"></span>
                                 </button>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-whitelist-{{ loop.index }}" title="Whitelisted IPs">
+                                    <span class="oi-key"></span>
+                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine" {{ 'disabled' if m.state in ['terminated', 'terminating'] or not m.can_modify }}>
                                     <span class="oi oi-trash"></span>
                                 </button>
@@ -123,6 +126,11 @@
                             <span class="oi oi-hard-drive"></span>
                             Create image
                         </button>
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-whitelist-{{ loop.index }}" >
+                            <span class="oi-key"></span>
+                            View Whitelisted IPs
+                        </button>
+
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" {{ 'disabled' if not m.can_modify }}>
                             <span class="oi oi-trash"></span>
                             Delete machine
@@ -294,6 +302,24 @@
             </div>
         </div>
     </div>
+    {% for m in g.machines %}
+    <div class="modal" id="modal-whitelist-{{ loop.index }}">
+         <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title text-light"> Whitelisted IPs </h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <code>
+                        {{ m.whitelistip }}
+                    </code>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 
     <datalist id="environment-list">
         {% for e in g.environments %}<option value="{{ e.env_group }}">{% endfor %}
