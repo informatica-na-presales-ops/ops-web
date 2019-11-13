@@ -50,6 +50,7 @@
                     <th>Running Time</th>
                     <th>Running Schedule</th>
                     <th>Owner</th>
+                    <th class="text-center">Whitelist</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -68,6 +69,11 @@
                         <td>{{ m.running_time_human }}</td>
                         <td>{{ m.running_schedule }}</td>
                         <td>{{ m.owner }}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="popover" title="Whitelist" data-content="{{ m.whitelist if m.whitelist else 'No whitelist' }}">
+                                <span class="oi oi-key"></span>
+                            </button>
+                        </td>
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button type="submit" class="btn btn-sm btn-outline-light" title="Start machine" {{ 'disabled' if m.state != 'stopped' or not m.can_control }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_start') }}">
@@ -81,9 +87,6 @@
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
                                     <span class="oi oi-hard-drive"></span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-whitelist-{{ loop.index }}" title="Whitelisted IPs">
-                                    <span class="oi-key"></span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine" {{ 'disabled' if m.state in ['terminated', 'terminating'] or not m.can_modify }}>
                                     <span class="oi oi-trash"></span>
@@ -110,6 +113,10 @@
                             <span class="badge badge-light">Running Schedule: {{ m.running_schedule }}</span>
                             <span class="badge badge-light">Owner: {{ m.owner }}</span>
                         </p>
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="popover" title="Whitelist" data-content="{{ m.whitelist if m.whitelist else 'No whitelist' }}">
+                            <span class="oi oi-key"></span>
+                            Whitelist
+                        </button>
                         <button type="submit" class="btn btn-outline-light mb-2" title="Start machine" form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_start') }}" {{ 'disabled' if m.state != 'stopped' or not m.can_control }}>
                             <span class="oi oi-media-play"></span>
                             Start machine
@@ -118,7 +125,7 @@
                             <span class="oi oi-media-stop"></span>
                             Stop machine
                         </button>
-                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" {{ 'disabled' or not m.can_modify }}>
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" {{ 'disabled' if not m.can_modify }}>
                             <span class="oi oi-pencil"></span>
                             Edit machine
                         </button>
@@ -126,11 +133,6 @@
                             <span class="oi oi-hard-drive"></span>
                             Create image
                         </button>
-                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-whitelist-{{ loop.index }}" >
-                            <span class="oi-key"></span>
-                            View Whitelisted IPs
-                        </button>
-
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" {{ 'disabled' if not m.can_modify }}>
                             <span class="oi oi-trash"></span>
                             Delete machine
@@ -302,28 +304,11 @@
             </div>
         </div>
     </div>
-    {% for m in g.machines %}
-    <div class="modal" id="modal-whitelist-{{ loop.index }}">
-         <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title text-light"> Whitelisted IPs </h5>
-                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <code>
-                        {{ m.whitelistip }}
-                    </code>
-                </div>
-
-            </div>
-        </div>
-    </div>
-    {% endfor %}
 
     <datalist id="environment-list">
         {% for e in g.environments %}<option value="{{ e.env_group }}">{% endfor %}
     </datalist>
+
     <datalist id="application-env-list">
         <option value="PROD">
         <option value="PREVIEW">
@@ -331,4 +316,10 @@
         <option value="DEV">
         <option value="TEST">
     </datalist>
+
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='environment-detail.js') }}"></script>
 {% endblock %}
