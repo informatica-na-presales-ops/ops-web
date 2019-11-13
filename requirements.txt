@@ -2,12 +2,12 @@ APScheduler==3.6.3
 Flask==1.1.1
 PyJWT==1.7.1
 Werkzeug==0.16.0
-XlsxWriter==1.2.3
+XlsxWriter==1.2.5
 azure-mgmt-compute==9.0.0
 azure-mgmt-network==7.0.0
 azure-mgmt-subscription==0.5.0
-boto3==1.10.13
-botocore==1.13.13
+boto3==1.10.16
+botocore==1.13.16
 fort==0.0.7
 pendulum==2.0.5
 psycopg2==2.8.4
