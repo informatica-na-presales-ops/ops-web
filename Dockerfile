@@ -10,10 +10,7 @@ RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev musl-dev postgresql-
 ENV APP_VERSION="2019.16" \
     AUTO_SYNC="true" \
     AUTO_SYNC_INTERVAL="10" \
-    AWS_ACCESS_KEY_ID="" \
-    AWS_DEFAULT_REGION="us-west-2" \
     AWS_IGNORED_SECURITY_GROUPS="" \
-    AWS_SECRET_ACCESS_KEY="" \
     AWS_SES_CONFIGURATION_SET="" \
     AZ_CLIENT_ID="" \
     AZ_CLIENT_SECRET="" \

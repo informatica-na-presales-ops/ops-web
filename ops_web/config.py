@@ -11,16 +11,12 @@ def as_bool(value: str) -> bool:
 class Config:
     auto_sync: bool
     auto_sync_interval: int
-    aws_access_key_id: str
-    aws_default_region: str
     aws_ignored_security_groups: Set
-    aws_secret_access_key: str
     aws_ses_configuration_set: str
     az_auth_endpoint: str
     az_client_id: str
     az_client_secret: str
     az_tenant_id: str
-    azure_token_endpoint: str
     bootstrap_admin: str
     clouds_to_sync: str
     db: str
@@ -49,16 +45,15 @@ class Config:
     def __init__(self):
         """Instantiating a Config object will automatically read the following environment variables:
 
-        APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_ACCESS_KEY_ID, AWS_DEFAULT_REGION, AWS_IGNORED_SECURITY_GROUPS,
-        AWS_SECRET_ACCESS_KEY, AWS_SES_CONFIGURATION_SET, AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN,
-        CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS,
-        POWER_CONTROL_DOMAIN, RESET_DATABASE, SCHEME, SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST,
-        SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ, ZENDESK_WIDGET_KEY
+        APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_IGNORED_SECURITY_GROUPS, AWS_SES_CONFIGURATION_SET,
+        AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS,
+        LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, SCHEME,
+        SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ,
+        ZENDESK_WIDGET_KEY
 
         Some variables have defaults if they are not found in the environment:
 
         AUTO_SYNC_INTERVAL=10
-        AWS_DEFAULT_REGION=us-west-2
         CLOUDS_TO_SYNC=aws,az
         LOG_FORMAT="%(levelname)s [%(name)s] %(message)s"
         LOG_LEVEL=INFO
@@ -72,10 +67,7 @@ class Config:
 
         self.auto_sync = as_bool(os.getenv('AUTO_SYNC'))
         self.auto_sync_interval = int(os.getenv('SYNC_INTERVAL', '10'))
-        self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-        self.aws_default_region = os.getenv('AWS_DEFAULT_REGION', 'us-west-2')
         self.aws_ignored_security_groups = set(os.getenv('AWS_IGNORED_SECURITY_GROUPS', '').split())
-        self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         self.aws_ses_configuration_set = os.getenv('AWS_SES_CONFIGURATION_SET')
         self.az_client_id = os.getenv('AZ_CLIENT_ID')
         self.az_client_secret = os.getenv('AZ_CLIENT_SECRET')
@@ -90,7 +82,7 @@ class Config:
         self.permanent_sessions = as_bool(os.getenv('PERMANENT_SESSIONS', 'False'))
         self.power_control_domain = os.getenv('POWER_CONTROL_DOMAIN')
         self.reset_database = as_bool(os.getenv('RESET_DATABASE', 'False'))
-        self.scheme = os.getenv('SCHEME', 'http')
+        self.scheme = os.getenv('SCHEME', 'http').lower()
         self.secret_key = os.getenv('SECRET_KEY')
         self.send_email = as_bool(os.getenv('SEND_EMAIL', 'False'))
         self.server_name = os.getenv('SERVER_NAME', 'localhost:8080')

@@ -21,10 +21,10 @@ VM_STATE_MAP = {
 
 
 class AZClient:
-    def __init__(self, config: ops_web.config.Config):
+    def __init__(self, config: ops_web.config.Config, client_id: str, secret: str, tenant: str):
         self.config = config
         self.credentials = azure.common.credentials.ServicePrincipalCredentials(
-            client_id=self.config.az_client_id, secret=self.config.az_client_secret, tenant=self.config.az_tenant_id
+            client_id=client_id, secret=secret, tenant=tenant
         )
         self.subscriptions = {}
         with azure.mgmt.subscription.SubscriptionClient(self.credentials) as client:

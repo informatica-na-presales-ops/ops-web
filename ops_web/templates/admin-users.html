@@ -1,19 +1,42 @@
 {% extends 'one-up.html' %}
 
 {% block main_content %}
-    <div class="row bump-top-padding">
-        <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
+    <div class="row pt-3">
+        <div class="col-12">
             <h1 class="text-light">Administration</h1>
-            <p class="text-light">The following users have custom permissions. If a user does not appear in this list, they still have default permissions.</p>
-            <p>
-                <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-add-user" data-permissions="none">
-                    <span class="oi oi-plus"></span>
-                    Add user permissions
-                </button>
-                <button type="button" class="btn btn-outline-warning" data-toggle="modal" data-target="#modal-impersonate">
-                    <span class="oi oi-people"></span>
-                    Impersonate
-                </button>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <ul class="nav nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Users</a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('admin_cloud_credentials') }}">Cloud credentials</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-add-user" data-permissions="none">
+                <span class="oi oi-plus"></span>
+                Add user
+            </button>
+            <button type="button" class="btn btn-outline-warning" data-toggle="modal" data-target="#modal-impersonate">
+                <span class="oi oi-people"></span>
+                Impersonate
+            </button>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
+            <p class="text-light">
+                The following users have custom permissions. If a user does not appear in this list, they still have default permissions.
             </p>
             <table class="table table-dark table-striped">
                 <thead>
@@ -33,7 +56,9 @@
                         {% endfor %}
                         </td>
                         <td class="text-right">
-                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-add-user" data-email="{{ u.email }}" data-permissions="{{ ' '.join(u.permissions) }}" title="Edit user permissions">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                    data-target="#modal-add-user" data-email="{{ u.email }}"
+                                    data-permissions="{{ ' '.join(u.permissions) }}" title="Edit user permissions">
                                 <span class="oi oi-pencil"></span>
                             </button>
                         </td>
@@ -70,21 +95,21 @@
 
     <div class="modal fade" id="modal-add-user">
         <div class="modal-dialog">
-            <div class="modal-content bg-dark">
+            <div class="modal-content bg-dark text-light">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">User permissions</h5>
+                    <h5 class="modal-title">User permissions</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="form-add-user" action="{{ url_for('admin_edit_user') }}" method="post">
                         <div class="form-group">
-                            <label for="add-user-email" class="text-light">Email address</label>
-                            <input type="email" name="email" class="form-control bg-dark text-light" id="add-user-email" placeholder="example@informatica.com" required>
+                            <label for="add-user-email">Email address</label>
+                            <input type="email" name="email" class="form-control" id="add-user-email" placeholder="example@informatica.com" required>
                         </div>
                         {% for p, d in g.available_permissions.items() %}
                         <div class="form-group form-check">
                             <input type="checkbox" class="form-check-input" id="permission-{{ p }}" name="permissions" value="{{ p }}">
-                            <label class="form-check-label text-light" for="permission-{{ p }}">{{ p }}</label>
+                            <label class="form-check-label" for="permission-{{ p }}">{{ p }}</label>
                             <small class="form-text text-muted">{{ d }}</small>
                         </div>
                         {% endfor %}
@@ -101,5 +126,5 @@
 
 {% block end_of_body %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='admin.js') }}"></script>
+    <script src="{{ url_for('static', filename='admin-users.js') }}"></script>
 {% endblock %}

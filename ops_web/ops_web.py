@@ -32,6 +32,9 @@ app.secret_key = config.secret_key
 app.config['PREFERRED_URL_SCHEME'] = config.scheme
 app.config['SERVER_NAME'] = config.server_name
 
+if config.scheme == 'https':
+    app.config['SESSION_COOKIE_SECURE'] = True
+
 
 def permission_required(permission: str):
     def decorator(f):
@@ -92,14 +95,58 @@ def index():
 @app.route('/admin')
 @permission_required('admin')
 def admin():
+    return flask.redirect(flask.url_for('admin_users'))
+
+
+@app.route('/admin/users')
+@permission_required('admin')
+def admin_users():
     db: ops_web.db.Database = flask.g.db
     flask.g.users = db.get_users()
     flask.g.available_permissions = {
-        'admin': 'view and manage all environments, launch sync manually, grant permissions to other users',
+        'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
+                  'cloud credentials'),
         'rep-sc-pairs': 'view and manage pairings between Sales Reps and SCs',
         'survey-admin': 'view all opportunity debrief surveys'
     }
-    return flask.render_template('admin.html')
+    flask.g.cloud_credentials = db.get_cloud_credentials()
+    return flask.render_template('admin-users.html')
+
+
+@app.route('/admin/cloud-credentials')
+@permission_required('admin')
+def admin_cloud_credentials():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.cloud_credentials = db.get_cloud_credentials()
+    return flask.render_template('admin-cloud-credentials.html')
+
+
+@app.route('/admin/cloud-credentials/delete', methods=['POST'])
+@permission_required('admin')
+def admin_cloud_credentials_delete():
+    db: ops_web.db.Database = flask.g.db
+    cred_id = flask.request.values.get('id')
+    db.delete_cloud_credentials(cred_id)
+    db.add_log_entry(flask.g.email, f'Delete cloud credentials {cred_id}')
+    return flask.redirect(flask.url_for('admin_cloud_credentials'))
+
+
+@app.route('/admin/cloud-credentials/edit', methods=['POST'])
+@permission_required('admin')
+def admin_cloud_credentials_edit():
+    db: ops_web.db.Database = flask.g.db
+    params = flask.request.values.to_dict()
+    app.logger.debug(params)
+    cred_id = params.get('id')
+    if cred_id:
+        if 'set-password' not in params:
+            params.pop('password', None)
+        db.update_cloud_credentials(params)
+        db.add_log_entry(flask.g.email, f'Update cloud credentials for {cred_id}')
+    else:
+        cred_id = db.add_cloud_credentials(params)
+        db.add_log_entry(flask.g.email, f'Add cloud credentials for {cred_id}')
+    return flask.redirect(flask.url_for('admin_cloud_credentials'))
 
 
 @app.route('/admin/edit-user', methods=['POST'])
@@ -292,11 +339,13 @@ def image_create():
             environment = flask.request.values.get('environment')
             return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
+        account = db.get_one_credential_for_use(machine.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         region = flask.request.values.get('region')
         name = flask.request.values.get('image-name')
         owner = flask.request.values.get('owner')
         public = 'public' in flask.request.values
-        image_id = ops_web.aws.create_image(region, machine_id, name, owner, public)
+        image_id = aws.create_image(region, machine_id, name, owner, public)
         params = {
             'id': image_id,
             'cloud': cloud,
@@ -306,7 +355,8 @@ def image_create():
             'public': public,
             'state': 'pending',
             'created': datetime.datetime.utcnow(),
-            'instanceid': machine_id
+            'instanceid': machine_id,
+            'account_id': machine.get('account_id')
         }
         db.add_image(params)
         return flask.redirect(flask.url_for('images'))
@@ -324,10 +374,12 @@ def image_delete():
     db.add_log_entry(flask.g.email, f'Delete image {image_id}')
     db.set_image_state(image_id, 'deleting')
     image = db.get_image(image_id)
+    account = db.get_one_credential_for_use(image.get('account_id'))
     cloud = image.get('cloud')
     if cloud == 'aws':
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         region = image.get('region')
-        ops_web.aws.delete_image(region, image_id)
+        aws.delete_image(region, image_id)
     return flask.redirect(flask.url_for('toolbox'))
 
 
@@ -350,11 +402,14 @@ def image_edit():
             'image_public': str(public)
         }
         cloud = image.get('cloud')
+        account = db.get_one_credential_for_use(image.get('account_id'))
         if cloud == 'aws':
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
             region = image.get('region')
-            ops_web.aws.update_resource_tags(region, image_id, tags)
+            aws.update_resource_tags(region, image_id, tags)
         elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
+            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                     account.get('azure_tenant_id'))
             az.update_image_tags(image_id, tags)
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit {image_id}')
@@ -375,9 +430,11 @@ def machine_create():
         name = flask.request.values.get('name')
         owner = flask.request.values.get('owner')
         environment = flask.request.values.get('environment')
-        response = ops_web.aws.create_instance(region, image_id, instance_id, name, owner, environment)
-        aws = ops_web.aws.AWSClient(config)
+        account = db.get_one_credential_for_use(image.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        response = aws.create_instance(region, image_id, instance_id, name, owner, environment)
         instance = aws.get_single_instance(region, response[0].id)
+        instance['account_id'] = account.get('id')
         db.add_machine(instance)
         return flask.redirect(flask.url_for('environment_detail', environment=environment))
     else:
@@ -432,11 +489,14 @@ def machine_edit():
             'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
         }
         cloud = machine.get('cloud')
+        account = db.get_one_credential_for_use(machine.get('account_id'))
         if cloud == 'aws':
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
             region = machine.get('region')
-            ops_web.aws.update_resource_tags(region, machine_id, tags)
+            aws.update_resource_tags(region, machine_id, tags)
         elif cloud == 'az':
-            az = ops_web.az.AZClient(config)
+            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                     account.get('azure_tenant_id'))
             az.update_machine_tags(machine_id, tags)
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit machine {machine_id}')
@@ -654,11 +714,14 @@ def delete_machine(machine_id):
     db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
+    account = db.get_one_credential_for_use(machine.get('account_id'))
     if cloud == 'aws':
         region = machine.get('region')
-        ops_web.aws.delete_machine(region, machine_id)
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        aws.delete_machine(region, machine_id)
     elif cloud == 'az':
-        az = ops_web.az.AZClient(config)
+        az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                 account.get('azure_tenant_id'))
         ops_web.az.delete_machine(az, machine_id)
     db.set_machine_public_ip(machine_id)
     db.set_machine_state(machine_id, 'terminated')
@@ -669,9 +732,11 @@ def start_machine(machine_id):
     db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
+    account = db.get_one_credential_for_use(machine.get('account_id'))
     if cloud == 'aws':
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         region = machine.get('region')
-        instance = ops_web.aws.start_machine(region, machine_id)
+        instance = aws.start_machine(region, machine_id)
         app.logger.debug(f'Waiting for {machine_id} to be running')
         instance.wait_until_running()
         app.logger.debug(f'{machine_id} is now running')
@@ -679,7 +744,8 @@ def start_machine(machine_id):
         db.set_machine_public_ip(machine_id, instance.public_ip_address)
         db.set_machine_created(machine_id, instance.launch_time)
     elif cloud == 'az':
-        az = ops_web.az.AZClient(config)
+        az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                 account.get('azure_tenant_id'))
         az.start_machine(machine_id)
 
 
@@ -688,9 +754,11 @@ def stop_machine(machine_id):
     db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
+    account = db.get_one_credential_for_use(machine.get('account_id'))
     if cloud == 'aws':
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         region = machine.get('region')
-        instance = ops_web.aws.stop_machine(region, machine_id)
+        instance = aws.stop_machine(region, machine_id)
         app.logger.debug(f'Waiting for {machine_id} to be stopped')
         instance.wait_until_stopped()
         app.logger.debug(f'{machine_id} is now stopped')
@@ -698,7 +766,8 @@ def stop_machine(machine_id):
         db.set_machine_public_ip(machine_id, instance.public_ip_address)
         db.set_machine_created(machine_id, instance.launch_time)
     elif cloud == 'az':
-        az = ops_web.az.AZClient(config)
+        az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                 account.get('azure_tenant_id'))
         az.stop_machine(machine_id)
 
 
@@ -717,11 +786,14 @@ def sync_machines():
     aws_start = datetime.datetime.utcnow()
     if 'aws' in config.clouds_to_sync:
         db.pre_sync('aws')
-        aws = ops_web.aws.AWSClient(config)
-        for instance in aws.get_all_instances():
-            db.add_machine(instance)
-        for image in aws.get_all_images():
-            db.add_image(image)
+        for account in db.get_all_credentials_for_use('aws'):
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            for instance in aws.get_all_instances():
+                instance['account_id'] = account.get('id')
+                db.add_machine(instance)
+            for image in aws.get_all_images():
+                image['account_id'] = account.get('id')
+                db.add_image(image)
         db.post_sync('aws')
     else:
         app.logger.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')
@@ -730,11 +802,15 @@ def sync_machines():
     az_start = datetime.datetime.utcnow()
     if 'az' in config.clouds_to_sync:
         db.pre_sync('az')
-        az = ops_web.az.AZClient(config)
-        for vm in az.get_all_virtual_machines():
-            db.add_machine(vm)
-        for image in az.get_all_images():
-            db.add_image(image)
+        for account in db.get_all_credentials_for_use('az'):
+            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                     account.get('azure_tenant_id'))
+            for vm in az.get_all_virtual_machines():
+                vm['account_id'] = account.get('id')
+                db.add_machine(vm)
+            for image in az.get_all_images():
+                image['account_id'] = account.get('id')
+                db.add_image(image)
         db.post_sync('az')
     else:
         app.logger.info(f'Skipping Azure because CLOUDS_TO_SYNC={config.clouds_to_sync}')

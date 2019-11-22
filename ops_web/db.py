@@ -70,6 +70,67 @@ class Database(fort.PostgresDatabase):
         '''
         return self.q(sql)
 
+    # cloud credentials
+
+    def add_cloud_credentials(self, params: Dict) -> uuid.UUID:
+        sql = '''
+            INSERT INTO cloud_credentials (id, cloud, description, username, password, azure_tenant_id)
+            VALUES (%(id)s, %(cloud)s, %(description)s, %(username)s, %(password)s, %(azure_tenant_id)s)
+        '''
+        params['id'] = uuid.uuid4()
+        if params.get('cloud') == 'aws':
+            params['azure_tenant_id'] = 'n/a'
+        self.u(sql, params)
+        return params['id']
+
+    def delete_cloud_credentials(self, cred_id: uuid.UUID):
+        params = {'id': cred_id}
+        for sql in ['DELETE FROM cloud_credentials WHERE id = %(id)s',
+                    'UPDATE images SET visible = FALSE WHERE account_id = %(id)s',
+                    'UPDATE virtual_machines SET visible = FALSE WHERE account_id = %(id)s']:
+            self.u(sql, params)
+
+    def get_cloud_credentials(self):
+        sql = '''
+            SELECT id, cloud, description, username, azure_tenant_id FROM cloud_credentials ORDER BY cloud, description
+        '''
+        return self.q(sql)
+
+    def get_all_credentials_for_use(self, cloud: str) -> List[Dict]:
+        sql = '''
+            SELECT id, username, password, azure_tenant_id
+            FROM cloud_credentials
+            WHERE cloud = %(cloud)s
+        '''
+        params = {'cloud': cloud}
+        return self.q(sql, params)
+
+    def get_one_credential_for_use(self, account_id: uuid.UUID) -> Dict:
+        sql = '''
+            SELECT id, username, password, azure_tenant_id
+            FROM cloud_credentials
+            WHERE id = %(id)s
+        '''
+        params = {'id': account_id}
+        return self.q_one(sql, params)
+
+    def update_cloud_credentials(self, params: Dict):
+        if 'password' in params:
+            sql = '''
+                UPDATE cloud_credentials
+                SET cloud = %(cloud)s, description = %(description)s, username = %(username)s, password = %(password)s,
+                    azure_tenant_id = %(azure_tenant_id)s
+                WHERE id = %(id)s
+            '''
+        else:
+            sql = '''
+                UPDATE cloud_credentials
+                SET cloud = %(cloud)s, description = %(description)s, username = %(username)s,
+                    azure_tenant_id = %(azure_tenant_id)s
+                WHERE id = %(id)s
+            '''
+        self.u(sql, params)
+
     # environments and machines
 
     def get_env_list(self) -> List[str]:
@@ -103,7 +164,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist,
+                    running_schedule, application_env, business_unit, dns_names, whitelist, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -116,7 +177,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist,
+                    running_schedule, application_env, business_unit, dns_names, whitelist, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -133,7 +194,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist,
+                    dns_names, whitelist, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -145,7 +206,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist,
+                    dns_names, whitelist, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -197,6 +258,7 @@ class Database(fort.PostgresDatabase):
                     public,
                     state,
                     created,
+                    account_id,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
                 FROM images
@@ -216,6 +278,7 @@ class Database(fort.PostgresDatabase):
                     public,
                     state,
                     created,
+                    account_id,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
                 FROM images
@@ -226,7 +289,7 @@ class Database(fort.PostgresDatabase):
 
     def get_image(self, image_id: str) -> Dict:
         sql = '''
-            SELECT id, cloud, region, name, owner, public, state, created, visible, synced, instanceid
+            SELECT id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id
             FROM images
             WHERE id = %(id)s
         '''
@@ -285,7 +348,8 @@ class Database(fort.PostgresDatabase):
         # params = {
         #   'id': '', 'cloud': '', 'region': '', 'environment': '', 'name': '', 'owner': '', 'contributors': '',
         #   'private_ip': '', 'public_ip': '', 'state': '', 'type': '', 'running_schedule': '', 'created': '',
-        #   'state_transition_time': '', 'application_env': '', 'business_unit': '', 'dns_names': ''
+        #   'state_transition_time': '', 'application_env': '', 'business_unit': '', 'dns_names': '', 'whitelist': '',
+        #   'account_id': ''
         # }
         sql = 'SELECT id FROM virtual_machines WHERE id = %(id)s'
         if self.q(sql, params):
@@ -296,7 +360,7 @@ class Database(fort.PostgresDatabase):
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
                     business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,
-                    whitelist = %(whitelist)s,
+                    whitelist = %(whitelist)s, account_id = %(account_id)s,
                     visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
@@ -305,11 +369,12 @@ class Database(fort.PostgresDatabase):
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,
-                    visible, synced
+                    account_id, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
-                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s, TRUE, TRUE
+                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s,
+                    %(account_id)s, TRUE, TRUE
                 )
             '''
         self.u(sql, params)
@@ -317,24 +382,24 @@ class Database(fort.PostgresDatabase):
     def add_image(self, params: Dict):
         # params = {
         #   'id': '', 'cloud': '', 'region': '', 'name': '', 'owner': '', 'state': '', 'created': '', 'instanceid': '',
-        #   'public': (bool)
+        #   'public': (bool), 'account_id': ''
         # }
         sql = 'SELECT id FROM images WHERE id = %(id)s'
         if self.q(sql, params):
             sql = '''
                 UPDATE images 
                 SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
-                    public = %(public)s, created = %(created)s, instanceid = %(instanceid)s, visible = TRUE,
-                    synced = TRUE
+                    public = %(public)s, created = %(created)s, instanceid = %(instanceid)s,
+                    account_id = %(account_id)s, visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
         else:
             sql = '''
                 INSERT INTO images (
-                    id, cloud, region, name, owner, public, state, created, instanceid, visible, synced
+                    id, cloud, region, name, owner, public, state, created, instanceid, account_id, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(public)s, %(state)s, %(created)s,
-                    %(instanceid)s, TRUE, TRUE
+                    %(instanceid)s, %(account_id)s, TRUE, TRUE
                 )
             '''
         self.u(sql, params)
@@ -468,8 +533,8 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('images', 'log_entries', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
-                      'sales_consultants', 'sales_reps', 'schema_versions', 'sf_opportunities',
+        for table in ('cloud_credentials', 'images', 'log_entries', 'op_debrief_surveys', 'op_debrief_tracking',
+                      'permissions', 'sales_consultants', 'sales_reps', 'schema_versions', 'sf_opportunities',
                       'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
@@ -687,6 +752,27 @@ class Database(fort.PostgresDatabase):
                 ADD COLUMN whitelist text
             ''')
             self.add_schema_version(14)
+        if self.version < 15:
+            self.log.info('Migrating database to schema version 15')
+            self.u('''
+                CREATE TABLE cloud_credentials (
+                    id uuid PRIMARY KEY,
+                    cloud text NOT NULL,
+                    description text NOT NULL,
+                    username text NOT NULL,
+                    password text NOT NULL,
+                    azure_tenant_id text
+                )
+            ''')
+            self.u('''
+                ALTER TABLE virtual_machines
+                ADD COLUMN account_id uuid
+            ''')
+            self.u('''
+                ALTER TABLE images
+                ADD COLUMN account_id uuid
+            ''')
+            self.add_schema_version(15)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
