@@ -68,7 +68,7 @@ def login_required(f):
 
 @app.before_request
 def log_request():
-    app.logger.info(f'{flask.request.method} {flask.request.path}')
+    app.logger.debug(f'{flask.request.method} {flask.request.path}')
 
 
 @app.before_request
