@@ -4,15 +4,19 @@ import ops_web.config
 import logging
 import time
 
-from typing import Dict
+from typing import Dict, List
 
 log = logging.getLogger(__name__)
 
 
-def resource_tags_as_dict(resource) -> Dict:
-    if resource.tags is None:
+def tag_list_to_dict(tags: List[dict]) -> dict:
+    if tags is None:
         return {}
-    return {tag['Key']: tag['Value'] for tag in resource.tags}
+    return {tag['Key']: tag['Value'] for tag in tags}
+
+
+def tag_dict_to_list(tags: dict) -> List[dict]:
+    return [{'Key': k, 'Value': v} for k, v in tags.items()]
 
 
 class AWSClient:
@@ -47,13 +51,11 @@ class AWSClient:
                 if t == 'GroupId':
                     security_group_ids.append(v)
 
-        for t in instance.tags:
-            if t.get('Key').lower() == 'name':
-                t['Value'] = name
-            elif t.get('Key').lower() == 'owneremail':
-                t['Value'] = owner
-            elif t.get('Key').lower() == 'machine__environment_group':
-                t['Value'] = environment
+        instance_tags = tag_list_to_dict(instance.tags)
+        instance_tags['Name'] = name
+        instance_tags['NAME'] = name
+        instance_tags['OWNEREMAIL'] = owner
+        instance_tags['machine__environment_group'] = environment
 
         response = ec2.create_instances(
             ImageId=imageid,
@@ -66,11 +68,11 @@ class AWSClient:
             TagSpecifications=[
                 {
                     'ResourceType': 'instance',
-                    'Tags': instance.tags
+                    'Tags': tag_dict_to_list(instance_tags)
                 },
                 {
                     'ResourceType': 'volume',
-                    'Tags': instance.tags
+                    'Tags': tag_dict_to_list(instance_tags)
                 }
             ]
         )
@@ -128,7 +130,7 @@ class AWSClient:
             ec2 = self.session.resource('ec2', region_name=region)
             try:
                 for image in ec2.images.filter(Owners=['self']):
-                    tags = resource_tags_as_dict(image)
+                    tags = tag_list_to_dict(image.tags)
                     params = {
                         'id': image.id,
                         'cloud': 'aws',
@@ -160,7 +162,7 @@ class AWSClient:
         return self.session.get_available_regions('ec2')
 
     def get_instance_dict(self, region, instance) -> Dict:
-        tags = resource_tags_as_dict(instance)
+        tags = tag_list_to_dict(instance.tags)
 
         log.debug(instance)
         params = {
