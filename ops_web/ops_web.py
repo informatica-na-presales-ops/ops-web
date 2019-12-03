@@ -247,7 +247,7 @@ def environment_detail(environment):
     db: ops_web.db.Database = flask.g.db
     flask.g.environment = environment
     flask.g.machines = add_running_time_human(db.get_machines_for_env(flask.g.email, environment))
-    flask.g.environments = db.get_environments()
+    flask.g.environments = db.get_env_list()
     flask.g.today = datetime.date.today()
     flask.g.machine_state_class_map = {
         'running': 'text-success',
