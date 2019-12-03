@@ -204,15 +204,8 @@ class AWSClient:
         params['contributors'] = ' '.join(sorted(contributors))
         return params
 
-    def get_instance_tags(self, machine_id):
-        ec2 = self.session.client('ec2')
-        response = ec2.describe_instances(InstanceIds=[machine_id])
-        for r in response['Reservations']:
-            for i in r['Instances']:
-                return i['Tags']
-
     def get_single_instance(self, region: str, instanceid: str):
-        ec2 = self.session.resource('ec2')
+        ec2 = self.session.resource('ec2', region_name=region)
         instance = ec2.Instance(instanceid)
         return self.get_instance_dict(region, instance)
 
