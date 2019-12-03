@@ -1,3 +1,4 @@
 .idea
 __pycache__
+deployment
 docker-compose.override.yml
