@@ -37,6 +37,7 @@ ENV APP_VERSION="2019.18" \
     SMTP_USERNAME="" \
     SUPPORT_EMAIL="" \
     TZ="Etc/UTC" \
+    WEB_SERVER_THREADS="4" \
     ZENDESK_WIDGET_KEY=""
 
 ENTRYPOINT ["/usr/local/bin/python"]
