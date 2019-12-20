@@ -1,3 +1,5 @@
+import datetime
+
 import boto3
 import botocore.exceptions
 import ops_web.config
@@ -39,6 +41,157 @@ class AWSClient:
         }
         image.create_tags(Tags=[{'Key': k, 'Value': v} for k, v in image_tags.items()])
         return image.id
+
+    def workshop_images(self, ws: str):
+
+        Filters = [
+            {'Name': 'tag:workshop', 'Values': [ws]}
+        ]
+
+
+        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        img = []
+        try:
+            for image in ec2.images.filter(Filters=Filters):
+                tags = tag_list_to_dict(image.tags)
+                log.info(image.id)
+                img.append(image.id)
+                params = {
+                    'id': image.id,
+                    'cloud': 'aws',
+                    'primary_product': tags.get('primary_product', ''),
+                    'created': image.creation_date,
+                    'ssh_user': tags.get('machine__ssh_user', ''),
+                    'host_name': tags.get('host_name', ''),
+                    'Instance_Type': tags.get('instance_type', '')
+
+                }
+                yield params
+
+        except botocore.exceptions.ClientError as e:
+            log.critical(e)
+
+        #
+        # images = ec2.images.filter(Filters=Filters).all()
+        # log.info(images)
+        # return images
+
+    def getimagetags(self, imageid: str, key: str):
+        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        imagedet = ec2.Image(imageid)
+        x=0
+
+        for tags in imagedet.tags:
+
+            if (tags["Key"] == key):
+                type = tags["Value"]
+                x=1
+        if x==0:
+            type="N/A"
+
+        return type
+
+    def createInstances(self, wsdetails: list, infofetails: dict):
+        securitygrp=(infofetails['securitygrp']).split(',')
+
+        wsst = wsdetails[1:]
+        wsdetails2 = wsst[:-1]
+        new_str = wsdetails2.replace("\'", "")
+        new_str2 = new_str.replace(' ', '')
+        ws = new_str2.split(',')
+        shrtowner=(infofetails['owneremail']).split('@')[0]
+        datetime2=datetime.datetime.utcnow().strftime('%Y%m%d')
+
+
+        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        qu = int(infofetails['quantity'])
+        instanceid=[]
+        for q in range(qu):
+            for i in ws:
+
+                name = shrtowner + "-" + datetime2 + "-" + infofetails['customer'] + "-" + self.getimagetags(i,'primary_product') + str(q)
+                machine_group=shrtowner + "-" + datetime2 + "-"  +"workshop" + "-" + infofetails['customer'] + "-" +"ENV" + str(q)
+
+                if (self.getimagetags(i,'host_name')==None):
+                    dnsname="workshop"
+                else:
+                    dnsname=self.getimagetags(i,'host_name')
+                if (self.getimagetags(i,'machine__ssh_user') == None):
+                    sshuser = "N/A"
+                else:
+                    sshuser = self.getimagetags(i, 'machine__ssh_user')
+                if(infofetails['envrole']=='Production'):
+                    schedule='00:00:23:59:1-5'
+                else:
+                    schedule='04:00:21:00:1-5'
+                response = ec2.create_instances(
+                    ImageId=i,
+                    InstanceType=self.getimagetags(i,'instance_type'),
+                    MinCount=1,
+                    MaxCount=1,
+                    SecurityGroupIds=securitygrp,
+                    SubnetId=infofetails['subnet'],
+                    TagSpecifications=[
+                        {
+                            'ResourceType': 'instance',
+                            'Tags':[
+                                {
+                                    'Key':'OWNEREMAIL',
+                                    'Value':infofetails['owneremail']
+                                },
+                                {
+                                    'Key':'Name',
+                                    'Value':name
+                                },
+                                {
+                                    'Key': 'NAME',
+                                    'Value': name
+                                },
+                                {
+                                    'Key': 'machine__environment_group',
+                                    'Value': machine_group
+                                },
+                                {
+                                    'Key': 'BUSINESSUNIT',
+                                    'Value': 'presales'
+                                },
+                                {
+                                    'Key': 'APPLICATIONENV',
+                                    'Value': 'PROD'
+                                },
+                                {
+                                    'Key': 'APPLICATIONROLE',
+                                    'Value': 'APPSVR'
+                                },
+                                {
+                                    'Key': 'machine__ssh_user',
+                                    'Value': sshuser
+                                },
+                                {
+                                    'Key': 'machine__name',
+                                    'Value': self.getimagetags(i, 'primary_product')
+                                },
+                                {
+                                    'Key': 'image__dns_names_private',
+                                    'Value': dnsname
+                                },
+                                {
+                                    'Key': 'RUNNINGSCHEDULE',
+                                    'Value': schedule
+                                },
+
+
+
+                            ]
+                        }
+                    ]
+
+
+
+                )
+                instanceid.append(response[0].id)
+
+        return str(instanceid)
 
     def create_instance(self, region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str):
         ec2 = self.session.resource('ec2', region_name=region)

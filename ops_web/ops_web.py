@@ -322,6 +322,81 @@ def images():
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('images.html')
 
+@app.route('/wscreator')
+@login_required
+def wscreator():
+    return flask.render_template('ws_creator.html')
+
+@app.route('/drp' , methods=['GET','POST'])
+@login_required
+def drp():
+    ws=flask.request.values.get("ws")
+    app.logger.info(ws)
+    db = ops_web.db.Database(config)
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+
+
+        result=aws.workshop_images(ws)
+        lst=[]
+        l=[]
+
+        for i in result:
+          lst.append(i)
+          l.append(i['id'])
+
+        app.logger.info(l)
+
+    return flask.render_template('ws_creator.html', ws=lst ,id=l)
+
+@app.route('/launch' , methods=['GET','POST'])
+@login_required
+def launch():
+    wsdetails=flask.request.values.get('id')
+    otherdetails=flask.request.values.get('ws')
+    app.logger.info(otherdetails)
+    pp=flask.request.values.get('pp')
+    app.logger.info(pp)
+
+    securitygrp=flask.request.values.get('security_groups')
+    flask.request.values.get(securitygrp)
+    quantity=flask.request.values.get('quantity')
+    eventtype=flask.request.values.get('event_type')
+    customer=flask.request.values.get('customer')
+    app.logger.info(customer)
+    owneremail=flask.request.values.get('owner_email')
+    envrole=flask.request.values.get('env')
+    app.logger.info(envrole)
+    subnet=flask.request.values.get('subnet')
+    app.logger.info(subnet)
+    whitelist=flask.request.values.get('whitelist')
+
+    infodict={
+        "securitygrp":securitygrp,
+        "quantity":quantity,
+        "eventtype":eventtype,
+        "customer":customer,
+        "owneremail":owneremail,
+        "envrole":envrole,
+        "subnet":subnet,
+        "whitelist":whitelist
+
+    }
+
+
+
+    db = ops_web.db.Database(config)
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        result=aws.createInstances(wsdetails,infodict)
+
+
+
+        return result
+
+
+
+
 
 @app.route('/images/create', methods=['POST'])
 @login_required
