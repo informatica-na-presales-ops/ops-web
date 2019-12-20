@@ -40,6 +40,7 @@ class Config:
     support_email: str
     tz: str
     version: str
+    web_server_threads: int
     zendesk_widget_key: str
 
     def __init__(self):
@@ -49,7 +50,7 @@ class Config:
         AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS,
         LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, SCHEME,
         SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ,
-        ZENDESK_WIDGET_KEY
+        WEB_SERVER_THREADS, ZENDESK_WIDGET_KEY
 
         Some variables have defaults if they are not found in the environment:
 
@@ -63,6 +64,7 @@ class Config:
         SEND_EMAIL=False
         SERVER_NAME=localhost:8080
         TZ=Etc/UTC
+        WEB_SERVER_THREADS=4
         """
 
         self.auto_sync = as_bool(os.getenv('AUTO_SYNC'))
@@ -93,6 +95,7 @@ class Config:
         self.support_email = os.getenv('SUPPORT_EMAIL')
         self.tz = os.getenv('TZ', 'Etc/UTC')
         self.version = os.getenv('APP_VERSION', 'unknown')
+        self.web_server_threads = int(os.getenv('WEB_SERVER_THREADS', '4'))
         self.zendesk_widget_key = os.getenv('ZENDESK_WIDGET_KEY')
 
         for log_spec in os.getenv('OTHER_LOG_LEVELS', '').split():

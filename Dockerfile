@@ -7,7 +7,7 @@ RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev musl-dev postgresql-
  && /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt \
  && /sbin/apk del --no-cache .deps
 
-ENV APP_VERSION="2019.18" \
+ENV APP_VERSION="2019.19" \
     AUTO_SYNC="true" \
     AUTO_SYNC_INTERVAL="10" \
     AWS_IGNORED_SECURITY_GROUPS="" \
@@ -37,6 +37,7 @@ ENV APP_VERSION="2019.18" \
     SMTP_USERNAME="" \
     SUPPORT_EMAIL="" \
     TZ="Etc/UTC" \
+    WEB_SERVER_THREADS="4" \
     ZENDESK_WIDGET_KEY=""
 
 ENTRYPOINT ["/usr/local/bin/python"]

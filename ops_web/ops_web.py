@@ -959,4 +959,4 @@ def main():
         scheduler.add_job(generate_op_debrief_surveys)
         scheduler.add_job(generate_op_debrief_surveys, 'interval', hours=6)
 
-    waitress.serve(app, ident=None)
+    waitress.serve(app, ident=None, threads=config.web_server_threads)
