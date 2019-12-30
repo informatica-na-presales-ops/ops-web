@@ -349,26 +349,36 @@ def drp():
 
     return flask.render_template('ws_creator.html', ws=lst ,id=l)
 
+@app.route('/elasticip' , methods=['GET','POST'])
+@login_required
+def elasticip():
+
+
+    db = ops_web.db.Database(config)
+    idlist=flask.request.values.get('instance')
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        allocate=aws.allocate_elasticip(idlist)
+
+    return "Allocated ElasticIP's to Instances"
+
+
+
 @app.route('/launch' , methods=['GET','POST'])
 @login_required
 def launch():
     wsdetails=flask.request.values.get('id')
     otherdetails=flask.request.values.get('ws')
-    app.logger.info(otherdetails)
     pp=flask.request.values.get('pp')
-    app.logger.info(pp)
 
     securitygrp=flask.request.values.get('security_groups')
     flask.request.values.get(securitygrp)
     quantity=flask.request.values.get('quantity')
     eventtype=flask.request.values.get('event_type')
     customer=flask.request.values.get('customer')
-    app.logger.info(customer)
     owneremail=flask.request.values.get('owner_email')
     envrole=flask.request.values.get('env')
-    app.logger.info(envrole)
     subnet=flask.request.values.get('subnet')
-    app.logger.info(subnet)
     whitelist=flask.request.values.get('whitelist')
 
     infodict={
@@ -388,14 +398,31 @@ def launch():
     db = ops_web.db.Database(config)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        result=aws.createInstances(wsdetails,infodict)
+        idlist=aws.createInstances(wsdetails,infodict)
+        instanceslist=[]
+        instanceidlist=[]
+        for i in idlist:
+
+
+            result=aws.get_single_instance('us-west-2',i)
+
+            state=aws.getinstancestatus(i)
+
+            idlist2=result['id']
+            instanceslist.append(result)
+            instanceidlist.append(idlist2)
+            result['account_id'] = account.get('id')
 
 
 
-        return result
+            while(state['Name']=='pending'):
+                state=aws.getinstancestatus(i)
+                if(state['Name']=='running'):
+                    break
 
+            db.add_machine(result)
 
-
+        return flask.render_template('postdep.html',instance=instanceslist,idlist=instanceidlist)
 
 
 @app.route('/images/create', methods=['POST'])

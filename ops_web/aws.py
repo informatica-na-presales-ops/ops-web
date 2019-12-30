@@ -191,7 +191,49 @@ class AWSClient:
                 )
                 instanceid.append(response[0].id)
 
-        return str(instanceid)
+        return instanceid
+
+    def getinstancestatus(self,instanceid:str):
+        ec2=self.session.resource('ec2', region_name='us-west-2')
+        instance = ec2.Instance(instanceid)
+        return instance.state
+
+    def getinstanceplatform(self,instanceid:str):
+        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        instance = ec2.Instance(instanceid)
+        return instance.platform
+
+
+
+
+    def allocate_elasticip(self,instanceid:list):
+        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        idlist=instanceid
+        idlist2 = idlist[1:]
+        idlist3 = idlist2[:-1]
+        idlist4=idlist3[1:]
+        idlist5=idlist4[:-1]
+        idlist6=idlist5.replace("\'", "")
+        idlist8=idlist6.replace(' ', '')
+        idlist7=idlist8.split(',')
+
+        ec2Client = boto3.client('ec2')
+        ec2Resource = boto3.resource('ec2')
+        for i in idlist7:
+            platform=self.getinstanceplatform(i)
+            if(platform=='windows'):
+             instance = ec2.Instance(i)
+             state=instance.state['Name']
+             if(state=='running'):
+              eip = ec2Client.allocate_address(Domain='vpc')
+              response=ec2Client.associate_address(
+
+                InstanceId=i,
+                AllocationId=eip["AllocationId"])
+             else:
+                log.info("check if the instance is running and try again.")
+
+
 
     def create_instance(self, region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str):
         ec2 = self.session.resource('ec2', region_name=region)
