@@ -2,7 +2,7 @@ FROM python:3.8.1-alpine3.11
 
 COPY requirements.txt /ops-web/requirements.txt
 
-RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev musl-dev postgresql-dev \
+RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev make musl-dev postgresql-dev \
  && /sbin/apk add --no-cache libpq openssl-dev \
  && /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt \
  && /sbin/apk del --no-cache .deps
