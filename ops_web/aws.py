@@ -89,8 +89,9 @@ class AWSClient:
 
         securitygrp = (infofetails['securitygrp']).split(',')
         whitelistid = infofetails['whitelist']
-        securitygrp.append(whitelistid)
-        self.addtag_WSecuritygrps(whitelistid, infofetails['owneremail'])
+        if(whitelistid):
+           securitygrp.append(whitelistid)
+           self.addtag_WSecuritygrps(whitelistid, infofetails['owneremail'])
         wsst = wsdetails[1:]
         wsdetails2 = wsst[:-1]
         new_str = wsdetails2.replace("\'", "")
@@ -479,9 +480,7 @@ class AWSClient:
                     ippermissionslist = sgid.ip_permissions
                     inbound_address_list = []
                     for i in ippermissionslist:
-                        log.info(i)
                         if 'IpRanges' in i:
-                            log.info(i['IpRanges'])
                             ips = i['IpRanges']
                     for s in ips:
                         if 'CidrIp' in s:

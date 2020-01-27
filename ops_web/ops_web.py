@@ -926,8 +926,6 @@ def sync_machines():
                 image['account_id'] = account.get('id')
                 db.add_image(image)
             for sgid in aws.get_all_securitygrps():
-                app.logger.info(account.get('id'))
-                app.logger.info(sgid)
                 sgid['account_id'] = account.get('id')
                 db.add_group(sgid)
         db.post_sync('aws')
