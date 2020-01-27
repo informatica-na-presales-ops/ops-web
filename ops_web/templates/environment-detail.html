@@ -52,6 +52,7 @@
                     <th>Owner</th>
                     <th class="text-center">Whitelist</th>
                     <th></th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -74,6 +75,10 @@
                                 <span class="oi oi-key"></span>
                             </button>
                         </td>
+                        <td>{% if m.vpc == 'vpc-07a70370f586a244d' %} <button type="button" class="btn btn-sm btn-outline-warning"  title="This instance cannot be copied" data-toggle="popover" data-trigger="focus" data-content="This instance is in the training or customer facing VPC and cannot be copied. Instances deployed into this VPC can only be shut down or terminated.Contact Ops team if you need help.">
+                            <span class="oi oi-warning"> </span>
+                        </button>
+                        {%  endif %}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button type="submit" class="btn btn-sm btn-outline-light" title="Start machine" {{ 'disabled' if m.state != 'stopped' or not m.can_control }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_start') }}">

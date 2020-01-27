@@ -164,7 +164,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist, account_id,
+                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -177,7 +177,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist, account_id,
+                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -194,7 +194,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, account_id,
+                    dns_names, whitelist, vpc,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -206,7 +206,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, account_id,
+                    dns_names, whitelist, vpc,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -243,6 +243,33 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
 
     # images
+
+    def get_groups(self, email: str) -> List[Dict]:
+        if self.has_permission(email, 'admin'):
+            sql = '''
+                SELECT
+                    id,
+                    cloud,
+                    inbound_rules,
+                    group_name,
+                    owner,
+                    account_id
+                FROM security_group
+                '''
+        else:
+            sql = '''
+                SELECT
+                    id,
+                    cloud,
+                    inbound_rules,
+                    group_name,
+                    owner,
+                    account_id
+                FROM security_group
+                WHERE 
+                 (owner = %(email)s)
+            '''
+        return self.q(sql, {'email': email})
 
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
@@ -360,7 +387,7 @@ class Database(fort.PostgresDatabase):
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
                     business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,
-                    whitelist = %(whitelist)s, account_id = %(account_id)s,
+                    whitelist = %(whitelist)s, vpc = %(vpc)s,account_id = %(account_id)s,
                     visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
@@ -368,12 +395,12 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,
+                    created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,vpc,
                     account_id, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
-                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s,
+                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s, %(vpc)s,
                     %(account_id)s, TRUE, TRUE
                 )
             '''
@@ -402,6 +429,29 @@ class Database(fort.PostgresDatabase):
                     %(instanceid)s, %(account_id)s, TRUE, TRUE
                 )
             '''
+        self.u(sql, params)
+
+    def add_group(self, params: Dict):
+        # params = {
+        #   'id': '', 'cloud': '', 'owner':'','inbound_rules':'','group_name':'',
+        #   'account_id': ''
+        # }
+
+        sql = 'SELECT id FROM security_group WHERE id = %(id)s'
+        if self.q(sql, params):
+            sql = '''
+                       UPDATE security_group
+                       SET cloud = %(cloud)s, owner = %(owner)s, inbound_rules = %(inbound_rules)s, group_name = %(group_name)s ,account_id = %(account_id)s
+                       WHERE id = %(id)s
+                   '''
+        else:
+            sql = '''
+                       INSERT INTO security_group (
+                           id, cloud, owner,inbound_rules,group_name,account_id
+                       ) VALUES (
+                           %(id)s, %(cloud)s, %(owner)s, %(inbound_rules)s,%(group_name)s,%(account_id)s
+                       )
+                   '''
         self.u(sql, params)
 
     # rep/sc pairs
@@ -535,7 +585,7 @@ class Database(fort.PostgresDatabase):
         self.log.warning('Database reset requested, dropping all tables')
         for table in ('cloud_credentials', 'images', 'log_entries', 'op_debrief_surveys', 'op_debrief_tracking',
                       'permissions', 'sales_consultants', 'sales_reps', 'schema_versions', 'sf_opportunities',
-                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
+                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines','security_group'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -564,6 +614,7 @@ class Database(fort.PostgresDatabase):
                     active boolean
                 )
             ''')
+
             self.u('''
                 CREATE TABLE permissions (
                     email text PRIMARY KEY,
@@ -634,6 +685,8 @@ class Database(fort.PostgresDatabase):
                 ALTER TABLE images
                 ADD COLUMN instanceid text
             ''')
+
+
             self.add_schema_version(6)
         if self.version < 7:
             self.log.info('Migrating database to schema version 7')
@@ -712,6 +765,7 @@ class Database(fort.PostgresDatabase):
                     last_check timestamp
                 )
             ''')
+
             params = {'last_check': datetime.datetime.utcnow()}
             self.u('INSERT INTO op_debrief_tracking (last_check) VALUES (%(last_check)s)', params)
             self.add_schema_version(11)
@@ -751,6 +805,11 @@ class Database(fort.PostgresDatabase):
                 ALTER TABLE virtual_machines
                 ADD COLUMN whitelist text
             ''')
+            self.u('''
+                    ALTER TABLE virtual_machines
+                    ADD COLUMN vpc text
+                ''')
+
             self.add_schema_version(14)
         if self.version < 15:
             self.log.info('Migrating database to schema version 15')
@@ -772,7 +831,22 @@ class Database(fort.PostgresDatabase):
                 ALTER TABLE images
                 ADD COLUMN account_id uuid
             ''')
+
             self.add_schema_version(15)
+
+        if self.version < 16:
+            self.log.info('Migrating database to schema version 15')
+            self.u('''
+                       CREATE TABLE security_group (
+                           id text ,
+                           cloud text ,
+                           owner text ,
+                           inbound_rules text ,
+                           group_name text,
+                           account_id uuid 
+                       )
+                   ''')
+            self.add_schema_version(16)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'

@@ -240,6 +240,15 @@ def environments():
     return flask.render_template('environments.html')
 
 
+@app.route('/ws_sg')
+@login_required
+def ws_sg():
+    db: ops_web.db.Database = flask.g.db
+    app.logger.info(flask.g.email)
+    flask.g.sg = db.get_groups(flask.g.email)
+    return flask.render_template('securitygroups.html')
+
+
 @app.route('/environments/<environment>')
 @login_required
 def environment_detail(environment):
@@ -327,102 +336,122 @@ def images():
 def wscreator():
     return flask.render_template('ws_creator.html')
 
-@app.route('/drp' , methods=['GET','POST'])
+@app.route('/wsimage', methods=['GET', 'POST'])
 @login_required
-def drp():
-    ws=flask.request.values.get("ws")
+def wsimage():
+    ws = flask.request.values.get("ws")
     app.logger.info(ws)
     db = ops_web.db.Database(config)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-
-
-        result=aws.workshop_images(ws)
-        lst=[]
-        l=[]
-
+        result = aws.workshop_images(ws)
+        wslist = []
+        wsidlist = []
         for i in result:
-          lst.append(i)
-          l.append(i['id'])
+            wslist.append(i)
+            wsidlist.append(i['id'])
+    return flask.render_template('ws_creator.html', ws=wslist, id=wsidlist)
 
-        app.logger.info(l)
 
-    return flask.render_template('ws_creator.html', ws=lst ,id=l)
-
-@app.route('/elasticip' , methods=['GET','POST'])
+@app.route('/elasticip', methods=['GET', 'POST'])
 @login_required
 def elasticip():
-
-
     db = ops_web.db.Database(config)
-    idlist=flask.request.values.get('instance')
+    idlist_str = flask.request.values.get('instance')
+    region = 'us-west-2'
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        allocate=aws.allocate_elasticip(idlist)
+        aws.allocate_elasticip(idlist_str)
+        instances_list = []
+        idlist = aws.convertinstanceidstrtolist(idlist_str)
+        for i in idlist:
+            result = aws.get_single_instance(region, i)
+            instances_list.append(result)
+    return flask.render_template('postdep.html', idlist=idlist_str, instance=instances_list)
 
-    return "Allocated ElasticIP's to Instances"
+
+@app.route('/synchosts', methods=['GET', 'POST'])
+@login_required
+def synchosts():
+    db = ops_web.db.Database(config)
+    idliststr = flask.request.values.get('instance')
+    region = 'us-west-2'
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        result = aws.sync_hosts(idliststr)
+        idlist = aws.convertinstanceidstrtolist(idliststr)
+        instanceslist = []
+        for i in idlist:
+            instance = aws.get_single_instance(region, i)
+            instanceslist.append(instance)
+        if result is None:
+            return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
+        else:
+            return result
 
 
+@app.route('/ws_sg/edit', methods=['GET', 'POST'])
+@login_required
+def sg_edit():
+    sg_id = flask.request.values.get('sg-id')
+    ip = flask.request.values.get('IP')
+    db: ops_web.db.Database = flask.g.db
+    app.logger.info(sg_id)
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        result = aws.add_inboundrule(sg_id, ip)
+    if result == 'successful':
+        return flask.redirect(flask.url_for('ws_sg'))
+    else:
+        return "not able to add this IP, check if the IP already exists in this security group or if it is malformed"
 
-@app.route('/launch' , methods=['GET','POST'])
+
+@app.route('/launch', methods=['GET', 'POST'])
 @login_required
 def launch():
-    wsdetails=flask.request.values.get('id')
-    otherdetails=flask.request.values.get('ws')
-    pp=flask.request.values.get('pp')
+    ws_details = flask.request.values.get('id')
+    security_group = flask.request.values.get('security_groups')
+    quantity = flask.request.values.get('quantity')
+    event_type = flask.request.values.get('event_type')
+    customer = flask.request.values.get('customer')
+    owner_email = flask.request.values.get('owner_email')
+    env_role = flask.request.values.get('env')
+    subnet = flask.request.values.get('subnet')
+    whitelist = flask.request.values.get('whitelist')
+    app.logger.info(whitelist)
+    region = 'us-west-2'
 
-    securitygrp=flask.request.values.get('security_groups')
-    flask.request.values.get(securitygrp)
-    quantity=flask.request.values.get('quantity')
-    eventtype=flask.request.values.get('event_type')
-    customer=flask.request.values.get('customer')
-    owneremail=flask.request.values.get('owner_email')
-    envrole=flask.request.values.get('env')
-    subnet=flask.request.values.get('subnet')
-    whitelist=flask.request.values.get('whitelist')
-
-    infodict={
-        "securitygrp":securitygrp,
-        "quantity":quantity,
-        "eventtype":eventtype,
-        "customer":customer,
-        "owneremail":owneremail,
-        "envrole":envrole,
-        "subnet":subnet,
-        "whitelist":whitelist
+    infodict = {
+        "securitygrp": security_group,
+        "quantity": quantity,
+        "eventtype": event_type,
+        "customer": customer,
+        "owneremail": owner_email,
+        "envrole": env_role,
+        "subnet": subnet,
+        "whitelist": whitelist
 
     }
 
-
-
     db = ops_web.db.Database(config)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        idlist=aws.createInstances(wsdetails,infodict)
-        instanceslist=[]
-        instanceidlist=[]
+        idlist = aws.createInstances(ws_details, infodict)
+        instanceslist = []
+        instanceidlist = []
         for i in idlist:
-
-
-            result=aws.get_single_instance('us-west-2',i)
-
-            state=aws.getinstancestatus(i)
-
-            idlist2=result['id']
+            result = aws.get_single_instance(region, i)
+            state = aws.getinstanceattr(region, i, 'state')
+            idlist2 = result['id']
             instanceslist.append(result)
             instanceidlist.append(idlist2)
             result['account_id'] = account.get('id')
-
-
-
-            while(state['Name']=='pending'):
-                state=aws.getinstancestatus(i)
-                if(state['Name']=='running'):
+            while state['Name'] == 'pending':
+                state = aws.getinstanceattr(region, i, 'state')
+                if state['Name'] == 'running':
                     break
-
             db.add_machine(result)
-
-        return flask.render_template('postdep.html',instance=instanceslist,idlist=instanceidlist)
+        return flask.render_template('postdep.html', instance=instanceslist, idlist=instanceidlist)
 
 
 @app.route('/images/create', methods=['POST'])
@@ -896,6 +925,11 @@ def sync_machines():
             for image in aws.get_all_images():
                 image['account_id'] = account.get('id')
                 db.add_image(image)
+            for sgid in aws.get_all_securitygrps():
+                app.logger.info(account.get('id'))
+                app.logger.info(sgid)
+                sgid['account_id'] = account.get('id')
+                db.add_group(sgid)
         db.post_sync('aws')
     else:
         app.logger.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')

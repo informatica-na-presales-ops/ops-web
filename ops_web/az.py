@@ -87,7 +87,8 @@ class AZClient:
                     'business_unit': vm.tags.get('BUSINESSUNIT', ''),
                     'created': None,
                     'dns_names': vm.tags.get('image__dns_names_private', ''),
-                    'whitelist': None
+                    'whitelist': None,
+                    'vpc': None
                 }
 
                 if params['dns_names'] == '':

@@ -11,19 +11,14 @@
         <div class="col-12">
 
             <h2 class="text-light">Select the workshop you want to launch.</h2>
-            <form id="form1" action="{{ url_for('drp') }}" method="post">
+            <form id="form1" action="{{ url_for('wsimage') }}" method="post">
                 <select id="tvalue" name="ws">
-
                     <option value="EDC">EDC</option>
                     <option value="CDW">CDW</option>
-
-
                 </select>
                 <input type="submit" value="Submit">
             </form>
         </div>
-
-
         <div id="result">
             {% if ws is defined %}
                 <form id="form2" action="{{ url_for('launch') }}" method="post">
@@ -41,16 +36,10 @@
                     <th>Hostname</th>
                     <th>Created</th>
                     <th>SshUser</th>
-
-
-
                     <th></th>
                 </tr>
                 </thead>
-
-
                             {% for i in ws %}
-
                                 <tr>
                                     <td>{{ i.id }}</td>
                                     <td>{{ i.cloud }}</td>
@@ -59,8 +48,6 @@
                                     <td>{{ i.created }}</td>
                                     <td>{{ i.ssh_user }}</td>
                                 </tr>
-
-
                             {% endfor %}
                         </table>
                     </div>
@@ -83,7 +70,6 @@
                         <input type="text" class="form-control" id="owner_email" name="owner_email"
                                value="@informatica.com" required>
                     </div>
-
                     <div class="form-group col-md-4">
                         <label for="form-envrole" class="text-light">Env Role</label>
                         <select id="env" name="env" class="form-control">
@@ -97,52 +83,27 @@
                     </div>
 
                 </div>
-
                 <div class="form-row">
-
                     <div class="form-group col-md-6">
                         <label for="form-whitelistid" class="text-light">Whitelist SGID</label>
-                        <input type="text" class="form-control" id="whitelist">
+                        <input type="text" class="form-control" name="whitelist" id="whitelist">
                     </div>
                     <div class="form-group col-md-6">
                         <label for="form-subnet" class="text-light">Subnet</label>
                         <input type="text" class="form-control" id="subnet" name="subnet"
                                value="subnet-08f2c346c07e6c1ea">
                     </div>
-
-
                 </div>
                 <div class="form-row">
-
-                    <div class="form-group col-md-6">
-                        <label for="form-key" class="text-light">Key</label>
-                        <input type="text" class="form-control" id="key">
-                    </div>
                     <div class="form-group col-md-6">
                         <label for="form-security_groups" class="text-light">Security Groups</label>
                         <input type="text" class="form-control" id="security_groups" name="security_groups"
                                value="sg-0787d7efcdab27769,sg-0625a656c3abf3c6b">
                     </div>
-
-
                 </div>
-
-
-
-
-
-
                 <input type="submit" value="Launch">
-
             {% endif %}
-
             </form>
-
-
         </div>
-
     </div>
-
-
-
 {% endblock %}
