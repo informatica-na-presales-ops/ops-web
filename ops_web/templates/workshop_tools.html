@@ -1,0 +1,33 @@
+{% extends 'one-up.html' %}
+
+{% block main_content %}
+    <div class="row bump-top-padding">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
+            <h1 class="text-light">Toolbox</h1>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <div class="card-deck">
+
+                <div class="card bg-dark border-light text-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Workshop Launcher</h5>
+{#                        <a class="card-link stretched-link text-light" href="#modal-ws-creator">Workshop Creator</a>#}
+                        <a href="{{ url_for('wscreator') }}" class="card-link stretched-link text-light">env creator</a>
+                    </div>
+                </div>
+                <div class="card bg-dark border-light text-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Workshop Post Deployments Page</h5>
+                        <a class="card-link stretched-link text-light" href="#">Allocate Elastic IP,Sync hosts to workshop instances.</a>
+                        <a href="{{ url_for('ws_postdep') }}" class="card-link stretched-link text-light"></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}

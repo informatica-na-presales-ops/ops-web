@@ -73,63 +73,62 @@ class AWSClient:
         except botocore.exceptions.ClientError as e:
             log.critical(e)
 
-    def getimagetags(self, region: str, imageid: str, key: str):
+    def getimage_tags(self, region: str, imageid: str, key: str):
         ec2 = self.session.resource('ec2', region_name=region)
-        imagedet = ec2.Image(imageid)
+        image_details = ec2.Image(imageid)
         x = 0
-        for tags in imagedet.tags:
+        for tags in image_details.tags:
             if tags["Key"] == key:
-                type = tags["Value"]
+                value = tags["Value"]
                 x = 1
         if x == 0:
-            type = "N/A"
-        return type
+            value = "N/A"
+        return value
 
-    def createInstances(self, wsdetails: list, infofetails: dict):
-
-        securitygrp = (infofetails['securitygrp']).split(',')
-        whitelistid = infofetails['whitelist']
-        if(whitelistid):
-           securitygrp.append(whitelistid)
-           self.addtag_WSecuritygrps(whitelistid, infofetails['owneremail'])
+    def create_instances(self, wsdetails: list, info_dict: dict):
+        securitygrp = (info_dict['securitygrp']).split(',')
+        whitelistid = info_dict['whitelist']
+        if whitelistid:
+            securitygrp.append(whitelistid)
+            self.addtag_WSecuritygrps(whitelistid, info_dict['owneremail'])
         wsst = wsdetails[1:]
         wsdetails2 = wsst[:-1]
         new_str = wsdetails2.replace("\'", "")
         new_str2 = new_str.replace(' ', '')
         ws = new_str2.split(',')
-        shrtowner = (infofetails['owneremail']).split('@')[0]
-        datetime2 = datetime.datetime.utcnow().strftime('%Y%m%d')
+        shrtowner = (info_dict['owneremail']).split('@')[0]
+        datetime2 = datetime.datetime.utcnow().strftime('%Y%m%d%H')
         ec2 = self.session.resource('ec2', region_name='us-west-2')
-        qu = int(infofetails['quantity'])
+        qu = int(info_dict['quantity'])
         instanceid = []
         region = 'us-west-2'
         for q in range(qu):
             for i in ws:
-                name = shrtowner + "-" + datetime2 + "-" + infofetails['customer'] + "-" + self.getimagetags(region, i,
-                                                                                                             'primary_product') + str(
+                name = shrtowner + "-" + datetime2 + "-" + info_dict['customer'] + "-" + self.getimage_tags(region, i,
+                                                                                                             'primary_product') + "-" + str(
                     q)
-                machine_group = shrtowner + "-" + datetime2 + "-" + "workshop" + "-" + infofetails[
-                    'customer'] + "-" + "ENV" + str(q)
+                machine_group = shrtowner + "-" + datetime2 + "-" + "workshop" + "-" + info_dict[
+                    'customer'] + "-" + "ENV" + "-" + str(q)
 
-                if (self.getimagetags(region, i, 'host_name') == None):
+                if self.getimage_tags(region, i, 'host_name') is None:
                     dnsname = "workshop"
                 else:
-                    dnsname = self.getimagetags(region, i, 'host_name')
-                if (self.getimagetags(region, i, 'machine__ssh_user') == None):
+                    dnsname = self.getimage_tags(region, i, 'host_name')
+                if self.getimage_tags(region, i, 'machine__ssh_user') is None:
                     sshuser = "N/A"
                 else:
-                    sshuser = self.getimagetags(region, i, 'machine__ssh_user')
-                if (infofetails['envrole'] == 'Production'):
+                    sshuser = self.getimage_tags(region, i, 'machine__ssh_user')
+                if info_dict['envrole'] == 'Production':
                     schedule = '00:00:23:59:1-5'
                 else:
                     schedule = '04:00:21:00:1-5'
                 response = ec2.create_instances(
                     ImageId=i,
-                    InstanceType=self.getimagetags(region, i, 'instance_type'),
+                    InstanceType=self.getimage_tags(region, i, 'instance_type'),
                     MinCount=1,
                     MaxCount=1,
                     SecurityGroupIds=securitygrp,
-                    SubnetId=infofetails['subnet'],
+                    SubnetId=info_dict['subnet'],
                     KeyName="keyPresalesNA_Prod_Demo",
                     TagSpecifications=[
                         {
@@ -137,7 +136,7 @@ class AWSClient:
                             'Tags': [
                                 {
                                     'Key': 'OWNEREMAIL',
-                                    'Value': infofetails['owneremail']
+                                    'Value': info_dict['owneremail']
                                 },
                                 {
                                     'Key': 'Name',
@@ -169,7 +168,7 @@ class AWSClient:
                                 },
                                 {
                                     'Key': 'machine__name',
-                                    'Value': self.getimagetags(region, i, 'primary_product')
+                                    'Value': self.getimage_tags(region, i, 'primary_product')
                                 },
                                 {
                                     'Key': 'image__dns_names_private',
@@ -188,17 +187,17 @@ class AWSClient:
                 instanceid.append(response[0].id)
         return instanceid
 
-    def getinstanceattr(self, region: str, instanceid: str, value: str):
+    def get_instance_attr(self, region: str, instanceid: str, value: str):
         ec2 = self.session.resource('ec2', region_name=region)
         instance = ec2.Instance(instanceid)
         return getattr(instance, value)
 
-    def getinstancetag(self, region: str, instanceid: str, tagkey: str):
+    def get_instance_tag(self, region: str, instanceid: str, tagkey: str):
         ec2 = self.session.resource('ec2', region_name=region)
         instance = ec2.Instance(instanceid)
         tags = tag_list_to_dict(instance.tags)
-        tagvalue = tags.get(tagkey, '')
-        return tagvalue
+        tag_value = tags.get(tagkey, '')
+        return tag_value
 
     def addtag_WSecuritygrps(self, securitygrpid: str, owneremail: str):
         """Adds owner email tag to the workshop specific security group"""
@@ -206,25 +205,21 @@ class AWSClient:
         security_group = ec2.SecurityGroup(securitygrpid)
         security_group.create_tags(Tags=[{'Key': 'OWNEREMAIL', 'Value': owneremail}, ])
 
-    def convertinstanceidstrtolist(self, instancestr):
-        idlist = instancestr
-        log.info(type(idlist))
-        idlist2 = idlist[1:]
-        log.info(idlist2)
-        idlist3 = idlist2[:-1]
-        log.info(idlist3)
-        idlist4 = idlist3[1:]
-        log.info(idlist4)
-        idlist5 = idlist4[:-1]
-        log.info(idlist5)
-        idlist6 = idlist5.replace("\'", "")
-        idlist8 = idlist6.replace(' ', '')
-        idlist7 = idlist8.split(',')
-        return idlist7
+    def convert_instanceidstr_list(self, instancestr):
+        id_list = instancestr
+        id_list2 = id_list[1:]
+        id_list3 = id_list2[:-1]
+        id_list4 = id_list3[1:]
+        id_list5 = id_list4[:-1]
+        id_list6 = id_list5.replace("\'", "")
+        id_list8 = id_list6.replace(' ', '')
+        id_list7 = id_list8.split(',')
+        return id_list7
 
-    def getinstanceofenvgrp(self, envgrp):
+    def get_instance_of_envgrp(self, envgrp):
         """ Returns the list of instances inside an environment group"""
         ec2 = self.session.resource('ec2', region_name='us-west-2')
+        log.info(envgrp)
         instances = ec2.instances.filter(
 
             Filters=[{
@@ -239,22 +234,23 @@ class AWSClient:
         idl = []
         for instance in instances:
             idl.append(instance.id)
+        log.info(idl)
         return idl
 
     def update_hosts(self, instancelist: list):
         """ Gets the list of instances inside an environment group , forms a string with host file information ,
         connects to the machine and updates the host file with the new host file string """
         hostfile_dictnry = {}
-        hostnamelist = []
+        host_name_list = []
         region = 'us-west-2'
         for i in instancelist:
-            privateip = self.getinstanceattr(region, i, 'private_ip_address')
-            hostname = self.getinstancetag(region, i, 'image__dns_names_private')
+            privateip = self.get_instance_attr(region, i, 'private_ip_address')
+            hostname = self.get_instance_tag(region, i, 'image__dns_names_private')
             hostfile_dictnry[privateip] = hostname
         strfinl = ""
         strfinl2 = ""
         for key, value in hostfile_dictnry.items():
-            hostnamelist.append(value)
+            host_name_list.append(value)
             strfinl2 = strfinl2 + '\n' + key + ' ' + value
             if value == 'modulabs.master.infa.world':
                 strfinl = strfinl + '\n' + key + ' ' + value + " " + "node01.modulabs.master.infa.world node01 sandbox.modulabs.master.infa.world sandbox sandbox-hdp sandbox-hdp.hortonworks.com ora_xe1.modulabs.master.infa.world ora_xe1 activemq.modulabs.master.infa.world activemq elasticsearch.modulabs.master.infa.world elasticsearch kibana.modulabs.master.infa.world kibana quickstart.modulabs.master.infa.world quickstart greenplum.modulabs.master.infa.world greenplum mssqlserver.modulabs.master.infa.world  mssqlserver"
@@ -269,70 +265,71 @@ class AWSClient:
 
         for i in instancelist:
             log.info(i)
-            amiid = self.getinstanceattr(region, i, 'image_id')
-            password = self.getimagetags(region, amiid, 'rdp_admin')
-            platform = self.getinstanceattr(region, i, 'platform')
-            publicip = self.getinstanceattr(region, i, 'public_ip_address')
-            checkhostname = self.getinstancetag(region, i, 'image__dns_names_private')
-            if (platform != 'windows'):
-                if (checkhostname != 'modulabs.master.infa.world'):
+            ami_id = self.get_instance_attr(region, i, 'image_id')
+            password = self.getimage_tags(region, ami_id, 'rdp_admin')
+            platform = self.get_instance_attr(region, i, 'platform')
+            public_ip = self.get_instance_attr(region, i, 'public_ip_address')
+            host_name = self.get_instance_tag(region, i, 'image__dns_names_private')
+            if platform != 'windows':
+                if host_name != 'modulabs.master.infa.world':
                     try:
                         key = RSAKey.from_private_key_file('/ops-web/data/keyPresalesNA_Prod_Demo.pem')
                         time.sleep(10)
                         client = SSHClient()
                         client.set_missing_host_key_policy(AutoAddPolicy())
-                        log.info("connecting to" + publicip)
-                        client.connect(hostname=publicip, username="centos", pkey=key)
+                        log.info("connecting to" + public_ip)
+                        client.connect(hostname=public_ip, username="centos", pkey=key)
                         client.exec_command(
                             'sudo chown centos: /etc/hosts && >/etc/hosts && echo \"%s\" >> /etc/hosts' % strfinl3)
                     except:
-                        return "Update hosts unsuccessful. Please check if the instance is running or wait sometime till the instance loads properly."
+                        return "Host file has not been updated. Please check if the instance is running or wait sometime till the instance loads properly."
             else:
                 try:
                     subprocess.check_output([
                         "smbclient -U Administrator%{0} //{1}/c$ --directory Windows\\\System32\\\drivers\\\etc -c 'get hosts'".format(
-                            password, publicip)],
+                            password, public_ip)],
                         shell='True')
                     os.system("> /hosts ")
                     subprocess.Popen(['echo "{}" > /hosts'.format(strfinl)], shell='True')
                     subprocess.check_output([
                         "smbclient -U Administrator%{0} //{1}/c$ --directory Windows\\\System32\\\drivers\\\etc -c 'put hosts'".format(
-                            password, publicip)],
+                            password, public_ip)],
                         shell='True')
                 except:
                     return "Failed updating hosts instances might still be loading please try again after sometime."
 
     def sync_hosts(self, instanceid: list):
+
         """Grabs the list of instances inside an environment group and updates hosts"""
+
         region = 'us-west-2'
-        idlist = self.convertinstanceidstrtolist(instanceid)
-        envgrplist = []
-        for i in idlist:
-            envgroup = self.getinstancetag(region, i, 'machine__environment_group')
-            if envgroup not in envgrplist:
-                envgrplist.append(envgroup)
-        for envgrp in envgrplist:
-            instancelist = self.getinstanceofenvgrp(envgrp)
-            hostresult = self.update_hosts(instancelist)
-        return hostresult
+        id_list = self.convert_instanceidstr_list(instanceid)
+        env_grp_list = []
+        for i in id_list:
+            env_group = self.get_instance_tag(region, i, 'machine__environment_group')
+            if env_group not in env_grp_list:
+                env_grp_list.append(env_group)
+        for env in env_grp_list:
+            instance_list = self.get_instance_of_envgrp(env)
+            host_result = self.update_hosts(instance_list)
+        return host_result
 
     def allocate_elasticip(self, instanceid: list):
         """Allocates elastic Ip's to only the windows machines """
 
         ec2 = self.session.resource('ec2', region_name='us-west-2')
-        idlist = self.convertinstanceidstrtolist(instanceid)
+        idlist = self.convert_instanceidstr_list(instanceid)
         region = 'us-west-2'
-
         ec2Client = boto3.client('ec2', region)
         for i in idlist:
             log.info(i)
-            platform = self.getinstanceattr(region, i, 'platform')
+            platform = self.get_instance_attr(region, i, 'platform')
             if platform == 'windows':
                 instance = ec2.Instance(i)
                 state = instance.state['Name']
                 if state == 'running':
                     eip = ec2Client.allocate_address(Domain='vpc')
-                    response = ec2Client.associate_address(
+                    ec2Client.associate_address(
                         InstanceId=i,
                         AllocationId=eip["AllocationId"])
             else:
@@ -476,15 +473,18 @@ class AWSClient:
             security_groups = ec2.security_groups.all()
             try:
                 for sgid in security_groups:
-                    tags = tag_list_to_dict(sgid.tags)
-                    ippermissionslist = sgid.ip_permissions
                     inbound_address_list = []
-                    for i in ippermissionslist:
-                        if 'IpRanges' in i:
-                            ips = i['IpRanges']
-                    for s in ips:
-                        if 'CidrIp' in s:
-                            inbound_address_list.append(s['CidrIp'])
+                    tags = tag_list_to_dict(sgid.tags)
+                    ip_permissions_list = sgid.ip_permissions
+                    if (len(ip_permissions_list)) == 0:
+                        inbound_address_list = []
+                    else:
+                        for i in ip_permissions_list:
+                            if 'IpRanges' in i:
+                                ips = i['IpRanges']
+                        for s in ips:
+                            if 'CidrIp' in s:
+                                inbound_address_list.append(s['CidrIp'])
                     params = {
                         'owner': tags.get('OWNEREMAIL', ''),
                         'cloud': 'aws',

@@ -17,6 +17,7 @@ import uuid
 import waitress
 import werkzeug.middleware.proxy_fix
 import xlsxwriter
+import ipaddress
 
 from typing import Dict, List
 
@@ -336,6 +337,31 @@ def images():
 def wscreator():
     return flask.render_template('ws_creator.html')
 
+
+@app.route('/workshop-tools')
+@login_required
+def workshop_tools():
+    return flask.render_template('workshop_tools.html')
+
+@app.route('/ws_postdep',methods=['GET', 'POST'])
+@login_required
+def ws_postdep():
+     return flask.render_template('postdep.html')
+
+@app.route('/ws_postdep_filter',methods=['GET', 'POST'])
+@login_required
+def ws_postdep_filter():
+    env_group=flask.request.values.get("env_group_name")
+    db = ops_web.db.Database(config)
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        instance_list=aws.get_instance_of_envgrp(env_group)
+        instances_list2 = []
+        for i in instance_list:
+            result = aws.get_single_instance('us-west-2', i)
+            instances_list2.append(result)
+        return flask.render_template('postdep.html',idlist=str(instance_list),instance=instances_list2)
+
 @app.route('/wsimage', methods=['GET', 'POST'])
 @login_required
 def wsimage():
@@ -363,7 +389,7 @@ def elasticip():
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         aws.allocate_elasticip(idlist_str)
         instances_list = []
-        idlist = aws.convertinstanceidstrtolist(idlist_str)
+        idlist = aws.convert_instanceidstr_list(idlist_str)
         for i in idlist:
             result = aws.get_single_instance(region, i)
             instances_list.append(result)
@@ -379,7 +405,7 @@ def synchosts():
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         result = aws.sync_hosts(idliststr)
-        idlist = aws.convertinstanceidstrtolist(idliststr)
+        idlist = aws.convert_instanceidstr_list(idliststr)
         instanceslist = []
         for i in idlist:
             instance = aws.get_single_instance(region, i)
@@ -387,7 +413,7 @@ def synchosts():
         if result is None:
             return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
         else:
-            return result
+            return flask.render_template('500.html', error=result)
 
 
 @app.route('/ws_sg/edit', methods=['GET', 'POST'])
@@ -395,15 +421,27 @@ def synchosts():
 def sg_edit():
     sg_id = flask.request.values.get('sg-id')
     ip = flask.request.values.get('IP')
-    db: ops_web.db.Database = flask.g.db
-    app.logger.info(sg_id)
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        result = aws.add_inboundrule(sg_id, ip)
-    if result == 'successful':
-        return flask.redirect(flask.url_for('ws_sg'))
+    if '/' in ip:
+        ip_valid = ip.split('/')[0]
     else:
-        return "not able to add this IP, check if the IP already exists in this security group or if it is malformed"
+        ip_valid = ip
+    try:
+        ipaddress.ip_address(ip_valid)
+    except Exception as e:
+        return flask.render_template('500.html', error=str(e))
+    if ip.startswith('0.0.0.0'):
+        return flask.render_template('500.html', error="Cant add any open networks")
+    else:
+        db: ops_web.db.Database = flask.g.db
+        app.logger.info(sg_id)
+        for account in db.get_all_credentials_for_use('aws'):
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            result = aws.add_inboundrule(sg_id, ip)
+        if result == 'successful':
+            return flask.redirect(flask.url_for('ws_sg'))
+        else:
+            return flask.render_template('500.html',
+                                         error="not able to add this IP, check if the IP already exists in this security group")
 
 
 @app.route('/launch', methods=['GET', 'POST'])
@@ -430,24 +468,23 @@ def launch():
         "envrole": env_role,
         "subnet": subnet,
         "whitelist": whitelist
-
     }
 
     db = ops_web.db.Database(config)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        idlist = aws.createInstances(ws_details, infodict)
+        idlist = aws.create_instances(ws_details, infodict)
         instanceslist = []
         instanceidlist = []
         for i in idlist:
             result = aws.get_single_instance(region, i)
-            state = aws.getinstanceattr(region, i, 'state')
+            state = aws.get_instance_attr(region, i, 'state')
             idlist2 = result['id']
             instanceslist.append(result)
             instanceidlist.append(idlist2)
             result['account_id'] = account.get('id')
             while state['Name'] == 'pending':
-                state = aws.getinstanceattr(region, i, 'state')
+                state = aws.get_instance_attr(region, i, 'state')
                 if state['Name'] == 'running':
                     break
             db.add_machine(result)

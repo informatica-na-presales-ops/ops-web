@@ -6,6 +6,18 @@
             <h1 class="text-light">Aws Launch Machines</h1>
         </div>
     </div>
+        <div class="row bump-top-padding">
+        <div class="col-12">
+
+            <div class="form-inline">
+                <label class="sr-only" for="filter-input"></label>
+                <form id="form1" action="{{ url_for('ws_postdep_filter') }}" method="post">
+                    <input type="text" placeholder="Environment Group Name...." title="Give the environment group name you want to perform the post deployment tasks." style="width: 450px;" name = "env_group_name">
+                </form>
+            </div>
+        </div>
+    </div>
+
     <body>
     <div class="row bump-top-padding">
         <div class="col-12">

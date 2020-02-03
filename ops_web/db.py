@@ -253,7 +253,8 @@ class Database(fort.PostgresDatabase):
                     inbound_rules,
                     group_name,
                     owner,
-                    account_id
+                    account_id,
+                    lower(coalesce(id,'') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) filter_value 
                 FROM security_group
                 '''
         else:
@@ -264,7 +265,8 @@ class Database(fort.PostgresDatabase):
                     inbound_rules,
                     group_name,
                     owner,
-                    account_id
+                    account_id,
+                    lower(coalesce(id,'') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) filter_value 
                 FROM security_group
                 WHERE 
                  (owner = %(email)s)
