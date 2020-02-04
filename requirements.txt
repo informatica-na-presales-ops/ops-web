@@ -13,4 +13,4 @@ paramiko==2.4.2
 pendulum==2.0.5
 psycopg2==2.8.4
 requests==2.22.0
-waitress==1.4.2
+waitress==1.4.3
