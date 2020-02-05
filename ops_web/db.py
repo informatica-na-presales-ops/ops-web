@@ -832,7 +832,7 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(15)
 
         if self.version < 16:
-            self.log.info('Migrating database to schema version 15')
+            self.log.info('Migrating database to schema version 16')
             self.u('''
                 ALTER TABLE virtual_machines
                 ADD COLUMN vpc text
