@@ -332,6 +332,7 @@ def images():
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('images.html')
 
+
 @app.route('/wscreator')
 @login_required
 def wscreator():
@@ -343,24 +344,27 @@ def wscreator():
 def workshop_tools():
     return flask.render_template('workshop_tools.html')
 
-@app.route('/ws_postdep',methods=['GET', 'POST'])
+
+@app.route('/ws_postdep', methods=['GET', 'POST'])
 @login_required
 def ws_postdep():
-     return flask.render_template('postdep.html')
+    return flask.render_template('postdep.html')
 
-@app.route('/ws_postdep_filter',methods=['GET', 'POST'])
+
+@app.route('/ws_postdep_filter', methods=['GET', 'POST'])
 @login_required
 def ws_postdep_filter():
-    env_group=flask.request.values.get("env_group_name")
+    env_group = flask.request.values.get("env_group_name")
     db = ops_web.db.Database(config)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        instance_list=aws.get_instance_of_envgrp(env_group)
+        instance_list = aws.get_instance_of_envgrp(env_group)
         instances_list2 = []
         for i in instance_list:
             result = aws.get_single_instance('us-west-2', i)
             instances_list2.append(result)
-        return flask.render_template('postdep.html',idlist=str(instance_list),instance=instances_list2)
+        return flask.render_template('postdep.html', idlist=str(instance_list), instance=instances_list2)
+
 
 @app.route('/wsimage', methods=['GET', 'POST'])
 @login_required
