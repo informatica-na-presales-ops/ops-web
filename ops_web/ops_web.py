@@ -943,6 +943,18 @@ def stop_machine(machine_id):
         az.stop_machine(machine_id)
 
 
+def check_sync():
+    app.logger.debug('Checking for a stuck sync ...')
+    db = ops_web.db.Database(config)
+    sync_data = db.get_sync_data()
+    if sync_data['syncing_now']:
+        now = datetime.datetime.utcnow()
+        duration = now - sync_data['last_sync_start']
+        if duration > datetime.timedelta(minutes=10):
+            app.logger.warning(f'Sync has been running for {duration}, aborting now ...')
+            db.end_sync()
+
+
 def sync_machines():
     app.logger.info('Syncing information from cloud providers now ...')
 
@@ -1049,6 +1061,8 @@ def main():
         db.end_sync()
 
     scheduler.start()
+    scheduler.add_job(check_sync, 'interval', minutes=1)
+
     app.logger.info(f'AUTO_SYNC is {config.auto_sync}')
     if config.auto_sync:
         scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
