@@ -807,11 +807,6 @@ class Database(fort.PostgresDatabase):
                 ALTER TABLE virtual_machines
                 ADD COLUMN whitelist text
             ''')
-            self.u('''
-                    ALTER TABLE virtual_machines
-                    ADD COLUMN vpc text
-                ''')
-
             self.add_schema_version(14)
         if self.version < 15:
             self.log.info('Migrating database to schema version 15')
@@ -838,6 +833,10 @@ class Database(fort.PostgresDatabase):
 
         if self.version < 16:
             self.log.info('Migrating database to schema version 15')
+            self.u('''
+                ALTER TABLE virtual_machines
+                ADD COLUMN vpc text
+            ''')
             self.u('''
                        CREATE TABLE security_group (
                            id text ,
