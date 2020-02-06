@@ -272,19 +272,19 @@ class AWSClient:
             host_name = self.get_instance_tag(region, i, 'image__dns_names_private')
             if platform != 'windows':
                 if host_name != 'modulabs.master.infa.world':
-                    try:
+                    # try:
                         key = RSAKey.from_private_key_file('/ops-web/data/keyPresalesNA_Prod_Demo.pem')
                         time.sleep(10)
                         client = SSHClient()
                         client.set_missing_host_key_policy(AutoAddPolicy())
-                        log.info("connecting to" + public_ip)
+                        log.debug("connecting to" + public_ip)
                         client.connect(hostname=public_ip, username="centos", pkey=key)
                         client.exec_command(
                             'sudo chown centos: /etc/hosts && >/etc/hosts && echo \"%s\" >> /etc/hosts' % strfinl3)
-                    except:
-                        return "Host file has not been updated. Please check if the instance is running or wait sometime till the instance loads properly."
+                    # except:
+                    #     return "Host file has not been updated. Please check if the instance is running or wait sometime till the instance loads properly."
             else:
-                try:
+                # try:
                     subprocess.check_output([
                         "smbclient -U Administrator%{0} //{1}/c$ --directory Windows\\\System32\\\drivers\\\etc -c 'get hosts'".format(
                             password, public_ip)],
@@ -295,8 +295,8 @@ class AWSClient:
                         "smbclient -U Administrator%{0} //{1}/c$ --directory Windows\\\System32\\\drivers\\\etc -c 'put hosts'".format(
                             password, public_ip)],
                         shell='True')
-                except:
-                    return "Failed updating hosts instances might still be loading please try again after sometime."
+                # except:
+                #     return "Failed updating hosts instances might still be loading please try again after sometime."
 
     def sync_hosts(self, instanceid: list):
 
@@ -320,7 +320,7 @@ class AWSClient:
         ec2 = self.session.resource('ec2', region_name='us-west-2')
         idlist = self.convert_instanceidstr_list(instanceid)
         region = 'us-west-2'
-        ec2Client = boto3.client('ec2', region)
+        ec2Client = self.session.client('ec2', region)
         for i in idlist:
             log.info(i)
             platform = self.get_instance_attr(region, i, 'platform')
