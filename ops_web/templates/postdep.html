@@ -54,7 +54,7 @@
             </button>
             <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-excelsheet"
                     title="Download Excel">
-                EXCEL
+                Download Excel sheet
             </button>
         </div>
     </div>
@@ -106,17 +106,17 @@
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                  <div class="modal-header">
-                    <h5 class="modal-title text-light">Update host file entries</h5>
+                    <h5 class="modal-title text-light">Download Excel</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-light">Wait for atleast 10 minutes after launching the instances before updating the hosts</p>
+                    <p class="text-light">Downloads an excel file with the Jumpbox instance name and public IPAddress</p>
 
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-outline-success" form="form-power-control" formaction="{{ url_for('excel_sheet') }}"
-                            method="post">EXCEL
+                            method="post">Download
                     </button>
                 </div>
             </div>
