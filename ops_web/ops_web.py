@@ -372,15 +372,20 @@ def wsimage():
     ws = flask.request.values.get("ws")
     app.logger.info(ws)
     db = ops_web.db.Database(config)
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        result = aws.workshop_images(ws)
-        wslist = []
-        wsidlist = []
-        for i in result:
-            wslist.append(i)
-            wsidlist.append(i['id'])
-    return flask.render_template('ws_creator.html', ws=wslist, id=wsidlist)
+    if (ws != 'CDW-AZ'):
+        for account in db.get_all_credentials_for_use('aws'):
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            result = aws.workshop_images(ws)
+            wslist = []
+            wsidlist = []
+            for i in result:
+                wslist.append(i)
+                wsidlist.append(i['id'])
+        return flask.render_template('ws_creator.html', ws2=ws, ws=wslist, id=wsidlist)
+    else:
+        app.logger.info("entered in ops-web")
+        app.logger.info(ws)
+        return flask.render_template('ws_creator.html', ws2=ws, ws=['ami1'])
 
 
 @app.route('/elasticip', methods=['GET', 'POST'])
@@ -418,6 +423,34 @@ def synchosts():
             return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
         else:
             return flask.render_template('500.html', error=result)
+
+
+@app.route('/synchosts_az', methods=['GET', 'POST'])
+@login_required
+def synchosts_az():
+    app.logger.info("entered in for updating hosts")
+    db = ops_web.db.Database(config)
+    idliststr = flask.request.values.get('instance')
+    instance_info = flask.request.values.get('instance_info')
+    id_list = idliststr
+    id_list2 = id_list[1:]
+    id_list3 = id_list2[:-1]
+    id_list4 = id_list3[1:]
+    id_list5 = id_list4[:-1]
+    id_list6 = id_list5.replace("\'", "")
+    id_list8 = id_list6.replace(' ', '')
+    id_list7 = id_list8.split(',')
+    app.logger.info(instance_info)
+    instance_info2=[]
+    for account in db.get_all_credentials_for_use('az'):
+        az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                 account.get('azure_tenant_id'))
+        result = az.sync_hosts(idliststr)
+        for i in id_list7:
+            i="'" + i + "'"
+            instance_info2.append(az.get_virtualmachine_info(i,'rg-cdw-workshops-201904'))
+
+        return flask.render_template('postdep_az.html',instance=instance_info2,idlist=id_list7)
 
 
 @app.route('/ws_sg/edit', methods=['GET', 'POST'])
@@ -535,6 +568,43 @@ def image_create():
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to create an image from {machine_id}')
         return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
+
+
+@app.route('/az_launch', methods=['POST'])
+@login_required
+def az_launch():
+    quantity = flask.request.values.get('count')
+    name = flask.request.values.get('name')
+    owner = flask.request.values.get('owner')
+    db = ops_web.db.Database(config)
+    q = int(quantity)
+    idlist = []
+    instance_info = []
+    for account in db.get_all_credentials_for_use('az'):
+        for i in range(q):
+            vmbase = name + str(i)
+            az_idlist = []
+            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                     account.get('azure_tenant_id'))
+            cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
+                                            account.get('azure_tenant_id'), vmbase, owner)
+
+            windows_result = az.launch_windows(account.get('username'), account.get('password'),
+                                               account.get('azure_tenant_id'), vmbase, owner)
+            infa_result = az.launch_infa(account.get('username'), account.get('password'),
+                                         account.get('azure_tenant_id'), vmbase, owner)
+            az_idlist.append(cdh_result)
+            az_idlist.append(windows_result)
+            az_idlist.append(infa_result)
+            for i in az_idlist:
+                virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
+                instance_info.append(virtualmachine_info)
+                idlist.append(virtualmachine_info['id'])
+                virtualmachine_info['account_id'] = account.get('id')
+                db.add_machine(virtualmachine_info)
+            app.logger.info(idlist)
+            app.logger.info(instance_info)
+        return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
 
 
 @app.route('/images/delete', methods=['POST'])
@@ -773,6 +843,50 @@ def rep_sc_pairs():
     flask.g.sales_reps = db.get_rep_sc_pairs()
     flask.g.sales_consultants = db.get_sales_consultants()
     return flask.render_template('rep-sc-pairs.html')
+
+
+@app.route('/excel_sheet', methods=['GET', 'POST'])
+@login_required
+def excel_sheet():
+    idlist = flask.request.values.get('instance')
+    app.logger.info(idlist)
+    db: ops_web.db.Database = flask.g.db
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        idlist2 = aws.convert_instanceidstr_list(idlist)
+        app.logger.info(idlist2)
+        instance_list = []
+        valdir = {}
+        for i in idlist2:
+
+            instance_info = aws.get_single_instance('us-west-2', i)
+            instance_name = instance_info['name']
+            instance_ip = instance_info['public_ip']
+
+            app.logger.info(instance_name)
+            if "Windows" in instance_name:
+                valdir[instance_name] = instance_ip
+                instance_list.append(valdir)
+            app.logger.info(valdir)
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet()
+
+        headers = ['Instance name', 'Public IP']
+        worksheet.write_row(0, 0, headers)
+        row = 0
+        col = 0
+
+        for key in valdir.keys():
+            row = row + 1
+            worksheet.write(row, col, key)
+            worksheet.write(row, col + 1, valdir[key])
+
+        workbook.close()
+        response = flask.make_response(output.getvalue())
+        response.headers['Content-Disposition'] = 'attachment; filename="workshop_CDW.csv"'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        return response
 
 
 @app.route('/rep-sc-pairs.xlsx')
