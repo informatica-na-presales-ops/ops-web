@@ -468,6 +468,10 @@ def sg_edit():
         return flask.render_template('500.html', error=str(e))
     if ip.startswith('0.0.0.0'):
         return flask.render_template('500.html', error="Cant add any open networks")
+    elif ip.startswith('10.'):
+        return flask.render_template('500.html', error="Cant add any internal networks")
+    elif ip.startswith('192.168.'):
+        return flask.render_template('500.html', error="Cant add any internal networks")
     else:
         db: ops_web.db.Database = flask.g.db
         app.logger.info(sg_id)
