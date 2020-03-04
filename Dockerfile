@@ -7,7 +7,7 @@ RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev make musl-dev postgr
  && /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt \
  && /sbin/apk del --no-cache .deps
 
-ENV APP_VERSION="2020.2" \
+ENV APP_VERSION="2020.3" \
     AUTO_SYNC="true" \
     AUTO_SYNC_INTERVAL="10" \
     AWS_IGNORED_SECURITY_GROUPS="" \
