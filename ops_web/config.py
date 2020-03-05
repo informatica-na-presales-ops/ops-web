@@ -54,8 +54,10 @@ class Config:
 
         Some variables have defaults if they are not found in the environment:
 
+        AUTO_SYNC=True
         AUTO_SYNC_INTERVAL=10
-        CLOUDS_TO_SYNC=aws,az
+        CLOUDS_TO_SYNC="aws az"
+        DEBUG_LAYOUT=False
         LOG_FORMAT="%(levelname)s [%(name)s] %(message)s"
         LOG_LEVEL=INFO
         PERMANENT_SESSIONS=False
@@ -67,15 +69,15 @@ class Config:
         WEB_SERVER_THREADS=4
         """
 
-        self.auto_sync = as_bool(os.getenv('AUTO_SYNC'))
-        self.auto_sync_interval = int(os.getenv('SYNC_INTERVAL', '10'))
+        self.auto_sync = as_bool(os.getenv('AUTO_SYNC', 'True'))
+        self.auto_sync_interval = int(os.getenv('AUTO_SYNC_INTERVAL', '10'))
         self.aws_ignored_security_groups = set(os.getenv('AWS_IGNORED_SECURITY_GROUPS', '').split())
         self.aws_ses_configuration_set = os.getenv('AWS_SES_CONFIGURATION_SET')
         self.az_client_id = os.getenv('AZ_CLIENT_ID')
         self.az_client_secret = os.getenv('AZ_CLIENT_SECRET')
         self.az_tenant_id = os.getenv('AZ_TENANT_ID')
         self.bootstrap_admin = os.getenv('BOOTSTRAP_ADMIN')
-        self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws,az')
+        self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws az')
         self.db = os.getenv('DB')
         self.debug_layout = as_bool(os.getenv('DEBUG_LAYOUT', 'False'))
         self.feature_flags = os.getenv('FEATURE_FLAGS', '').split()

@@ -8,37 +8,8 @@ RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev make musl-dev postgr
  && /sbin/apk del --no-cache .deps
 
 ENV APP_VERSION="2020.3" \
-    AUTO_SYNC="true" \
-    AUTO_SYNC_INTERVAL="10" \
-    AWS_IGNORED_SECURITY_GROUPS="" \
-    AWS_SES_CONFIGURATION_SET="" \
-    AZ_CLIENT_ID="" \
-    AZ_CLIENT_SECRET="" \
-    AZ_TENANT_ID="" \
-    BOOTSTRAP_ADMIN="" \
-    CLOUDS_TO_SYNC="aws az" \
-    DB="" \
-    DEBUG_LAYOUT="false" \
-    FEATURE_FLAGS="" \
-    LOG_FORMAT="%(levelname)s [%(name)s] %(message)s" \
-    LOG_LEVEL="INFO" \
-    OTHER_LOG_LEVELS="" \
-    PERMANENT_SESSIONS="false" \
-    POWER_CONTROL_DOMAIN="example.com" \
     PYTHONUNBUFFERED="1" \
-    RESET_DATABASE="false" \
-    SCHEME="http" \
-    SECRET_KEY="" \
-    SEND_EMAIL="False" \
-    SERVER_NAME="" \
-    SMTP_FROM="" \
-    SMTP_HOST="" \
-    SMTP_PASSWORD="" \
-    SMTP_USERNAME="" \
-    SUPPORT_EMAIL="" \
-    TZ="Etc/UTC" \
-    WEB_SERVER_THREADS="4" \
-    ZENDESK_WIDGET_KEY=""
+    TZ="Etc/UTC"
 
 ENTRYPOINT ["/usr/local/bin/python"]
 CMD ["/ops-web/run.py"]
