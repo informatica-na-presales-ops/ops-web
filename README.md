@@ -1,6 +1,6 @@
 To launch the project:
 
-1. Copy `docker-compose.override-example.yml` to `docker-compose.override.yml` and edit as necessary.
+1. Copy `docker-compose.override-example.yaml` to `docker-compose.override.yaml` and edit as necessary.
 2. Open a shell and change to the project directory.
 3. Run `docker-compose up -d postgres` to start the database server.
 4. Run `docker-compose up ops-web` to start the application server.
