@@ -1,49 +1,41 @@
 // dynamically hide and show form questions
 
 $('input[name="primary-loss-reason"]').on('click', function () {
-    let clr = $('#competitive-loss');
-    let clr_inputs = $('input[name="competitive-loss-reason"]');
-    let tgt_inputs = $('input[name="technology-gap-type"]');
-    let ppfr_inputs = $('input[name="perceived-poor-fit-reason"]');
+    let nodes = $('.show-on-tech-gap');
     switch (this.value) {
+        case 'price':
         case 'key-decision-maker-left':
         case 'project-cancelled':
-            clr.collapse('hide');
-            clr_inputs.prop('required', false);
-            tgt_inputs.prop('required', false);
-            ppfr_inputs.prop('required', false);
+        case 'competitive-loss-other':
+            nodes.collapse('hide');
             break;
-        case 'competitive-loss':
-            clr.collapse('show');
-            clr_inputs.prop('required', true);
+        case 'competitive-loss-tech':
+            nodes.collapse('show');
             break;
     }
 });
 
-$('input[name="competitive-loss-reason"]').on('click',function () {
-    let tgt = $('#technology-gap-type');
-    let tgt_inputs = $('input[name="technology-gap-type"]');
-    let ppfr = $('#perceived-poor-fit-reason');
-    let ppfr_inputs = $('input[name="perceived-poor-fit-reason"]');
+$('input[name="did-poc"]').on('click', function () {
+    let nodes = $('.show-on-did-poc');
+    if (this.checked) {
+        nodes.collapse('show');
+    } else {
+        nodes.collapse('hide');
+    }
+});
+
+$('input[name="poc-outcome"]').on('click', function () {
+    let nodes = $('.show-on-bad-poc');
     switch (this.value) {
-        case 'relationship-loss':
-        case 'partner-influenced':
-            tgt.collapse('hide');
-            tgt_inputs.prop('required', false);
-            ppfr.collapse('hide');
-            ppfr_inputs.prop('required', false);
+        case 'tech-win':
+        case 'partner-tech-win':
+        case 'not-sure':
+            nodes.collapse('hide');
             break;
-        case 'perceived-poor-fit':
-            tgt.collapse('hide');
-            tgt_inputs.prop('required', false);
-            ppfr.collapse('show');
-            ppfr_inputs.prop('required', true);
-            break;
-        case 'technology-gap':
-            ppfr.collapse('hide');
-            ppfr_inputs.prop('required', false);
-            tgt.collapse('show');
-            tgt_inputs.prop('required', true);
+        case 'no-tech-win':
+        case 'no-outcome':
+        case 'partner-no-tech-win':
+            nodes.collapse('show');
             break;
     }
 });

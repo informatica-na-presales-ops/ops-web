@@ -1,0 +1,21 @@
+<html lang="en">
+<body>
+<p>Hello!</p>
+
+<p>Our records show that an opportunity you worked on was recently closed:</p>
+
+<p>
+    Account: {{ c.opportunity.account_name }}<br>
+    Opportunity: {{ c.opportunity.name }} ({{ c.opportunity.opportunity_number }})<br>
+    Your role: {{ c.person.role }}
+</p>
+
+<p>Will you please complete a short survey to help us improve? You can find the survey here:</p>
+
+<p><a href="{{ url_for('op_debrief_survey', survey_id=c.survey_id) }}">{{ url_for('op_debrief_survey', survey_id=c.survey_id) }}</a></p>
+
+<p>If you were not involved in this opportunity, please <a href="#">click here</a> to cancel this survey.</p>
+
+<p>Thanks!</p>
+</body>
+</html>

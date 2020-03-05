@@ -800,26 +800,57 @@ def op_debrief_survey(survey_id: uuid.UUID):
     if 'admin' in flask.g.permissions or 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
         if flask.request.method == 'GET':
             flask.g.survey = survey
+            flask.g.op_contacts = db.get_op_contacts(survey.get('opportunity_number'))
+            # Primary loss reason
             flask.g.plr_options = {
+                'price': 'Price',
                 'key-decision-maker-left': 'Key decision maker left',
-                'project-cancelled': 'Project cancelled',
-                'competitive-loss': 'Competitive loss'
+                'project-cancelled': 'Project cancelled or delayed',
+                'competitive-loss-tech': 'Competitive loss (technology gap)',
+                'competitive-loss-other': 'Competitive loss (other)',
             }
-            flask.g.clr_options = {
-                'relationship-loss': 'Relationship loss',
-                'technology-gap': 'Technology gap',
-                'perceived-poor-fit': 'Perceived poor brand/solution fit',
-                'partner-influenced': 'Partner influenced'
+            # Technology gap type
+            flask.g.tech_gap_categories = {
+                'runtime': 'Runtime',
+                'design-time': 'Design-time',
+                'connectivity': 'Connectivity',
+                'install': 'Install',
             }
-            flask.g.tgt_options = {
-                'option-1': 'Option 1',
-                'option-2': 'Option 2',
-                'option-3': 'Option 3'
+            # Technology gap options
+            flask.g.tech_gap_options = {
+                'performance': 'Performance',
+                'stability': 'Stability',
+                'missing-features': 'Missing features',
+                'compatibility': 'Compatibility',
+                'ease-of-use': 'Ease of use',
             }
-            flask.g.ppfr_options = {
-                'option-1': 'Option 1',
-                'option-2': 'Option 2',
-                'option-3': 'Option 3'
+            # who engaged to manage technology gap
+            flask.g.who_engaged_options = {
+                'engaged-other-specialists': 'Other specialists',
+                'engaged-gcs': 'Global Customer Support',
+                'engaged-pm': 'Product Management',
+                'engaged-dev': 'Development',
+            }
+            flask.g.validation_activities = {
+                'did-rfp': 'RFP',
+                'did-standard-demo': 'Standard demo',
+                'did-custom-demo': 'Custom demo',
+                'did-eval-trial': 'Evaluation / Trial',
+                'did-poc': 'POC',
+            }
+            flask.g.poc_outcomes = {
+                'tech-win': 'Secured technical win',
+                'no-tech-win': 'Did not secure technical win',
+                'no-outcome': 'No clear outcome',
+                'partner-tech-win': 'Partner led, technical win',
+                'partner-no-tech-win': 'Partner led, no technical win',
+                'not-sure': 'Not sure',
+            }
+            flask.g.poc_failure_reasons = {
+                'success-criteria': 'Undefined or poorly-defined success criteria',
+                'use-cases': 'Undefined or poorly-defined use cases',
+                'customer-not-engaged': 'Customer not engaged',
+                'tech-gap': 'Technology gap',
             }
             return flask.render_template('op-debrief-survey.html')
         elif flask.request.method == 'POST':
@@ -1150,8 +1181,9 @@ def generate_op_debrief_surveys():
                 'survey_id': survey_id
             }
             with app.app_context():
-                body = flask.render_template('op-debrief-survey-email.jinja2', c=c)
+                body = flask.render_template('op-debrief-survey-email.html', c=c)
             ops_web.send_email.send_email(config, email, 'Opportunity debrief survey', body)
+    app.logger.info('Done generating opportunity debrief surveys')
     db.update_op_debrief_tracking(now)
 
 

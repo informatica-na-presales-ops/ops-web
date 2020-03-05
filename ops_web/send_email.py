@@ -14,7 +14,7 @@ def send_email(c: ops_web.config.Config, to_addr, subject, body) -> bool:
         msg['Subject'] = subject
         msg['From'] = c.smtp_from
         msg['To'] = to_addr
-        msg.set_content(body)
+        msg.set_content(body, subtype='html')
         with smtplib.SMTP_SSL(host=c.smtp_host) as s:
             s.login(user=c.smtp_username, password=c.smtp_password)
             try:

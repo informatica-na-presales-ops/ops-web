@@ -397,8 +397,8 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,vpc,
-                    account_id, visible, synced
+                    created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,
+                    vpc, account_id, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
@@ -435,25 +435,25 @@ class Database(fort.PostgresDatabase):
 
     def add_group(self, params: Dict):
         # params = {
-        #   'id': '', 'cloud': '', 'owner':'','inbound_rules':'','group_name':'',
-        #   'account_id': ''
+        #   'id': '', 'cloud': '', 'owner':'', 'inbound_rules':'', 'group_name':'', 'account_id': ''
         # }
 
         sql = 'SELECT id FROM security_group WHERE id = %(id)s'
         if self.q(sql, params):
             sql = '''
-                       UPDATE security_group
-                       SET cloud = %(cloud)s, owner = %(owner)s, inbound_rules = %(inbound_rules)s, group_name = %(group_name)s ,account_id = %(account_id)s
-                       WHERE id = %(id)s
-                   '''
+                UPDATE security_group
+                SET cloud = %(cloud)s, owner = %(owner)s, inbound_rules = %(inbound_rules)s,
+                    group_name = %(group_name)s, account_id = %(account_id)s
+                WHERE id = %(id)s
+           '''
         else:
             sql = '''
-                       INSERT INTO security_group (
-                           id, cloud, owner,inbound_rules,group_name,account_id
-                       ) VALUES (
-                           %(id)s, %(cloud)s, %(owner)s, %(inbound_rules)s,%(group_name)s,%(account_id)s
-                       )
-                   '''
+                INSERT INTO security_group (
+                    id, cloud, owner, inbound_rules, group_name, account_id
+                ) VALUES (
+                    %(id)s, %(cloud)s, %(owner)s, %(inbound_rules)s, %(group_name)s, %(account_id)s
+                )
+            '''
         self.u(sql, params)
 
     # rep/sc pairs
@@ -522,6 +522,16 @@ class Database(fort.PostgresDatabase):
         params = {'since': since}
         return self.q(sql, params)
 
+    def get_op_contacts(self, opportunity_number: str) -> List[Dict]:
+        sql = '''
+            SELECT DISTINCT c.opportunity_key, c.contact_key, c.name, c.title, c.phone, c.email, c.is_primary
+            FROM sf_opportunity_contacts c
+            JOIN sf_opportunities o ON o.opportunity_key = c.opportunity_key
+            WHERE o.opportunity_number = %(opportunity_number)s
+        '''
+        params = {'opportunity_number': opportunity_number}
+        return self.q(sql, params)
+
     def get_op_numbers_for_existing_surveys(self) -> Set[str]:
         sql = 'SELECT DISTINCT opportunity_number FROM op_debrief_surveys'
         return set([r.get('opportunity_number') for r in self.q(sql)])
@@ -538,8 +548,16 @@ class Database(fort.PostgresDatabase):
     def get_survey(self, survey_id: uuid.UUID) -> Optional[Dict]:
         sql = '''
             SELECT
-                s.id, s.opportunity_number, s.email, s.role, s.primary_loss_reason, s.competitive_loss_reason,
-                s.technology_gap_type, s.perceived_poor_fit_reason, s.generated, s.completed,
+                s.id, s.opportunity_number, s.email, s.generated, s.completed, s.role, s.primary_loss_reason,
+                s.tg_runtime_performance, s.tg_runtime_stability, s.tg_runtime_missing_features,
+                s.tg_runtime_compatibility, s.tg_runtime_ease_of_use, s.tg_design_time_performance,
+                s.tg_design_time_stability, s.tg_design_time_missing_features, s.tg_design_time_compatibility,
+                s.tg_design_time_ease_of_use, s.tg_connectivity_performance, s.tg_connectivity_stability,
+                s.tg_connectivity_missing_features, s.tg_connectivity_compatibility, s.tg_connectivity_ease_of_use,
+                s.tg_install_performance, s.tg_install_stability, s.tg_install_missing_features,
+                s.tg_install_compatibility, s.tg_install_ease_of_use, s.engaged_other_specialists, s.engaged_gcs,
+                s.engaged_pm, s.engaged_dev, s.did_rfp, s.did_standard_demo, s.did_custom_demo, s.did_eval_trial,
+                s.did_poc, s.poc_outcome, s.close_contacts,
                 o.name opportunity_name, o.account_name, o.close_date, o.technology_ecosystem, o.sales_journey,
                 o.competitors
             FROM op_debrief_surveys s
@@ -587,7 +605,8 @@ class Database(fort.PostgresDatabase):
         self.log.warning('Database reset requested, dropping all tables')
         for table in ('cloud_credentials', 'images', 'log_entries', 'op_debrief_surveys', 'op_debrief_tracking',
                       'permissions', 'sales_consultants', 'sales_reps', 'schema_versions', 'sf_opportunities',
-                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines','security_group'):
+                      'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines',
+                      'security_group'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -687,8 +706,6 @@ class Database(fort.PostgresDatabase):
                 ALTER TABLE images
                 ADD COLUMN instanceid text
             ''')
-
-
             self.add_schema_version(6)
         if self.version < 7:
             self.log.info('Migrating database to schema version 7')
@@ -830,7 +847,6 @@ class Database(fort.PostgresDatabase):
             ''')
 
             self.add_schema_version(15)
-
         if self.version < 16:
             self.log.info('Migrating database to schema version 16')
             self.u('''
@@ -838,16 +854,68 @@ class Database(fort.PostgresDatabase):
                 ADD COLUMN vpc text
             ''')
             self.u('''
-                       CREATE TABLE security_group (
-                           id text ,
-                           cloud text ,
-                           owner text ,
-                           inbound_rules text ,
-                           group_name text,
-                           account_id uuid 
-                       )
-                   ''')
+               CREATE TABLE security_group (
+                   id text,
+                   cloud text,
+                   owner text,
+                   inbound_rules text,
+                   group_name text,
+                   account_id uuid 
+               )
+           ''')
             self.add_schema_version(16)
+        if self.version < 17:
+            self.log.info('Migrating database to schema version 17')
+            self.u('''
+                CREATE TABLE sf_opportunity_contacts (
+                    opportunity_contact_key integer primary key,
+                    opportunity_key integer,
+                    contact_key integer,
+                    name text,
+                    title text,
+                    phone text,
+                    email text,
+                    is_primary boolean
+                )
+            ''')
+            self.u('''
+                ALTER TABLE op_debrief_surveys
+                DROP COLUMN competitive_loss_reason,
+                DROP COLUMN technology_gap_type,
+                DROP COLUMN perceived_poor_fit_reason,
+                ADD COLUMN tg_runtime_performance boolean,
+                ADD COLUMN tg_runtime_stability boolean,
+                ADD COLUMN tg_runtime_missing_features boolean,
+                ADD COLUMN tg_runtime_compatibility boolean,
+                ADD COLUMN tg_runtime_ease_of_use boolean,
+                ADD COLUMN tg_design_time_performance boolean,
+                ADD COLUMN tg_design_time_stability boolean,
+                ADD COLUMN tg_design_time_missing_features boolean,
+                ADD COLUMN tg_design_time_compatibility boolean,
+                ADD COLUMN tg_design_time_ease_of_use boolean,
+                ADD COLUMN tg_connectivity_performance boolean,
+                ADD COLUMN tg_connectivity_stability boolean,
+                ADD COLUMN tg_connectivity_missing_features boolean,
+                ADD COLUMN tg_connectivity_compatibility boolean,
+                ADD COLUMN tg_connectivity_ease_of_use boolean,
+                ADD COLUMN tg_install_performance boolean,
+                ADD COLUMN tg_install_stability boolean,
+                ADD COLUMN tg_install_missing_features boolean,
+                ADD COLUMN tg_install_compatibility boolean,
+                ADD COLUMN tg_install_ease_of_use boolean,
+                ADD COLUMN engaged_other_specialists boolean,
+                ADD COLUMN engaged_gcs boolean,
+                ADD COLUMN engaged_pm boolean,
+                ADD COLUMN engaged_dev boolean,
+                ADD COLUMN did_rfp boolean,
+                ADD COLUMN did_standard_demo boolean,
+                ADD COLUMN did_custom_demo boolean,
+                ADD COLUMN did_eval_trial boolean,
+                ADD COLUMN did_poc boolean,
+                ADD COLUMN poc_outcome text,
+                ADD COLUMN close_contacts text
+            ''')
+            self.add_schema_version(17)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
