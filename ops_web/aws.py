@@ -532,7 +532,8 @@ class AWSClient:
             'business_unit': tags.get('BUSINESSUNIT', ''),
             'dns_names': tags.get('image__dns_names_private', ''),
             'whitelist': self.get_whitelist_for_instance(region, instance),
-            'vpc': instance.vpc_id
+            'vpc': instance.vpc_id,
+            'disable_termination': instance.describe_attribute(Attribute = 'disableApiTermination')['DisableApiTermination']['Value']
         }
         if params['environment'] == '':
             params['environment'] = 'default-environment'
