@@ -601,6 +601,11 @@ class Database(fort.PostgresDatabase):
         sql = 'UPDATE op_debrief_tracking SET last_check = %(last_check)s WHERE only_row IS TRUE'
         params = {'last_check': last_check}
         self.u(sql, params)
+
+    def update_cost_tracking(self, last_check: datetime.datetime, report_id):
+        sql = 'UPDATE cost_tracking SET last_check = %(last_check)s,report_id = %(report_id)s WHERE only_row IS TRUE'
+        params = {'last_check': last_check,'report_id': report_id}
+        self.u(sql, params)
     # migrations and metadata
 
     def add_schema_version(self, schema_version: int):

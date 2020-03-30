@@ -1192,9 +1192,12 @@ def generate_costperinstance():
     url = 'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token=GMBXEN8EkNBj7hPCdpUM&filters=vendor_account_identifier==3680-9902-9718,service_name==Amazon Elastic Compute Cloud'
     response = requests.get(url)
     result = response.json()
-    jsonresult = result['id']
-    app.logger.info(jsonresult)
-    db.add_reportid(datetime.datetime.utcnow(),jsonresult)
+    report_id = result['id']
+    app.logger.info(report_id)
+    if(db.get_reportid()==None):
+      db.add_reportid(datetime.datetime.utcnow(),report_id)
+    else:
+        db.update_cost_tracking(datetime.datetime.utcnow(),report_id)
 
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)
