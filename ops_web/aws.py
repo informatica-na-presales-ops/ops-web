@@ -534,13 +534,11 @@ class AWSClient:
                 break
             else:
                 ic= '$0'
-        log.info(ic)
         instance_cost = ic[1:]
         if ',' in instance_cost:
             instance_cost= instance_cost.replace(',','')
         else:
             instance_cost=instance_cost
-        log.info(instance_cost)
         for i,f in result.items():
                if(i == volid):
                    vc=f
@@ -552,12 +550,12 @@ class AWSClient:
             volume_cost=volume_cost.replace(',','')
         else:
             volume_cost=volume_cost
-        log.info(volume_cost)
         return float(instance_cost) + float(volume_cost)
 
     def get_volume(self,vol):
         for i in vol:
-            return i.id
+            return i['Ebs']['VolumeId']
+
 
     def get_instance_dict(self, region, instance,result) -> Dict:
         tags = tag_list_to_dict(instance.tags)
@@ -581,7 +579,7 @@ class AWSClient:
             'whitelist': self.get_whitelist_for_instance(region, instance),
             'vpc': instance.vpc_id,
             'disable_termination': instance.describe_attribute(Attribute='disableApiTermination')['DisableApiTermination']['Value'],
-            'cost':self.get_unblendedcost(instance.id ,result,self.get_volume(instance.volumes.all()))
+            'cost':self.get_unblendedcost(instance.id ,result,self.get_volume(instance.block_device_mappings))
         }
         if params['environment'] == '':
             params['environment'] = 'default-environment'
