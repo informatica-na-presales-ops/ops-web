@@ -167,7 +167,8 @@ class AZClient:
             'dns_names': vm.tags.get('image__dns_names_private', ''),
             'whitelist': None,
             'vpc': None,
-            'disable_termination': None
+            'disable_termination': None,
+            'cost':None
         }
 
         return params

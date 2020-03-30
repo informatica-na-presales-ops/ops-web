@@ -1,5 +1,6 @@
 import apscheduler.schedulers.background
 import datetime
+import requests
 import ops_web.aws
 import ops_web.az
 import ops_web.config
@@ -361,7 +362,7 @@ def ws_postdep_filter():
         instance_list = aws.get_instance_of_envgrp(env_group)
         instances_list2 = []
         for i in instance_list:
-            result = aws.get_single_instance('us-west-2', i)
+            result = aws.get_single_instance('us-west-2', i,db.get_reportid())
             instances_list2.append(result)
         return flask.render_template('postdep.html', idlist=str(instance_list), instance=instances_list2)
 
@@ -400,7 +401,7 @@ def elasticip():
         instances_list = []
         idlist = aws.convert_instanceidstr_list(idlist_str)
         for i in idlist:
-            result = aws.get_single_instance(region, i)
+            result = aws.get_single_instance(region, i,db.get_reportid())
             instances_list.append(result)
     return flask.render_template('postdep.html', idlist=idlist_str, instance=instances_list)
 
@@ -417,7 +418,7 @@ def synchosts():
         idlist = aws.convert_instanceidstr_list(idliststr)
         instanceslist = []
         for i in idlist:
-            instance = aws.get_single_instance(region, i)
+            instance = aws.get_single_instance(region, i,db.get_reportid())
             instanceslist.append(instance)
         if result is None:
             return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
@@ -518,7 +519,7 @@ def launch():
         instanceslist = []
         instanceidlist = []
         for i in idlist:
-            result = aws.get_single_instance(region, i)
+            result = aws.get_single_instance(region, i,db.get_reportid())
             state = aws.get_instance_attr(region, i, 'state')
             idlist2 = result['id']
             instanceslist.append(result)
@@ -679,7 +680,7 @@ def machine_create():
         account = db.get_one_credential_for_use(image.get('account_id'))
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         response = aws.create_instance(region, image_id, instance_id, name, owner, environment)
-        instance = aws.get_single_instance(region, response[0].id)
+        instance = aws.get_single_instance(region, response[0].id,db.get_reportid())
         instance['account_id'] = account.get('id')
         db.add_machine(instance)
         return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -894,7 +895,7 @@ def excel_sheet():
         valdir = {}
         for i in idlist2:
 
-            instance_info = aws.get_single_instance('us-west-2', i)
+            instance_info = aws.get_single_instance('us-west-2', i,db.get_reportid())
             instance_name = instance_info['name']
             instance_ip = instance_info['public_ip']
 
@@ -1121,7 +1122,7 @@ def sync_machines():
         db.pre_sync('aws')
         for account in db.get_all_credentials_for_use('aws'):
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            for instance in aws.get_all_instances():
+            for instance in aws.get_all_instances(db.get_reportid()):
                 instance['account_id'] = account.get('id')
                 db.add_machine(instance)
             for image in aws.get_all_images():
@@ -1186,6 +1187,14 @@ def generate_op_debrief_surveys():
     app.logger.info('Done generating opportunity debrief surveys')
     db.update_op_debrief_tracking(now)
 
+def generate_costperinstance():
+    db = ops_web.db.Database(config)
+    url = 'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token=GMBXEN8EkNBj7hPCdpUM&filters=vendor_account_identifier==3680-9902-9718,service_name==Amazon Elastic Compute Cloud'
+    response = requests.get(url)
+    result = response.json()
+    jsonresult = result['id']
+    app.logger.info(jsonresult)
+    db.add_reportid(datetime.datetime.utcnow(),jsonresult)
 
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)
@@ -1222,5 +1231,8 @@ def main():
     if 'op-debrief' in config.feature_flags:
         scheduler.add_job(generate_op_debrief_surveys)
         scheduler.add_job(generate_op_debrief_surveys, 'interval', hours=6)
+    if 'cloudability-cost' in config.feature_flags:
+        scheduler.add_job(generate_costperinstance)
+        scheduler.add_job(generate_costperinstance, 'interval', hours=24)
 
     waitress.serve(app, ident=None, threads=config.web_server_threads)

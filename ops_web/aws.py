@@ -11,6 +11,7 @@ import botocore
 import paramiko
 import os
 import subprocess
+import requests
 
 from typing import Dict, List
 
@@ -497,13 +498,28 @@ class AWSClient:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
 
-    def get_all_instances(self):
+    def get_all_instances(self,report_id):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 instances in {region}')
+            url = 'https://app.cloudability.com/api/1/reporting/cost/reports/{0}/results?auth_token=GMBXEN8EkNBj7hPCdpUM'.format(report_id)
+            response = requests.get(url)
+            dictr={}
+            result = response.json()
+            jsonresult=result['results']
+            for i in jsonresult:
+                for k, v in i.items():
+                    if (k == 'resource_identifier'):
+                        l = v
+                        continue
+                    elif (k == 'unblended_cost'):
+                        g = v
+                    else:
+                        g = None
+                    dictr[l] = g
             ec2 = self.session.resource('ec2', region_name=region)
             try:
                 for instance in ec2.instances.all():
-                    yield self.get_instance_dict(region, instance)
+                    yield self.get_instance_dict(region, instance,dictr)
             except botocore.exceptions.ClientError as e:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
@@ -511,9 +527,40 @@ class AWSClient:
     def get_available_regions(self):
         return self.session.get_available_regions('ec2')
 
-    def get_instance_dict(self, region, instance) -> Dict:
-        tags = tag_list_to_dict(instance.tags)
+    def get_unblendedcost(self,instanceid , result , volid):
+        for i, f in result.items():
+            if (i == instanceid):
+                ic = f
+                break
+            else:
+                ic= '$0'
+        log.info(ic)
+        instance_cost = ic[1:]
+        if ',' in instance_cost:
+            instance_cost= instance_cost.replace(',','')
+        else:
+            instance_cost=instance_cost
+        log.info(instance_cost)
+        for i,f in result.items():
+               if(i == volid):
+                   vc=f
+                   break
+               else:
+                    vc='$0'
+        volume_cost = vc[1:]
+        if ',' in volume_cost:
+            volume_cost=volume_cost.replace(',','')
+        else:
+            volume_cost=volume_cost
+        log.info(volume_cost)
+        return float(instance_cost) + float(volume_cost)
 
+    def get_volume(self,vol):
+        for i in vol:
+            return i.id
+
+    def get_instance_dict(self, region, instance,result) -> Dict:
+        tags = tag_list_to_dict(instance.tags)
         params = {
             'id': instance.id,
             'cloud': 'aws',
@@ -533,7 +580,8 @@ class AWSClient:
             'dns_names': tags.get('image__dns_names_private', ''),
             'whitelist': self.get_whitelist_for_instance(region, instance),
             'vpc': instance.vpc_id,
-            'disable_termination': instance.describe_attribute(Attribute = 'disableApiTermination')['DisableApiTermination']['Value']
+            'disable_termination': instance.describe_attribute(Attribute='disableApiTermination')['DisableApiTermination']['Value'],
+            'cost':self.get_unblendedcost(instance.id ,result,self.get_volume(instance.volumes.all()))
         }
         if params['environment'] == '':
             params['environment'] = 'default-environment'
@@ -555,10 +603,24 @@ class AWSClient:
         params['contributors'] = ' '.join(sorted(contributors))
         return params
 
-    def get_single_instance(self, region: str, instanceid: str):
+    def get_single_instance(self, region: str, instanceid: str , report_id):
         ec2 = self.session.resource('ec2', region_name=region)
         instance = ec2.Instance(instanceid)
-        return self.get_instance_dict(region, instance)
+        url = 'https://app.cloudability.com/api/1/reporting/cost/reports/{0}/results?auth_token=GMBXEN8EkNBj7hPCdpUM'.format(report_id)
+        response = requests.get(url)
+        dictr = {}
+        result = response.json()
+        jsonresult = result['results']
+        for i in jsonresult:
+            for k, v in i.items():
+                if (k == 'resource_identifier'):
+                    l = v
+                    continue
+                elif (k == 'unblended_cost'):
+                    g = v
+                dictr[l] = g
+
+        return self.get_instance_dict(region, instance , dictr)
 
     def get_whitelist_for_instance(self, region: str, instance):
         whitelist = set()

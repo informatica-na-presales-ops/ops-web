@@ -164,7 +164,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,disable_termination,account_id,
+                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,disable_termination,cost,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -177,7 +177,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,disable_termination,account_id,
+                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,disable_termination,cost,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -194,7 +194,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc,disable_termination,account_id,
+                    dns_names, whitelist, vpc,disable_termination,cost,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -206,7 +206,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc,disable_termination,account_id,
+                    dns_names, whitelist, vpc,disable_termination,cost,account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -389,7 +389,7 @@ class Database(fort.PostgresDatabase):
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
                     business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,
-                    whitelist = %(whitelist)s, vpc = %(vpc)s,disable_termination = %(disable_termination)s,account_id = %(account_id)s,
+                    whitelist = %(whitelist)s, vpc = %(vpc)s,disable_termination = %(disable_termination)s,cost = %(cost)s,account_id = %(account_id)s,
                     visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
@@ -398,11 +398,11 @@ class Database(fort.PostgresDatabase):
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,
-                    vpc,disable_termination, account_id, visible, synced
+                    vpc,disable_termination,cost,account_id, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
-                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s, %(vpc)s,%(disable_termination)s,
+                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s, %(vpc)s,%(disable_termination)s,%(cost)s,
                     %(account_id)s, TRUE, TRUE
                 )
             '''
@@ -495,6 +495,21 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
         return params.get('id')
 
+    def add_reportid(self,last_check: datetime , report_id: str):
+        sql = '''
+        INSERT INTO cost_tracking (last_check, report_id) 
+        VALUES (%(last_check)s,%(report_id)s)
+        '''
+        params ={
+            'last_check': datetime.datetime.utcnow(),
+            'report_id':report_id
+        }
+        self.u(sql,params)
+
+    def get_reportid(self):
+        sql = 'SELECT report_id FROM cost_tracking'
+        return self.q_val(sql)
+
     def complete_survey(self, params: Dict):
         sql = '''
             UPDATE op_debrief_surveys
@@ -586,7 +601,6 @@ class Database(fort.PostgresDatabase):
         sql = 'UPDATE op_debrief_tracking SET last_check = %(last_check)s WHERE only_row IS TRUE'
         params = {'last_check': last_check}
         self.u(sql, params)
-
     # migrations and metadata
 
     def add_schema_version(self, schema_version: int):
@@ -606,7 +620,7 @@ class Database(fort.PostgresDatabase):
         for table in ('cloud_credentials', 'images', 'log_entries', 'op_debrief_surveys', 'op_debrief_tracking',
                       'permissions', 'sales_consultants', 'sales_reps', 'schema_versions', 'sf_opportunities',
                       'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines',
-                      'security_group'):
+                      'security_group','cost_tracking'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -926,6 +940,24 @@ class Database(fort.PostgresDatabase):
 
                                    ''')
             self.add_schema_version(18)
+
+        if self.version < 19:
+            self.log.info('Migrating database to schema version 18')
+            self.u('''
+                                       ALTER TABLE virtual_machines
+                                       ADD COLUMN cost text
+
+                                   ''')
+            self.add_schema_version(19)
+        if self.version < 20:
+            self.u('''
+                                  CREATE TABLE cost_tracking (
+                                      only_row boolean PRIMARY KEY DEFAULT TRUE CONSTRAINT only_row_constraint CHECK (only_row),
+                                      last_check timestamp,
+                                      report_id text
+                                  )
+                              ''')
+            self.add_schema_version(20)
 
 
     def _table_exists(self, table_name: str) -> bool:
