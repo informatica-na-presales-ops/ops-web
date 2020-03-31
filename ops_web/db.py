@@ -602,7 +602,7 @@ class Database(fort.PostgresDatabase):
         params = {'last_check': last_check}
         self.u(sql, params)
 
-    def update_cost_tracking(self, last_check: datetime.datetime, report_id):
+    def update_reportid(self, last_check: datetime.datetime, report_id):
         sql = 'UPDATE cost_tracking SET last_check = %(last_check)s,report_id = %(report_id)s WHERE only_row IS TRUE'
         params = {'last_check': last_check,'report_id': report_id}
         self.u(sql, params)

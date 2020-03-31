@@ -1197,7 +1197,7 @@ def generate_costperinstance():
     if(db.get_reportid()==None):
       db.add_reportid(datetime.datetime.utcnow(),report_id)
     else:
-        db.update_cost_tracking(datetime.datetime.utcnow(),report_id)
+        db.update_reportid(datetime.datetime.utcnow(),report_id)
 
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)

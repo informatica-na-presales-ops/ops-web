@@ -552,9 +552,9 @@ class AWSClient:
             volume_cost=volume_cost
         return float(instance_cost) + float(volume_cost)
 
-    def get_volume(self,vol):
-        for i in vol:
-            return i['Ebs']['VolumeId']
+    def get_volume(self,vol_list):
+        for vol in vol_list:
+            return vol['Ebs']['VolumeId']
 
 
     def get_instance_dict(self, region, instance,result) -> Dict:
