@@ -10,6 +10,7 @@ def as_bool(value: str) -> bool:
 
 class Config:
     auto_sync: bool
+    auto_sync_max_duration: int
     auto_sync_interval: int
     aws_ignored_security_groups: Set
     aws_ses_configuration_set: str
@@ -48,17 +49,18 @@ class Config:
     def __init__(self):
         """Instantiating a Config object will automatically read the following environment variables:
 
-        APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_IGNORED_SECURITY_GROUPS, AWS_SES_CONFIGURATION_SET,
-        AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDABILITY_AUTH_TOKEN,
-        CLOUDABILITY_VENDOR_ACCOUNT_ID, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT, LOG_LEVEL,
-        OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, SCHEME, SECRET_KEY, SEND_EMAIL,
-        SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ, WEB_SERVER_THREADS,
-        ZENDESK_WIDGET_KEY
+        APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AUTO_SYNC_MAX_DURATION, AWS_IGNORED_SECURITY_GROUPS,
+        AWS_SES_CONFIGURATION_SET, AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN,
+        CLOUDABILITY_AUTH_TOKEN, CLOUDABILITY_VENDOR_ACCOUNT_ID, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS,
+        LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, SCHEME,
+        SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ,
+        WEB_SERVER_THREADS, ZENDESK_WIDGET_KEY
 
         Some variables have defaults if they are not found in the environment:
 
         AUTO_SYNC=True
         AUTO_SYNC_INTERVAL=10
+        AUTO_SYNC_MAX_DURATION=10
         CLOUDS_TO_SYNC="aws az"
         DEBUG_LAYOUT=False
         LOG_FORMAT="%(levelname)s [%(name)s] %(message)s"
@@ -74,6 +76,7 @@ class Config:
 
         self.auto_sync = as_bool(os.getenv('AUTO_SYNC', 'True'))
         self.auto_sync_interval = int(os.getenv('AUTO_SYNC_INTERVAL', '10'))
+        self.auto_sync_max_duration = int(os.getenv('AUTO_SYNC_MAX_DURATION', '10'))
         self.aws_ignored_security_groups = set(os.getenv('AWS_IGNORED_SECURITY_GROUPS', '').split())
         self.aws_ses_configuration_set = os.getenv('AWS_SES_CONFIGURATION_SET')
         self.az_client_id = os.getenv('AZ_CLIENT_ID')

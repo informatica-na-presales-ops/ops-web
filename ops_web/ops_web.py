@@ -1100,7 +1100,7 @@ def check_sync():
     if sync_data['syncing_now']:
         now = datetime.datetime.utcnow()
         duration = now - sync_data['last_sync_start']
-        if duration > datetime.timedelta(minutes=10):
+        if duration > datetime.timedelta(minutes=config.auto_sync_max_duration):
             app.logger.warning(f'Sync has been running for {duration}, aborting now ...')
             db.end_sync()
 
