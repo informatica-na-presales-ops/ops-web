@@ -577,7 +577,7 @@ class AWSClient:
             'dns_names': tags.get('image__dns_names_private', ''),
             'whitelist': self.get_whitelist_for_instance(region, instance),
             'vpc': instance.vpc_id,
-            'disable_termination': instance.describe_attribute(Attribute='disableApiTermination')['DisableApiTermination']['Value'],
+            'disable_termination': None,
             'cost': self.get_unblendedcost(instance.id, result, self.get_volume(instance.block_device_mappings))
         }
         if params['environment'] == '':
