@@ -1187,17 +1187,19 @@ def generate_op_debrief_surveys():
     app.logger.info('Done generating opportunity debrief surveys')
     db.update_op_debrief_tracking(now)
 
+
 def generate_cloudability_reportid():
     db = ops_web.db.Database(config)
-    url = 'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token=GMBXEN8EkNBj7hPCdpUM&filters=vendor_account_identifier==3680-9902-9718,service_name==Amazon Elastic Compute Cloud'
+    url = f'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token={config.cloudability_auth_token}&filters=vendor_account_identifier=={config.cloudability_vendor_account_id},service_name==Amazon Elastic Compute Cloud'
     response = requests.get(url)
     result = response.json()
     report_id = result['id']
     app.logger.info(report_id)
-    if(db.get_reportid()==None):
-      db.add_reportid(datetime.datetime.utcnow(),report_id)
+    if db.get_reportid() is None:
+        db.add_reportid(datetime.datetime.utcnow(), report_id)
     else:
-        db.update_reportid(datetime.datetime.utcnow(),report_id)
+        db.update_reportid(datetime.datetime.utcnow(), report_id)
+
 
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)

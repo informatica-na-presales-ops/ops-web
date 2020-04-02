@@ -501,7 +501,7 @@ class AWSClient:
     def get_all_instances(self,report_id):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 instances in {region}')
-            url = 'https://app.cloudability.com/api/1/reporting/cost/reports/{0}/results?auth_token=GMBXEN8EkNBj7hPCdpUM'.format(report_id)
+            url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
             response = requests.get(url)
             dictr={}
             result = response.json()
@@ -556,7 +556,6 @@ class AWSClient:
         for vol in vol_list:
             return vol['Ebs']['VolumeId']
 
-
     def get_instance_dict(self, region, instance,result) -> Dict:
         tags = tag_list_to_dict(instance.tags)
         params = {
@@ -579,7 +578,7 @@ class AWSClient:
             'whitelist': self.get_whitelist_for_instance(region, instance),
             'vpc': instance.vpc_id,
             'disable_termination': instance.describe_attribute(Attribute='disableApiTermination')['DisableApiTermination']['Value'],
-            'cost':self.get_unblendedcost(instance.id ,result,self.get_volume(instance.block_device_mappings))
+            'cost': self.get_unblendedcost(instance.id, result, self.get_volume(instance.block_device_mappings))
         }
         if params['environment'] == '':
             params['environment'] = 'default-environment'
@@ -604,7 +603,7 @@ class AWSClient:
     def get_single_instance(self, region: str, instanceid: str , report_id):
         ec2 = self.session.resource('ec2', region_name=region)
         instance = ec2.Instance(instanceid)
-        url = 'https://app.cloudability.com/api/1/reporting/cost/reports/{0}/results?auth_token=GMBXEN8EkNBj7hPCdpUM'.format(report_id)
+        url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
         response = requests.get(url)
         dictr = {}
         result = response.json()

@@ -18,6 +18,8 @@ class Config:
     az_client_secret: str
     az_tenant_id: str
     bootstrap_admin: str
+    cloudability_auth_token: str
+    cloudability_vendor_account_id: str
     clouds_to_sync: str
     db: str
     debug_layout: bool
@@ -47,10 +49,11 @@ class Config:
         """Instantiating a Config object will automatically read the following environment variables:
 
         APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AWS_IGNORED_SECURITY_GROUPS, AWS_SES_CONFIGURATION_SET,
-        AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS,
-        LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, SCHEME,
-        SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ,
-        WEB_SERVER_THREADS, ZENDESK_WIDGET_KEY
+        AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, BOOTSTRAP_ADMIN, CLOUDABILITY_AUTH_TOKEN,
+        CLOUDABILITY_VENDOR_ACCOUNT_ID, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT, LOG_LEVEL,
+        OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, SCHEME, SECRET_KEY, SEND_EMAIL,
+        SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ, WEB_SERVER_THREADS,
+        ZENDESK_WIDGET_KEY
 
         Some variables have defaults if they are not found in the environment:
 
@@ -77,6 +80,8 @@ class Config:
         self.az_client_secret = os.getenv('AZ_CLIENT_SECRET')
         self.az_tenant_id = os.getenv('AZ_TENANT_ID')
         self.bootstrap_admin = os.getenv('BOOTSTRAP_ADMIN')
+        self.cloudability_auth_token = os.getenv('CLOUDABILITY_AUTH_TOKEN')
+        self.cloudability_vendor_account_id = os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID')
         self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws az')
         self.db = os.getenv('DB')
         self.debug_layout = as_bool(os.getenv('DEBUG_LAYOUT', 'False'))
