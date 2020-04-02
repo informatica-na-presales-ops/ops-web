@@ -1187,7 +1187,7 @@ def generate_op_debrief_surveys():
     app.logger.info('Done generating opportunity debrief surveys')
     db.update_op_debrief_tracking(now)
 
-def generate_costperinstance():
+def generate_cloudability_reportid():
     db = ops_web.db.Database(config)
     url = 'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token=GMBXEN8EkNBj7hPCdpUM&filters=vendor_account_identifier==3680-9902-9718,service_name==Amazon Elastic Compute Cloud'
     response = requests.get(url)
@@ -1235,7 +1235,7 @@ def main():
         scheduler.add_job(generate_op_debrief_surveys)
         scheduler.add_job(generate_op_debrief_surveys, 'interval', hours=6)
     if 'cloudability-cost' in config.feature_flags:
-        scheduler.add_job(generate_costperinstance)
-        scheduler.add_job(generate_costperinstance, 'interval', hours=24)
+        scheduler.add_job(generate_cloudability_reportid)
+        scheduler.add_job(generate_cloudability_reportid, 'interval', hours=24)
 
     waitress.serve(app, ident=None, threads=config.web_server_threads)
