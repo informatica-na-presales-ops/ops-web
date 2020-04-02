@@ -97,7 +97,9 @@ class AZClient:
                     'created': None,
                     'dns_names': vm.tags.get('image__dns_names_private', ''),
                     'whitelist': None,
-                    'vpc': None
+                    'vpc': None,
+                    'disable_termination': None,
+                    'cost': None
                 }
 
                 if params['dns_names'] == '':

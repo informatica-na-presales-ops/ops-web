@@ -519,7 +519,7 @@ class AWSClient:
             ec2 = self.session.resource('ec2', region_name=region)
             try:
                 for instance in ec2.instances.all():
-                    yield self.get_instance_dict(region, instance,dictr)
+                    yield self.get_instance_dict(region, instance, dictr)
             except botocore.exceptions.ClientError as e:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
@@ -556,7 +556,7 @@ class AWSClient:
         for vol in vol_list:
             return vol['Ebs']['VolumeId']
 
-    def get_instance_dict(self, region, instance,result) -> Dict:
+    def get_instance_dict(self, region, instance, result) -> Dict:
         tags = tag_list_to_dict(instance.tags)
         params = {
             'id': instance.id,
