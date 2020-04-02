@@ -615,6 +615,8 @@ class AWSClient:
                     continue
                 elif (k == 'unblended_cost'):
                     g = v
+                else:
+                    g = None
                 dictr[l] = g
 
         return self.get_instance_dict(region, instance , dictr)
