@@ -6,6 +6,7 @@ import ops_web.az
 import ops_web.config
 import ops_web.db
 import ops_web.send_email
+import ops_web.tasks
 import flask
 import functools
 import io
@@ -1125,6 +1126,7 @@ def sync_machines():
             for instance in aws.get_all_instances(db.get_reportid()):
                 instance['account_id'] = account.get('id')
                 db.add_machine(instance)
+                scheduler.add_job(ops_web.tasks.update_termination_protection, args=[aws, db, instance.get('id')])
             for image in aws.get_all_images():
                 image['account_id'] = account.get('id')
                 db.add_image(image)

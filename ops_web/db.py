@@ -164,7 +164,8 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,disable_termination,cost,account_id,
+                    running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
+                    cost, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -177,7 +178,8 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist,vpc,disable_termination,cost,account_id,
+                    running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
+                    cost, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -194,7 +196,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc,disable_termination,cost,account_id,
+                    dns_names, whitelist, vpc, termination_protection, cost, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -206,7 +208,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc,disable_termination,cost,account_id,
+                    dns_names, whitelist, vpc, termination_protection, cost, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -240,6 +242,18 @@ class Database(fort.PostgresDatabase):
                 business_unit = %(business_unit)s, env_group = %(environment)s, dns_names = %(dns_names)s
             WHERE id = %(id)s
         '''
+        self.u(sql, params)
+
+    def set_machine_termination_protection(self, machine_id: str, termination_protection: bool):
+        sql = '''
+            UPDATE virtual_machines
+            SET termination_protection = %(termination_protection)s
+            WHERE id = %(id)s
+        '''
+        params = {
+            'id': machine_id,
+            'termination_protection': termination_protection
+        }
         self.u(sql, params)
 
     # images
@@ -389,8 +403,7 @@ class Database(fort.PostgresDatabase):
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
                     business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,
-                    whitelist = %(whitelist)s, vpc = %(vpc)s, disable_termination = %(disable_termination)s,
-                    cost = %(cost)s, account_id = %(account_id)s,
+                    whitelist = %(whitelist)s, vpc = %(vpc)s, cost = %(cost)s, account_id = %(account_id)s,
                     visible = TRUE, synced = TRUE
                 WHERE id = %(id)s
             '''
@@ -399,12 +412,12 @@ class Database(fort.PostgresDatabase):
                 INSERT INTO virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,
-                    vpc, disable_termination, cost, account_id, visible, synced
+                    vpc, cost, account_id, visible, synced
                 ) VALUES (
                     %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
                     %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s, %(vpc)s,
-                    %(disable_termination)s, %(cost)s, %(account_id)s, TRUE, TRUE
+                    %(cost)s, %(account_id)s, TRUE, TRUE
                 )
             '''
         self.u(sql, params)
@@ -962,6 +975,17 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(20)
+        if self.version < 21:
+            self.log.info('Migrating database to schema version 21')
+            self.u('''
+                ALTER TABLE virtual_machines
+                DROP COLUMN disable_termination
+            ''')
+            self.u('''
+                ALTER TABLE virtual_machines
+                ADD COLUMN termination_protection boolean
+            ''')
+            self.add_schema_version(21)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'

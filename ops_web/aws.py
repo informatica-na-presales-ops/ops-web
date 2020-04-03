@@ -193,6 +193,15 @@ class AWSClient:
         instance = ec2.Instance(instanceid)
         return getattr(instance, value)
 
+    def describe_instance_attribute(self, region: str, instance_id: str, attribute: str) -> Dict:
+        ec2 = self.session.resource('ec2', region_name=region)
+        instance = ec2.Instance(instance_id)
+        return instance.describe_attribute(Attribute=attribute)
+
+    def get_termination_protection(self, region: str, instance_id: str) -> bool:
+        tp = self.describe_instance_attribute(region, instance_id, 'disableApiTermination')
+        return tp.get('DisableApiTermination').get('Value')
+
     def get_instance_tag(self, region: str, instanceid: str, tagkey: str):
         ec2 = self.session.resource('ec2', region_name=region)
         instance = ec2.Instance(instanceid)
@@ -577,7 +586,6 @@ class AWSClient:
             'dns_names': tags.get('image__dns_names_private', ''),
             'whitelist': self.get_whitelist_for_instance(region, instance),
             'vpc': instance.vpc_id,
-            'disable_termination': None,
             'cost': self.get_unblendedcost(instance.id, result, self.get_volume(instance.block_device_mappings))
         }
         if params['environment'] == '':

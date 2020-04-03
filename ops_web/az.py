@@ -69,9 +69,9 @@ class AZClient:
                 credentials=self.credentials, subscription_id=subscription_id
             )
             network_interfaces = {nic.id: nic for nic in network_client.network_interfaces.list_all()}
-            log.info(network_interfaces)
+            log.debug(network_interfaces)
             public_ips = {public_ip.id: public_ip for public_ip in network_client.public_ip_addresses.list_all()}
-            log.info(public_ips)
+            log.debug(public_ips)
             for vm in compute_client.virtual_machines.list_all():
 
                 log.debug(f'Found a virtual machine: {vm.id}')
@@ -169,7 +169,6 @@ class AZClient:
             'dns_names': vm.tags.get('image__dns_names_private', ''),
             'whitelist': None,
             'vpc': None,
-            'disable_termination': None,
             'cost':None
         }
 
