@@ -282,7 +282,7 @@ class AWSClient:
             host_name = self.get_instance_tag(region, i, 'image__dns_names_private')
             if platform != 'windows':
                 if host_name != 'modulabs.master.infa.world':
-                    # try:
+                    try:
                         key = RSAKey.from_private_key_file('/ops-web/data/keyPresalesNA_Prod_Demo.pem')
                         time.sleep(10)
                         client = SSHClient()
@@ -291,22 +291,23 @@ class AWSClient:
                         client.connect(hostname=public_ip, username="centos", pkey=key)
                         client.exec_command(
                             'sudo chown centos: /etc/hosts && >/etc/hosts && echo \"%s\" >> /etc/hosts' % strfinl3)
-                    # except:
-                    #     return "Host file has not been updated. Please check if the instance is running or wait sometime till the instance loads properly."
+                    except:
+                        return "Host file has not been updated. Please check if the instance is running or wait sometime till the instance loads properly."
             else:
-                # try:
+                try:
                     subprocess.check_output([
                         "smbclient -U Administrator%{0} //{1}/c$ --directory Windows\\\System32\\\drivers\\\etc -c 'get hosts'".format(
                             password, public_ip)],
                         shell='True')
                     os.system("> /hosts ")
                     subprocess.Popen(['echo "{}" > /hosts'.format(strfinl)], shell='True')
-                    subprocess.check_output([
+                    result_updatehosts=subprocess.check_output([
                         "smbclient -U Administrator%{0} //{1}/c$ --directory Windows\\\System32\\\drivers\\\etc -c 'put hosts'".format(
                             password, public_ip)],
                         shell='True')
-                # except:
-                #     return "Failed updating hosts instances might still be loading please try again after sometime."
+                    log.info(result_updatehosts)
+                except Exception as e:
+                    return "Failed updating hosts instances might still be loading please try again after sometime." + str(e)
 
     def sync_hosts(self, instanceid: list):
 
