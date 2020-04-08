@@ -1144,7 +1144,10 @@ def sync_machines():
         for account in db.get_all_credentials_for_use('az'):
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
-            for vm in az.get_all_virtual_machines():
+            url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{db.get_reportid()}/results?auth_token={config.cloudability_auth_token}'
+            response = requests.get(url)
+            result = response.json()
+            for vm in az.get_all_virtual_machines(result):
                 vm['account_id'] = account.get('id')
                 db.add_machine(vm)
             for image in az.get_all_images():
@@ -1192,7 +1195,8 @@ def generate_op_debrief_surveys():
 
 def generate_cloudability_reportid():
     db = ops_web.db.Database(config)
-    url = f'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token={config.cloudability_auth_token}&filters=vendor_account_identifier=={config.cloudability_vendor_account_id},service_name==Amazon Elastic Compute Cloud'
+    # url = f'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token={config.cloudability_auth_token}&filters=vendor_account_identifier=={config.cloudability_vendor_account_id},service_name==Amazon Elastic Compute Cloud'
+    url = f'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier&start_date=30 days ago at 00:00:00&auth_token={config.cloudability_auth_token}&filters=vendor_account_identifier=={config.cloudability_vendor_account_id},vendor_account_identifier=={config.cloudability_vendor_account_id_az},resource_identifier!=@(not set)'
     response = requests.get(url)
     result = response.json()
     report_id = result['id']

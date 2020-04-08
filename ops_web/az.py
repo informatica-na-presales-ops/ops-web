@@ -58,8 +58,22 @@ class AZClient:
                 }
                 yield params
             compute_client.close()
+    def get_unblendedcost(self,instanceid,result):
+        id_lower = instanceid.lower()
+        if id_lower in result:
+            log.info(result.values())
+            log.info(result[id_lower])
+            cost = result[id_lower][1:]
+            if ',' in cost:
+                instance_cost = cost.replace(',', '')
+                return instance_cost
+            else:
+                return cost
 
-    def get_all_virtual_machines(self):
+        else:
+               return 0
+
+    def get_all_virtual_machines(self,result):
         for subscription_id in self.subscriptions:
 
             log.info(f'Getting all virtual machines in subscription {subscription_id}')
@@ -72,8 +86,25 @@ class AZClient:
             log.debug(network_interfaces)
             public_ips = {public_ip.id: public_ip for public_ip in network_client.public_ip_addresses.list_all()}
             log.debug(public_ips)
-            for vm in compute_client.virtual_machines.list_all():
+            dictr={}
+            jsonresult = result['results']
+            for i in jsonresult:
+                for k, v in i.items():
 
+                    if (k == 'resource_identifier'):
+                        if('::' in v):
+                            isy = v.split('/', 1)[1]
+                            it = "/" + isy
+
+                            l = it
+                            continue
+                    elif (k == 'unblended_cost'):
+                        g = v
+                    else:
+                        g = None
+                    dictr[l] = g
+
+            for vm in compute_client.virtual_machines.list_all():
                 log.debug(f'Found a virtual machine: {vm.id}')
                 vm_rg = vm.id.split('/')[4]
                 if vm.tags is None:
@@ -101,6 +132,7 @@ class AZClient:
                     'disable_termination': None,
                     'cost': None
                 }
+                #self.get_unblendedcost(vm.id, dictr)
 
                 if params['dns_names'] == '':
                     params['dns_names'] = params.get('name')

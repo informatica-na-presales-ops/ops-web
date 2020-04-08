@@ -509,23 +509,35 @@ class AWSClient:
                 log.critical(f'Skipping {region}')
 
     def get_all_instances(self,report_id):
+
+        url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
+        response = requests.get(url)
+        log.info(response)
+        result = response.json()
+        log.info(result)
+        dictr = {}
+        while 'error' in result:
+            response = requests.get(url)
+            log.info(response)
+            result = response.json()
+
+            if 'results' in result:
+                log.info("got json data")
+                result = response.json()
+                break
+        jsonresult = result['results']
+        for i in jsonresult:
+            for k, v in i.items():
+                if (k == 'resource_identifier'):
+                    l = v
+                    continue
+                elif (k == 'unblended_cost'):
+                    g = v
+                else:
+                    g = None
+                dictr[l] = g
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 instances in {region}')
-            url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
-            response = requests.get(url)
-            dictr={}
-            result = response.json()
-            jsonresult=result['results']
-            for i in jsonresult:
-                for k, v in i.items():
-                    if (k == 'resource_identifier'):
-                        l = v
-                        continue
-                    elif (k == 'unblended_cost'):
-                        g = v
-                    else:
-                        g = None
-                    dictr[l] = g
             ec2 = self.session.resource('ec2', region_name=region)
             try:
                 for instance in ec2.instances.all():
@@ -560,7 +572,8 @@ class AWSClient:
             volume_cost=volume_cost.replace(',','')
         else:
             volume_cost=volume_cost
-        return float(instance_cost) + float(volume_cost)
+        unblended_cost=float(instance_cost) + float(volume_cost)
+        return round(unblended_cost,2)
 
     def get_volume(self,vol_list):
         for vol in vol_list:

@@ -22,6 +22,7 @@
                     <th>Cloud</th>
                     <th>Environment</th>
                     <th>Owner</th>
+                    <th>30 Day env cost</th>
                     <th>Running Time</th>
                     <th class="text-right">Machines</th>
                 </tr>
@@ -35,6 +36,7 @@
                         <td>{{ e.cloud }}</td>
                         <td><a href="{{ url_for('environment_detail', environment=e.env_group) }}">{{ e.env_group }}</a></td>
                         <td>{{ e.owner }}</td>
+                        <td>{{ e.costsum  }}</td>
                         <td>{{ e.running_time_human }}</td>
                         <td class="text-right">{{ e.instance_count }}</td>
                     </tr>
@@ -51,6 +53,7 @@
                             <a href="{{ url_for('environment_detail', environment=e.env_group) }}" class="card-link stretched-link text-light">{{ e.env_group }}</a>
                         </h5>
                         <p class="card-text">{{ e.owner }}</p>
+                        <p class="card-text">{{ e.costsum }}</p>
                         <p class="card-text"><span class="badge badge-pill badge-light">{{ e.cloud }}</span> {{ e.instance_count }} machine{{ 's' if e.instance_count > 1 }}</p>
                     </div>
                 </div>

@@ -85,6 +85,7 @@ class Config:
         self.bootstrap_admin = os.getenv('BOOTSTRAP_ADMIN')
         self.cloudability_auth_token = os.getenv('CLOUDABILITY_AUTH_TOKEN')
         self.cloudability_vendor_account_id = os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID')
+        self.cloudability_vendor_account_id_az=os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID_AZ')
         self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws az')
         self.db = os.getenv('DB')
         self.debug_layout = as_bool(os.getenv('DEBUG_LAYOUT', 'False'))

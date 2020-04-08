@@ -148,6 +148,7 @@ class Database(fort.PostgresDatabase):
                 cloud,
                 env_group,
                 owner,
+                CONCAT('$', SUM(CAST(cost AS float))) costsum,
                 count(*) instance_count,
                 bool_or(state = 'running') running,
                 max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
@@ -165,7 +166,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    cost, account_id,
+                    CONCAT('$',cost) cost_agg, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -179,7 +180,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    cost, account_id,
+                    CONCAT('$',cost) cost_agg, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -196,7 +197,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, cost, account_id,
+                    dns_names, whitelist, vpc, termination_protection, CONCAT('$',cost) cost_agg, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     TRUE can_control,
                     TRUE can_modify
@@ -208,7 +209,7 @@ class Database(fort.PostgresDatabase):
                 SELECT
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, cost, account_id,
+                    dns_names, whitelist, vpc, termination_protection, CONCAT('$',cost) cost_agg, account_id,
                     CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
                     owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
