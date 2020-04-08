@@ -148,7 +148,7 @@ class Database(fort.PostgresDatabase):
                 cloud,
                 env_group,
                 owner,
-                CONCAT('$', SUM(CAST(cost AS float))) costsum,
+                SUM(CAST(cost AS float)) costsum,
                 count(*) instance_count,
                 bool_or(state = 'running') running,
                 max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
