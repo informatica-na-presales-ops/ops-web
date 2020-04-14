@@ -130,7 +130,7 @@ class AZClient:
                     'whitelist': None,
                     'vpc': None,
                     'disable_termination': None,
-                    'cost': None
+                    'cost': 0
                 }
                 #self.get_unblendedcost(vm.id, dictr)
 
