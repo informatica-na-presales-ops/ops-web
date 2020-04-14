@@ -301,7 +301,7 @@ class AWSClient:
                         shell='True')
                     os.system("> /hosts ")
                     subprocess.Popen(['echo "{}" > /hosts'.format(strfinl)], shell='True')
-                    result_updatehosts=subprocess.check_output([
+                    result_updatehosts = subprocess.check_output([
                         "smbclient -U Administrator%{0} //{1}/c$ --directory Windows\\\System32\\\drivers\\\etc -c 'put hosts'".format(
                             password, public_ip)],
                         shell='True')
@@ -372,42 +372,45 @@ class AWSClient:
 
     def create_instance(self, region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str):
         ec2 = self.session.resource('ec2', region_name=region)
-        instance = ec2.Instance(instanceid)
+        try:
+            instance = ec2.Instance(instanceid)
+            security_group_ids = []
+            security_groups = instance.security_groups
+            for i in security_groups:
+                for t, v in i.items():
+                    if t == 'GroupId':
+                        security_group_ids.append(v)
 
-        security_group_ids = []
-        security_groups = instance.security_groups
-        for i in security_groups:
-            for t, v in i.items():
-                if t == 'GroupId':
-                    security_group_ids.append(v)
+            instance_tags = tag_list_to_dict(instance.tags)
+            instance_tags['Name'] = name
+            instance_tags['NAME'] = name
+            instance_tags['OWNEREMAIL'] = owner
+            instance_tags['machine__environment_group'] = environment
 
-        instance_tags = tag_list_to_dict(instance.tags)
-        instance_tags['Name'] = name
-        instance_tags['NAME'] = name
-        instance_tags['OWNEREMAIL'] = owner
-        instance_tags['machine__environment_group'] = environment
+            response = ec2.create_instances(
+                ImageId=imageid,
+                InstanceType=instance.instance_type,
+                KeyName=instance.key_name,
+                MaxCount=1,
+                MinCount=1,
+                SecurityGroupIds=security_group_ids,
+                SubnetId=instance.subnet_id,
 
-        response = ec2.create_instances(
-            ImageId=imageid,
-            InstanceType=instance.instance_type,
-            KeyName=instance.key_name,
-            MaxCount=1,
-            MinCount=1,
-            SecurityGroupIds=security_group_ids,
-            SubnetId=instance.subnet_id,
+                TagSpecifications=[
+                    {
+                        'ResourceType': 'instance',
+                        'Tags': tag_dict_to_list(instance_tags)
+                    },
+                    {
+                        'ResourceType': 'volume',
+                        'Tags': tag_dict_to_list(instance_tags)
+                    }
+                ]
+            )
+            return response
 
-            TagSpecifications=[
-                {
-                    'ResourceType': 'instance',
-                    'Tags': tag_dict_to_list(instance_tags)
-                },
-                {
-                    'ResourceType': 'volume',
-                    'Tags': tag_dict_to_list(instance_tags)
-                }
-            ]
-        )
-        return response
+        except:
+            return "Unsuccessful"
 
     def delete_image(self, region: str, image_id: str):
         log.debug(f'Delete image: {image_id}')
@@ -549,33 +552,33 @@ class AWSClient:
     def get_available_regions(self):
         return self.session.get_available_regions('ec2')
 
-    def get_unblendedcost(self,instanceid , result , volid):
+    def get_unblendedcost(self, instanceid, result, volid):
         for i, f in result.items():
             if (i == instanceid):
                 ic = f
                 break
             else:
-                ic= '$0'
+                ic = '$0'
         instance_cost = ic[1:]
         if ',' in instance_cost:
-            instance_cost= instance_cost.replace(',','')
+            instance_cost = instance_cost.replace(',', '')
         else:
-            instance_cost=instance_cost
-        for i,f in result.items():
-               if(i == volid):
-                   vc=f
-                   break
-               else:
-                    vc='$0'
+            instance_cost = instance_cost
+        for i, f in result.items():
+            if (i == volid):
+                vc = f
+                break
+            else:
+                vc = '$0'
         volume_cost = vc[1:]
         if ',' in volume_cost:
-            volume_cost=volume_cost.replace(',','')
+            volume_cost = volume_cost.replace(',', '')
         else:
-            volume_cost=volume_cost
-        unblended_cost=float(instance_cost) + float(volume_cost)
-        return round(unblended_cost,2)
+            volume_cost = volume_cost
+        unblended_cost = float(instance_cost) + float(volume_cost)
+        return round(unblended_cost, 2)
 
-    def get_volume(self,vol_list):
+    def get_volume(self, vol_list):
         for vol in vol_list:
             return vol['Ebs']['VolumeId']
 
@@ -622,7 +625,7 @@ class AWSClient:
         params['contributors'] = ' '.join(sorted(contributors))
         return params
 
-    def get_single_instance(self, region: str, instanceid: str , report_id):
+    def get_single_instance(self, region: str, instanceid: str, report_id):
         ec2 = self.session.resource('ec2', region_name=region)
         instance = ec2.Instance(instanceid)
         url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
@@ -641,7 +644,7 @@ class AWSClient:
                     g = None
                 dictr[l] = g
 
-        return self.get_instance_dict(region, instance , dictr)
+        return self.get_instance_dict(region, instance, dictr)
 
     def get_whitelist_for_instance(self, region: str, instance):
         whitelist = set()

@@ -363,7 +363,7 @@ def ws_postdep_filter():
         instance_list = aws.get_instance_of_envgrp(env_group)
         instances_list2 = []
         for i in instance_list:
-            result = aws.get_single_instance('us-west-2', i,db.get_reportid())
+            result = aws.get_single_instance('us-west-2', i, db.get_reportid())
             instances_list2.append(result)
         return flask.render_template('postdep.html', idlist=str(instance_list), instance=instances_list2)
 
@@ -402,7 +402,7 @@ def elasticip():
         instances_list = []
         idlist = aws.convert_instanceidstr_list(idlist_str)
         for i in idlist:
-            result = aws.get_single_instance(region, i,db.get_reportid())
+            result = aws.get_single_instance(region, i, db.get_reportid())
             instances_list.append(result)
     return flask.render_template('postdep.html', idlist=idlist_str, instance=instances_list)
 
@@ -419,7 +419,7 @@ def synchosts():
         idlist = aws.convert_instanceidstr_list(idliststr)
         instanceslist = []
         for i in idlist:
-            instance = aws.get_single_instance(region, i,db.get_reportid())
+            instance = aws.get_single_instance(region, i, db.get_reportid())
             instanceslist.append(instance)
         if result is None:
             return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
@@ -443,16 +443,16 @@ def synchosts_az():
     id_list8 = id_list6.replace(' ', '')
     id_list7 = id_list8.split(',')
     app.logger.info(instance_info)
-    instance_info2=[]
+    instance_info2 = []
     for account in db.get_all_credentials_for_use('az'):
         az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                  account.get('azure_tenant_id'))
         result = az.sync_hosts(idliststr)
         for i in id_list7:
-            i="'" + i + "'"
-            instance_info2.append(az.get_virtualmachine_info(i,'rg-cdw-workshops-201904'))
+            i = "'" + i + "'"
+            instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
 
-        return flask.render_template('postdep_az.html',instance=instance_info2,idlist=id_list7)
+        return flask.render_template('postdep_az.html', instance=instance_info2, idlist=id_list7)
 
 
 @app.route('/ws_sg/edit', methods=['GET', 'POST'])
@@ -520,7 +520,7 @@ def launch():
         instanceslist = []
         instanceidlist = []
         for i in idlist:
-            result = aws.get_single_instance(region, i,db.get_reportid())
+            result = aws.get_single_instance(region, i, db.get_reportid())
             state = aws.get_instance_attr(region, i, 'state')
             idlist2 = result['id']
             instanceslist.append(result)
@@ -544,7 +544,6 @@ def image_create():
     if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
         cloud = flask.request.values.get('cloud')
-
         if not cloud == 'aws':
             app.logger.warning(f'Unable to create images for cloud {cloud}')
             environment = flask.request.values.get('environment')
@@ -552,6 +551,7 @@ def image_create():
 
         account = db.get_one_credential_for_use(machine.get('account_id'))
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+
         region = flask.request.values.get('region')
         name = flask.request.values.get('image-name')
         owner = flask.request.values.get('owner')
@@ -593,7 +593,7 @@ def az_launch():
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
             cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
-                                            account.get('azure_tenant_id'), vmbase, owner)
+                                                account.get('azure_tenant_id'), vmbase, owner)
 
             windows_result = az.launch_windows(account.get('username'), account.get('password'),
                                                account.get('azure_tenant_id'), vmbase, owner)
@@ -679,12 +679,25 @@ def machine_create():
         owner = flask.request.values.get('owner')
         environment = flask.request.values.get('environment')
         account = db.get_one_credential_for_use(image.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        response = aws.create_instance(region, image_id, instance_id, name, owner, environment)
-        instance = aws.get_single_instance(region, response[0].id,db.get_reportid())
-        instance['account_id'] = account.get('id')
-        db.add_machine(instance)
-        return flask.redirect(flask.url_for('environment_detail', environment=environment))
+        if instance_id == '':
+            return flask.render_template('500.html',
+                                         error='Original instance from which this copy was made is not found! Cannot '
+                                               'create instance through Ops-web. Please open a zendesk ticket to '
+                                               'create a machine from this image')
+
+        else:
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            response = aws.create_instance(region, image_id, instance_id, name, owner, environment)
+            if response == 'Unsuccessful':
+                return flask.render_template('500.html',
+                                             error='Original instance('+ instance_id +') from which this copy was made is not found! '
+                                                   'Cannot create instance through Ops-web. Please open a zendesk '
+                                                   'ticket to create a machine from this image')
+            else:
+                instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                instance['account_id'] = account.get('id')
+                db.add_machine(instance)
+                return flask.redirect(flask.url_for('environment_detail', environment=environment))
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
         return flask.redirect(flask.url_for('images'))
@@ -896,7 +909,7 @@ def excel_sheet():
         valdir = {}
         for i in idlist2:
 
-            instance_info = aws.get_single_instance('us-west-2', i,db.get_reportid())
+            instance_info = aws.get_single_instance('us-west-2', i, db.get_reportid())
             instance_name = instance_info['name']
             instance_ip = instance_info['public_ip']
 
