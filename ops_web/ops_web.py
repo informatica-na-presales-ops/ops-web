@@ -234,6 +234,21 @@ def add_running_time_human(col: List[Dict]) -> List[Dict]:
     return new_col
 
 
+@app.route('/environment-usage-events', methods=['POST'])
+def environment_usage_events():
+    request_secret = flask.request.values.get('secret')
+    if request_secret == config.secret_key:
+        params = {
+            'environment_name': flask.request.values.get('environment_name'),
+            'event_name': flask.request.values.get('event_name'),
+            'user_name': flask.request.values.get('user_name')
+        }
+        db: ops_web.db.Database = flask.g.db
+        db.add_environment_usage_event(params)
+        return 'OK'
+    flask.abort(403)
+
+
 @app.route('/environments')
 @login_required
 def environments():

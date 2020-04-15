@@ -631,10 +631,13 @@ class Database(fort.PostgresDatabase):
             INSERT INTO environment_usage_events (
                 id, environment_name, event_name, user_name, event_time
             ) VALUES (
-                %(id)s, %(environment_name)s, %(event_name)s, %(user_name)s, $(event_time)s
+                %(id)s, %(environment_name)s, %(event_name)s, %(user_name)s, %(event_time)s
             )
         '''
-        params.update({'id': uuid.uuid4()})
+        params.update({
+            'id': uuid.uuid4(),
+            'event_time': datetime.datetime.utcnow()
+        })
         self.u(sql, params)
 
     # migrations and metadata
