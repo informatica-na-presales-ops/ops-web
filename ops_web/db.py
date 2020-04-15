@@ -624,6 +624,19 @@ class Database(fort.PostgresDatabase):
         params = {'last_check': last_check, 'report_id': report_id}
         self.u(sql, params)
 
+    # environment usage events
+
+    def add_environment_usage_event(self, params: Dict):
+        sql = '''
+            INSERT INTO environment_usage_events (
+                id, environment_name, event_name, user_name, event_time
+            ) VALUES (
+                %(id)s, %(environment_name)s, %(event_name)s, %(user_name)s, $(event_time)s
+            )
+        '''
+        params.update({'id': uuid.uuid4()})
+        self.u(sql, params)
+
     # migrations and metadata
 
     def add_schema_version(self, schema_version: int):
@@ -987,6 +1000,18 @@ class Database(fort.PostgresDatabase):
                 ADD COLUMN termination_protection boolean
             ''')
             self.add_schema_version(21)
+        if self.version < 22:
+            self.log.info('Migrating database to schema version 22')
+            self.u('''
+                CREATE TABLE environment_usage_events (
+                    id uuid primary key,
+                    environment_name text,
+                    event_name text,
+                    user_name text,
+                    event_time timestamp
+                )
+            ''')
+            self.add_schema_version(22)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
