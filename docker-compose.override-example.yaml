@@ -7,6 +7,7 @@ services:
       AZ_CLIENT_ID: [required]
       AZ_CLIENT_SECRET: [required]
       AZ_TENANT_ID: [required]
+      AZ_WORKSHOP_SUBSCRIPTION_ID: ''
       BOOTSTRAP_ADMIN: email@example.com
       CLOUDS_TO_SYNC: aws az
       DEBUG_LAYOUT: 'true'
