@@ -690,8 +690,8 @@ def machine_create():
             response = aws.create_instance(region, image_id, instance_id, name, owner, environment)
             if response == 'Unsuccessful':
                 return flask.render_template('500.html',
-                                             error='Original instance('+ instance_id +') from which this copy was made is not found! '
-                                                   'Cannot create instance through Ops-web. Please open a zendesk '
+                                             error='Caught an error while creating machines from this image , please check if the original instance('+ instance_id +') from which this copy was made is still available'
+                                                   'If not Please open a zendesk '
                                                    'ticket to create a machine from this image')
             else:
                 instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
