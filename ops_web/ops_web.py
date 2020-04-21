@@ -679,6 +679,27 @@ def image_edit():
     return flask.redirect(flask.url_for('images'))
 
 
+@app.route('/machines/create/launchmachine_default_specs', methods=['POST', 'GET'])
+@login_required
+def launchmachine_default_specs():
+    image_id = flask.request.values.get('image_id')
+    app.logger.info(image_id)
+    owner = flask.request.values.get('owner')
+    name = flask.request.values.get('name')
+    region = flask.request.values.get('region')
+    environment = flask.request.values.get('environment')
+
+    db: ops_web.db.Database = flask.g.db
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'default')
+        app.logger.info(response[0])
+        instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+        instance['account_id'] = account.get('id')
+        db.add_machine(instance)
+        return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+
 @app.route('/machines/create', methods=['POST'])
 @login_required
 def machine_create():
@@ -693,26 +714,60 @@ def machine_create():
         name = flask.request.values.get('name')
         owner = flask.request.values.get('owner')
         environment = flask.request.values.get('environment')
+        vpc = flask.request.values.get('vpc')
+        app.logger.info(vpc)
         account = db.get_one_credential_for_use(image.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         if instance_id == '':
-            return flask.render_template('500.html',
-                                         error='Original instance from which this copy was made is not found! Cannot '
-                                               'create instance through Ops-web. Please open a zendesk ticket to '
-                                               'create a machine from this image')
-
+            return flask.render_template('Default_launchinstance.html', region=region, image_id=image_id, name=name,
+                                         owner=owner, environment=environment, vpc=vpc)
         else:
-            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            response = aws.create_instance(region, image_id, instance_id, name, owner, environment)
-            if response == 'Unsuccessful':
-                return flask.render_template('500.html',
-                                             error='Caught an error while creating machines from this image , please check if the original instance('+ instance_id +') from which this copy was made is still available'
-                                                   'If not Please open a zendesk '
-                                                   'ticket to create a machine from this image')
+            if vpc == 'Default':
+                response = aws.create_instance(region, image_id, instance_id, name, owner, environment, '')
+                if response == 'Unsuccessful':
+
+                    return flask.render_template('Default_launchinstance.html', region=region, image_id=image_id,
+                                                 name=name,
+                                                 owner=owner, environment=environment, vpc=vpc)
+
+                else:
+                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                    instance['account_id'] = account.get('id')
+                    db.add_machine(instance)
+                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+            elif vpc == 'MdmDemo':
+                response = aws.create_instance(region, image_id, instance_id, name, owner, environment, 'mdmdemo')
+                if response == 'Unsuccessful':
+                    response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'mdmdemo')
+                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                    instance['account_id'] = account.get('id')
+                    db.add_machine(instance)
+                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+                else:
+                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                    instance['account_id'] = account.get('id')
+                    db.add_machine(instance)
+                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+            elif vpc == 'PresalesDemo':
+                response = aws.create_instance(region, image_id, instance_id, name, owner, environment, 'presalesdemo')
+                app.logger.info(response)
+                if response == 'Unsuccessful':
+                    response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment,
+                                                                'presalesdemo')
+                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                    instance['account_id'] = account.get('id')
+                    db.add_machine(instance)
+                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+                else:
+                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                    instance['account_id'] = account.get('id')
+                    db.add_machine(instance)
+                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
             else:
-                instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
-                instance['account_id'] = account.get('id')
-                db.add_machine(instance)
-                return flask.redirect(flask.url_for('environment_detail', environment=environment))
+                pass
+
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
         return flask.redirect(flask.url_for('images'))
@@ -1172,10 +1227,19 @@ def sync_machines():
         for account in db.get_all_credentials_for_use('az'):
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
-            url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{db.get_reportid()}/results?auth_token={config.cloudability_auth_token}'
-            response = requests.get(url)
-            result = response.json()
-            for vm in az.get_all_virtual_machines(result):
+            # url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{db.get_reportid()}/results?auth_token={config.cloudability_auth_token}'
+            # response = requests.get(url)
+            # result = response.json()
+            # while 'error' in result:
+            #     response = requests.get(url)
+            #     app.logger.info(response)
+            #     result = response.json()
+            #
+            #     if 'results' in result:
+            #         result = response.json()
+            #         break
+            #
+            for vm in az.get_all_virtual_machines():
                 vm['account_id'] = account.get('id')
                 db.add_machine(vm)
             for image in az.get_all_images():

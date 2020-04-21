@@ -73,7 +73,7 @@ class AZClient:
         else:
                return 0
 
-    def get_all_virtual_machines(self,result):
+    def get_all_virtual_machines(self):
         for subscription_id in self.subscriptions:
 
             log.info(f'Getting all virtual machines in subscription {subscription_id}')
@@ -86,23 +86,21 @@ class AZClient:
             log.debug(network_interfaces)
             public_ips = {public_ip.id: public_ip for public_ip in network_client.public_ip_addresses.list_all()}
             log.debug(public_ips)
-            dictr={}
-            jsonresult = result['results']
-            for i in jsonresult:
-                for k, v in i.items():
-
-                    if (k == 'resource_identifier'):
-                        if('::' in v):
-                            isy = v.split('/', 1)[1]
-                            it = "/" + isy
-
-                            l = it
-                            continue
-                    elif (k == 'unblended_cost'):
-                        g = v
-                    else:
-                        g = None
-                    dictr[l] = g
+            # dictr={}
+            # jsonresult = result['results']
+            # for i in jsonresult:
+            #     for k, v in i.items():
+            #         if (k == 'resource_identifier'):
+            #             if('::' in v):
+            #                 isy = v.split('/', 1)[1]
+            #                 it = "/" + isy
+            #                 l = it
+            #                 continue
+            #         elif (k == 'unblended_cost'):
+            #             g = v
+            #         else:
+            #             g = None
+            #         dictr[l] = g
 
             for vm in compute_client.virtual_machines.list_all():
                 log.debug(f'Found a virtual machine: {vm.id}')

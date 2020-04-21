@@ -1,0 +1,39 @@
+{% extends 'index.html' %}
+
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('images') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Images</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <h1 class="text-light">The original instance is not found.</h1>
+            <p class="text-light">Do you want to create the instance with default specs?</p>
+
+
+               <form id="form1" action="{{ url_for('launchmachine_default_specs') }}" method="post">
+
+                <span class="text-light"> AMI ID : {{ image_id }} </span> <br>
+                <span class="text-light"> Name : {{ name }}</span> <br>
+                <span class="text-light"> {% if vpc == 'PresalesDemo'  %} VPC : vpc-81e798e7
+                {% else %} VPC : vpc-09f621890d284a70c
+                {% endif %}</span><br>
+                <span class ="text-light"> Intsance Type : m4.2xlarge</span><br>
+
+                <input type="hidden" name="image_id" value = {{ image_id }}>
+                <input type="hidden" name="name" value = {{ name }}>
+                <input type="hidden" name="owner" value = {{ owner }}>
+                <input type="hidden" name="environment" value = {{ environment }}>
+                <input type="hidden" name="region" value="{{ region }}">
+                <br>
+                <input type="submit" value="Submit">
+               </form>
+
+            </p>
+        </div>
+    </div>
+{% endblock %}

@@ -106,7 +106,7 @@ class AWSClient:
         for q in range(qu):
             for i in ws:
                 name = shrtowner + "-" + datetime2 + "-" + info_dict['customer'] + "-" + self.getimage_tags(region, i,
-                                                                                                             'primary_product') + "-" + str(
+                                                                                                            'primary_product') + "-" + str(
                     q)
                 machine_group = shrtowner + "-" + datetime2 + "-" + "workshop" + "-" + info_dict[
                     'customer'] + "-" + "ENV" + "-" + str(q)
@@ -307,7 +307,8 @@ class AWSClient:
                         shell='True')
                     log.info(result_updatehosts)
                 except Exception as e:
-                    return "Failed updating hosts instances might still be loading please try again after sometime." + str(e)
+                    return "Failed updating hosts instances might still be loading please try again after sometime." + str(
+                        e)
 
     def sync_hosts(self, instanceid: list):
 
@@ -370,16 +371,106 @@ class AWSClient:
         except:
             return "exception!"
 
-    def create_instance(self, region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str):
+    def create_instance_defaultspecs(self, region: str, imageid: str, name: str, owner: str, environment: str,
+                                     vpc: str):
         ec2 = self.session.resource('ec2', region_name=region)
-        try:
+        if vpc == 'mdmdemo':
+            security_group_ids = ['sg-0bfbf3dc3c4ea981d', 'sg-02525e6c6a426c479']
+            SubnetId = 'subnet-0962f22cded669d8d'
+        elif vpc == 'presalesdemo':
+            security_group_ids = ['sg-ffaf0082', 'sg-4dae0130']
+            SubnetId = 'subnet-c5f77ba3'
+        else:
+            security_group_ids = ['sg-0bfbf3dc3c4ea981d', 'sg-02525e6c6a426c479']
+            SubnetId = 'subnet-04544424c9710f760'
+        response = ec2.create_instances(
+            ImageId=imageid,
+            InstanceType='m4.2xlarge',
+            KeyName="keyPresalesNA_Prod_Demo",
+            MaxCount=1,
+            MinCount=1,
+            SecurityGroupIds=security_group_ids,
+            SubnetId=SubnetId,
+
+            TagSpecifications=[
+                {
+                    'ResourceType': 'instance',
+                    'Tags': [
+                        {
+                            'Key': 'OWNEREMAIL',
+                            'Value': owner
+                        },
+                        {
+                            'Key': 'Name',
+                            'Value': name
+                        },
+                        {
+                            'Key': 'NAME',
+                            'Value': name
+                        },
+                        {
+                            'Key': 'machine__environment_group',
+                            'Value': environment
+                        },
+                        {
+                            'Key': 'BUSINESSUNIT',
+                            'Value': 'presales'
+                        },
+                        {
+                            'Key': 'APPLICATIONENV',
+                            'Value': 'PROD'
+                        },
+                        {
+                            'Key': 'APPLICATIONROLE',
+                            'Value': 'APPSVR'
+                        },
+
+                        {
+                            'Key': 'machine__name',
+                            'Value': 'mdm'
+                        },
+                        {
+                            'Key': 'image__dns_names_private',
+                            'Value': 'windows'
+                        },
+                        {
+                            'Key': 'RUNNINGSCHEDULE',
+                            'Value': '00:00:23:59:1-4'
+                        },
+
+                    ]
+                }
+            ]
+        )
+        return response
+
+    def create_instance(self, region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str,
+                        vpc: str):
+
+        ec2 = boto3.client('ec2', region_name=region)
+        response = ec2.describe_instances(InstanceIds=[instanceid])
+        log.info(response['Reservations'])
+
+        if not response['Reservations']:
+            return "Unsuccessful"
+        else:
+            ec2 = self.session.resource('ec2', region_name=region)
             instance = ec2.Instance(instanceid)
-            security_group_ids = []
-            security_groups = instance.security_groups
-            for i in security_groups:
-                for t, v in i.items():
-                    if t == 'GroupId':
-                        security_group_ids.append(v)
+            if vpc == 'mdmdemo':
+                security_group_ids = ['sg-0bfbf3dc3c4ea981d', 'sg-02525e6c6a426c479']
+                SubnetId = 'subnet-0962f22cded669d8d'
+            elif vpc == 'presalesdemo':
+                security_group_ids = ['sg-ffaf0082', 'sg-4dae0130']
+                SubnetId = 'subnet-c5f77ba3'
+            else:
+                SubnetId = instance.subnet_id
+                security_group_ids = []
+                security_groups = instance.security_groups
+                for i in security_groups:
+                    for t, v in i.items():
+                        if t == 'GroupId':
+                            security_group_ids.append(v)
+                            break
 
             instance_tags = tag_list_to_dict(instance.tags)
             instance_tags['Name'] = name
@@ -387,30 +478,30 @@ class AWSClient:
             instance_tags['OWNEREMAIL'] = owner
             instance_tags['machine__environment_group'] = environment
 
-            response = ec2.create_instances(
-                ImageId=imageid,
-                InstanceType=instance.instance_type,
-                KeyName=instance.key_name,
-                MaxCount=1,
-                MinCount=1,
-                SecurityGroupIds=security_group_ids,
-                SubnetId=instance.subnet_id,
+            try:
+                response = ec2.create_instances(
+                    ImageId=imageid,
+                    InstanceType=instance.instance_type,
+                    KeyName=instance.key_name,
+                    MaxCount=1,
+                    MinCount=1,
+                    SecurityGroupIds=security_group_ids,
+                    SubnetId=SubnetId,
 
-                TagSpecifications=[
-                    {
-                        'ResourceType': 'instance',
-                        'Tags': tag_dict_to_list(instance_tags)
-                    },
-                    {
-                        'ResourceType': 'volume',
-                        'Tags': tag_dict_to_list(instance_tags)
-                    }
-                ]
-            )
-            return response
-
-        except:
-            return "Unsuccessful"
+                    TagSpecifications=[
+                        {
+                            'ResourceType': 'instance',
+                            'Tags': tag_dict_to_list(instance_tags)
+                        },
+                        {
+                            'ResourceType': 'volume',
+                            'Tags': tag_dict_to_list(instance_tags)
+                        }
+                    ]
+                )
+                return response
+            except:
+                return "Unsuccessful"
 
     def delete_image(self, region: str, image_id: str):
         log.debug(f'Delete image: {image_id}')
@@ -511,7 +602,7 @@ class AWSClient:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
 
-    def get_all_instances(self,report_id):
+    def get_all_instances(self, report_id):
 
         url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
         response = requests.get(url)

@@ -120,6 +120,14 @@
                             <input type="text" class="form-control" id="form-image-launch-environment" name="environment" value="{{ g.default_environment }}" list="environment-list" required>
                             <small class="form-text text-muted">Add this machine to an existing environment or specify a new environment name.</small>
                         </div>
+                        <div class="form-group">
+                            <label for="form-image-vpc" class="text-light">VPC</label>
+                            <select id="vpc" name="vpc" class="form-control">
+                              <option value="Default" title="Copy network and sizing specs from the existing instance if it exists">Default</option>
+                              <option value="MdmDemo" title = "MDM network space intended only for MDM team usage">MDM Demo</option>
+                              <option value="PresalesDemo" title="Standard network space for presales demo environments">Presales Demo</option>
+                            </select>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
