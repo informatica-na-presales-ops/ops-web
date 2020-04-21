@@ -447,8 +447,8 @@ class AWSClient:
     def create_instance(self, region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str,
                         vpc: str):
 
-        ec2 = boto3.client('ec2', region_name=region)
-        response = ec2.describe_instances(InstanceIds=[instanceid])
+        ec2Client = self.session.client('ec2', region_name=region)
+        response = ec2Client.describe_instances(InstanceIds=[instanceid])
         log.info(response['Reservations'])
 
         if not response['Reservations']:
