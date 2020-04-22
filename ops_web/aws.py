@@ -606,17 +606,17 @@ class AWSClient:
 
         url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
         response = requests.get(url)
-        log.info(response)
+        log.debug(response)
         result = response.json()
-        log.info(result)
+        log.debug(result)
         dictr = {}
         while 'error' in result:
             response = requests.get(url)
-            log.info(response)
+            log.debug(response)
             result = response.json()
 
             if 'results' in result:
-                log.info("got json data")
+                log.debug("got json data")
                 result = response.json()
                 break
         jsonresult = result['results']
