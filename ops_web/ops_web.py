@@ -24,7 +24,7 @@ import ipaddress
 from typing import Dict, List
 
 config = ops_web.config.Config()
-scheduler = apscheduler.schedulers.background.BackgroundScheduler()
+scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 10})
 
 app = flask.Flask(__name__)
 app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_port=1)
