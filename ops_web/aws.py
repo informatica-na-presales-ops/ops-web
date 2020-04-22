@@ -574,6 +574,7 @@ class AWSClient:
 
     def get_all_securitygrps(self):
         for region in self.get_available_regions():
+            log.info(f'Getting all EC2 security groups in {region}')
             ec2 = self.session.resource('ec2', region_name=region)
             security_groups = ec2.security_groups.all()
             try:
