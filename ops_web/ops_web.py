@@ -1323,17 +1323,18 @@ def main():
         db.end_sync()
 
     scheduler.start()
-    scheduler.add_job(check_sync, 'interval', minutes=1)
 
     app.logger.info(f'AUTO_SYNC is {config.auto_sync}')
     if config.auto_sync:
         scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
         scheduler.add_job(sync_machines)
+        scheduler.add_job(check_sync, 'interval', minutes=1)
 
     # op debrief survey jobs
     if 'op-debrief' in config.feature_flags:
         scheduler.add_job(generate_op_debrief_surveys)
         scheduler.add_job(generate_op_debrief_surveys, 'interval', hours=6)
+
     if 'cloudability-cost' in config.feature_flags:
         scheduler.add_job(generate_cloudability_reportid)
         scheduler.add_job(generate_cloudability_reportid, 'interval', hours=24)
