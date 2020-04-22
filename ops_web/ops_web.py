@@ -1209,7 +1209,6 @@ def sync_machines():
             for instance in aws.get_all_instances(db.get_reportid()):
                 instance['account_id'] = account.get('id')
                 db.add_machine(instance)
-                scheduler.add_job(ops_web.tasks.update_termination_protection, args=[aws, db, instance.get('id')])
             for image in aws.get_all_images():
                 image['account_id'] = account.get('id')
                 db.add_image(image)
@@ -1217,6 +1216,7 @@ def sync_machines():
                 sgid['account_id'] = account.get('id')
                 db.add_group(sgid)
         db.post_sync('aws')
+        scheduler.add_job(ops_web.tasks.update_termination_protection, args=[db])
     else:
         app.logger.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     aws_duration = datetime.datetime.utcnow() - aws_start

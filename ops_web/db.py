@@ -160,6 +160,14 @@ class Database(fort.PostgresDatabase):
         '''
         return self.q(sql)
 
+    def get_all_visible_machines(self) -> List[Dict]:
+        sql = '''
+            SELECT account_id, cloud, region, id
+            FROM virtual_machines
+            WHERE visible IS TRUE
+        '''
+        return self.q(sql)
+
     def get_machines_for_env(self, email: str, env_group: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
