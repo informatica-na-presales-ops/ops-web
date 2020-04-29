@@ -448,7 +448,11 @@ class AWSClient:
                         vpc: str):
 
         ec2Client = self.session.client('ec2', region_name=region)
-        response = ec2Client.describe_instances(InstanceIds=[instanceid])
+        try:
+          response = ec2Client.describe_instances(InstanceIds=[instanceid])
+        except:
+          return "Unsuccessful"
+
         log.info(response['Reservations'])
 
         if not response['Reservations']:

@@ -389,7 +389,7 @@ def wsimage():
     ws = flask.request.values.get("ws")
     app.logger.info(ws)
     db = ops_web.db.Database(config)
-    if (ws != 'CDW-AZ'):
+    if (ws != 'CDW-AZ' and ws != 'CDW104-AZ'):
         for account in db.get_all_credentials_for_use('aws'):
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
             result = aws.workshop_images(ws)
@@ -594,6 +594,8 @@ def image_create():
 @app.route('/az_launch', methods=['POST'])
 @login_required
 def az_launch():
+    cdwversion = flask.request.values.get("cdwversion")
+    app.logger.info(cdwversion)
     quantity = flask.request.values.get('count')
     name = flask.request.values.get('name')
     owner = flask.request.values.get('owner')
@@ -607,24 +609,31 @@ def az_launch():
             az_idlist = []
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
-            cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
+            if cdwversion == 'CDW104-AZ':
+                infa_result = az.launch_infa104(account.get('username'), account.get('password'),
                                                 account.get('azure_tenant_id'), vmbase, owner)
+                # windows_result = az.launch_windows104(account.get('username'), account.get('password'),
+                #                                       account.get('azure_tenant_id'), vmbase, owner)
 
-            windows_result = az.launch_windows(account.get('username'), account.get('password'),
-                                               account.get('azure_tenant_id'), vmbase, owner)
-            infa_result = az.launch_infa(account.get('username'), account.get('password'),
-                                         account.get('azure_tenant_id'), vmbase, owner)
-            az_idlist.append(cdh_result)
-            az_idlist.append(windows_result)
-            az_idlist.append(infa_result)
-            for i in az_idlist:
-                virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
-                instance_info.append(virtualmachine_info)
-                idlist.append(virtualmachine_info['id'])
-                virtualmachine_info['account_id'] = account.get('id')
-                db.add_machine(virtualmachine_info)
-            app.logger.info(idlist)
-            app.logger.info(instance_info)
+            else:
+                cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
+                                                    account.get('azure_tenant_id'), vmbase, owner)
+
+                windows_result = az.launch_windows(account.get('username'), account.get('password'),
+                                                   account.get('azure_tenant_id'), vmbase, owner)
+                infa_result = az.launch_infa(account.get('username'), account.get('password'),
+                                             account.get('azure_tenant_id'), vmbase, owner)
+                az_idlist.append(cdh_result)
+                az_idlist.append(windows_result)
+                az_idlist.append(infa_result)
+                for i in az_idlist:
+                    virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
+                    instance_info.append(virtualmachine_info)
+                    idlist.append(virtualmachine_info['id'])
+                    virtualmachine_info['account_id'] = account.get('id')
+                    db.add_machine(virtualmachine_info)
+                app.logger.info(idlist)
+                app.logger.info(instance_info)
         return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
 
 

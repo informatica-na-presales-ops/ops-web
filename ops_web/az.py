@@ -593,6 +593,161 @@ class AZClient:
         instance_id = result_dict[1]
         return instance_id
 
+    def launch_infa104(self, user, password, tenantid, vmbase, owner):
+
+        k = vmbase.rfind('-')
+        virtual_machine_name = vmbase[:k] + "-infa-" + vmbase[k + 1:]
+        log.info(virtual_machine_name)
+        subscriptionId = '950a5f1a-97b6-4c9c-b79b-e32d951b5e66'
+        compute_client = self.get_compute_client(subscriptionId)
+        # subprocess.check_output("az account set --subscription {0}".format(subscriptionId),shell=True)
+        resourceGroupName = 'rg-cdw-workshops-201904'
+        virtualNetworkName = 'vnet-cdw-workshops-201904'
+        nsgName = "nsg-cdw-workshops-201904"
+        snapshotName_os = 'cdw-104-student-master-disk'
+        snapshotName_data = ''
+        storageType = 'Standard_LRS'
+        osType = 'linux'
+        ssh_key = '/ops-web/data/keyPresalesNA_Prod_Demo.pem'
+        ImageName = "CDW-Master-Azure-10.4-Linux_image_2020-04-07-1530"
+        ImageId = "/subscriptions/950a5f1a-97b6-4c9c-b79b-e32d951b5e66/resourceGroups/rg-cdw-workshops-201904/providers/Microsoft.Compute/images/CDW-Master-Azure-10.4-Linux_image_2020-04-07-1530"
+        virtualMachineSize = 'Standard_B12ms'
+
+        tags = {
+            'APPLICATIONENV' : 'PROD',
+            'APPLICATIONROLE' : 'APPSVR',
+            'BUSINESSUNIT' : 'NA-Presales',
+            'OWNEREMAIL': owner,
+            'RUNNINGSCHEDULE' : '00:06:20:00:1-5',
+            'NAME' : virtual_machine_name
+
+        }
+
+        osDiskName = virtual_machine_name + "_os"
+        DiskName_data = virtual_machine_name + "_data"
+        nicName = virtual_machine_name + "_nic"
+        myPublicIP = virtual_machine_name +"_public_ip"
+
+        network_client = azure.mgmt.network.NetworkManagementClient(
+            credentials=self.credentials, subscription_id=subscriptionId
+        )
+
+        def create_publicip(network_client):
+            public_ip_params = {
+                'location' : 'westus',
+                'public_ip_allocation_method': 'Static'
+            }
+            creation_result = network_client.public_ip_addresses.create_or_update(
+                resourceGroupName,
+                myPublicIP,
+                public_ip_params,
+            )
+            return creation_result.result()
+        publicip=create_publicip(network_client)
+
+        responsesubnet=network_client.virtual_networks.get(resourceGroupName,virtualNetworkName)
+        SubnetId = responsesubnet.subnets[0].id
+        SubnetName = responsesubnet.subnets[0].name
+        network_security_group = network_client.network_security_groups.get(resourceGroupName,nsgName)
+        nsgId = network_security_group.id
+        log.info(nsgId)
+
+
+
+        log.info(publicip.id)
+        publicipid=publicip.id
+
+        params = {'location': 'westus',
+                  'ip_configurations': [{
+                      'name':nicName,
+
+                      'public_ip_address':
+                          {'id': publicipid },
+                      'subnet': {
+                          'id': SubnetId
+                      }
+
+                  }],
+                  'network_security_group' : { 'id' : nsgId }
+
+
+                  }
+
+        network_client.network_interfaces.create_or_update(resourceGroupName,nicName,params)
+        snapshotId_os = compute_client.snapshots.get(resourceGroupName,snapshotName_os).id
+        log.info(snapshotId_os)
+        result = compute_client.disks.create_or_update(resourceGroupName, osDiskName, {
+            'location': 'westus',
+            'storage_profile': {
+                'os_disk': {
+                    'os_type': osType
+                }
+            },
+            'sku': {
+                'name': storageType,
+
+            },
+            'creation_data': {
+                'create_option': 'Copy',
+                'source_resource_id': snapshotId_os
+            }
+        })
+        log.info(result)
+
+        if snapshotName_data!= "":
+            snapshotId_data = compute_client.snapshots.get(resourceGroupName,snapshotName_data).id
+            result2 = compute_client.disks.create_or_update(resourceGroupName, DiskName_data, {
+                'location': 'westus',
+                'storage_profile': {
+                    'os_disk': {
+                        'os_type': osType
+                    }
+                },
+                'sku': {
+                    'name': storageType,
+
+                },
+                'creation_data': {
+                    'create_option': 'Copy',
+                    'source_resource_id': snapshotId_data
+                }
+            })
+            log.info(result2)
+        vm_parameters = {
+            'location':'westus',
+            'hardware_profile': {
+                'vm_size': virtualMachineSize
+            },
+
+            'network_profile': {
+                'network_interfaces': [{
+                    'name': nicName,
+                }]
+            },
+            'tags' : tags,
+            "osProfile": {
+                "adminUsername": "az-user",
+                "adminPassword": "Infa@az@12346",
+
+                "linuxConfiguration": {
+                    "ssh": {
+                        "publicKeys": [
+                            {
+                                "path": ssh_key,
+                            }
+                        ]
+                    },
+                    "disablePasswordAuthentication": 'false'
+                }
+            },
+            'storage_profile': {
+                'image_reference': {
+                    'id': ImageId
+                }
+            },
+                        }
+        compute_client.virtual_machines.create_or_update(resourceGroupName,virtual_machine_name,vm_parameters)
+
 
 def delete_machine(az: AZClient, machine_id: str):
     """Delete a virtual machine in Azure.

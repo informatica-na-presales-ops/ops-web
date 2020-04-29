@@ -12,9 +12,10 @@
             <h2 class="text-light">Select the workshop you want to launch.</h2>
             <form id="form1" action="{{ url_for('wsimage') }}" method="post">
                 <select id="tvalue" name="ws">
-                    <option value="EDC">EDC</option>
+                    <option value="EDC104">EDC104</option>
                     <option value="CDW">CDW</option>
                     <option value="CDW-AZ">CDW-AZ</option>
+                    <option value="CDW104-AZ">CDW104-AZ</option>
                 </select>
                 <input type="submit" value="Submit">
             </form>
@@ -24,7 +25,7 @@
           {% if ws is defined %}
 
 
-              {% if ws2 != 'CDW-AZ'  %}
+              {% if ws2 != 'CDW-AZ' and ws2 != 'CDW104-AZ'  %}
                 <form id="form2" action="{{ url_for('launch') }}" method="post">
                 <input type="hidden" name="machine-id" value="{{ ws }}">
                 <input type="hidden" name="id" value="{{ id }}">
@@ -109,6 +110,7 @@
                 </form>
               {% else %}
                  <form id="form3" action="{{ url_for('az_launch') }}" method="post">
+                 <input type="hidden" name="cdwversion" value={{ ws2 }}>
                  <h2 class="text-light">Give the following information</h2>
                  <div class="form-row">
                     <div class="form-group col-md-6">
