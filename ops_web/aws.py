@@ -271,7 +271,7 @@ class AWSClient:
                 strfinl2 = strfinl2 + "ec2eicemea.infacloud ec2eicemea edc.infa.com"
             else:
                 strfinl = strfinl + '\n' + key + ' ' + value
-        strfinl3 = strfinl2 + " " + "127.0.0.1" + "  " + "localhost localhost.localdomain localhost4 localhost4.localdomain4" + "\n" + "::1" + "  " + "localhost localhost.localdomain localhost6 localhost6.localdomain6"
+        strfinl3 = strfinl2
 
         for i in instancelist:
             log.info(i)
@@ -281,7 +281,7 @@ class AWSClient:
             public_ip = self.get_instance_attr(region, i, 'public_ip_address')
             host_name = self.get_instance_tag(region, i, 'image__dns_names_private')
             if platform != 'windows':
-                if host_name != 'modulabs.master.infa.world':
+                if host_name == 'modulabs.master.infa.world':
                     try:
                         key = RSAKey.from_private_key_file('/ops-web/data/keyPresalesNA_Prod_Demo.pem')
                         time.sleep(10)
@@ -290,9 +290,9 @@ class AWSClient:
                         log.debug("connecting to" + public_ip)
                         client.connect(hostname=public_ip, username="centos", pkey=key)
                         client.exec_command(
-                            'sudo chown centos: /etc/hosts && >/etc/hosts && echo \"%s\" >> /etc/hosts' % strfinl3)
-                    except:
-                        return "Host file has not been updated. Please check if the instance is running or wait sometime till the instance loads properly."
+                            'sudo chown centos: /etc/hosts  && echo \"%s\" >> /etc/hosts' % strfinl3)
+                    except Exception as e:
+                        return "Host file has not been updated. Please check if the instance is running or wait sometime till the instance loads properly." + str(e)
             else:
                 try:
                     subprocess.check_output([
