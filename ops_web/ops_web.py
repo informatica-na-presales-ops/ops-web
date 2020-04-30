@@ -315,7 +315,7 @@ def environment_start(environment):
         if machine.get('can_control'):
             db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
             db.set_machine_state(machine_id, 'starting')
-            scheduler.add_job(start_machine, args=[machine_id])
+            scheduler.add_job(start_machine, args=[machine_id],misfire_grace_time=900)
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -332,7 +332,7 @@ def environment_stop(environment):
         if machine.get('can_control'):
             db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
             db.set_machine_state(machine_id, 'stopping')
-            scheduler.add_job(stop_machine, args=[machine_id])
+            scheduler.add_job(stop_machine, args=[machine_id],misfire_grace_time=900)
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
