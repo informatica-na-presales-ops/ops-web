@@ -12,6 +12,7 @@ import paramiko
 import os
 import subprocess
 import requests
+from botocore.config import Config
 
 from typing import Dict, List
 
@@ -27,6 +28,13 @@ def tag_list_to_dict(tags: List[dict]) -> dict:
 def tag_dict_to_list(tags: dict) -> List[dict]:
     return [{'Key': k, 'Value': v} for k, v in tags.items()]
 
+def get_config():
+    config = Config(
+        retries=dict(
+            max_attempts=10
+        )
+    )
+    return config
 
 class AWSClient:
     def __init__(self, config: ops_web.config.Config, access_key_id: str, secret_access_key: str):
@@ -556,7 +564,7 @@ class AWSClient:
     def get_all_images(self):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 images in {region}')
-            ec2 = self.session.resource('ec2', region_name=region)
+            ec2 = self.session.resource('ec2', region_name=region, config=get_config())
             try:
                 for image in ec2.images.filter(Owners=['self']):
                     tags = tag_list_to_dict(image.tags)
@@ -579,7 +587,7 @@ class AWSClient:
     def get_all_securitygrps(self):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 security groups in {region}')
-            ec2 = self.session.resource('ec2', region_name=region)
+            ec2 = self.session.resource('ec2', region_name=region,config=get_config())
             security_groups = ec2.security_groups.all()
             try:
                 for sgid in security_groups:
@@ -611,17 +619,17 @@ class AWSClient:
 
         url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
         response = requests.get(url)
-        log.debug(response)
+        log.info(response)
         result = response.json()
-        log.debug(result)
+        log.info(result)
         dictr = {}
         while 'error' in result:
             response = requests.get(url)
-            log.debug(response)
+            log.info(response)
             result = response.json()
 
             if 'results' in result:
-                log.debug("got json data")
+                log.info("got json data")
                 result = response.json()
                 break
         jsonresult = result['results']
@@ -744,7 +752,7 @@ class AWSClient:
 
     def get_whitelist_for_instance(self, region: str, instance):
         whitelist = set()
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.session.resource('ec2', region_name=region,config=get_config())
         for sg in instance.security_groups:
             sg_id = sg.get('GroupId')
             if sg_id in self.config.aws_ignored_security_groups:
@@ -756,14 +764,14 @@ class AWSClient:
 
     def start_machine(self, region: str, machine_id: str):
         log.debug(f'Start machine: {machine_id}')
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.session.resource('ec2', region_name=region,config=get_config())
         instance = ec2.Instance(machine_id)
         instance.start()
         return instance
 
     def stop_machine(self, region: str, machine_id: str):
         log.debug(f'Stop machine: {machine_id}')
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.session.resource('ec2', region_name=region,config=get_config())
         instance = ec2.Instance(machine_id)
         instance.stop()
         return instance

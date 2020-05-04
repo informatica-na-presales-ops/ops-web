@@ -713,6 +713,8 @@ class AZClient:
                 }
             })
             log.info(result2)
+        nicId = network_client.network_interfaces.get(resourceGroupName,nicName).id
+        log.info(nicId)
         vm_parameters = {
             'location':'westus',
             'hardware_profile': {
@@ -721,12 +723,13 @@ class AZClient:
 
             'network_profile': {
                 'network_interfaces': [{
-                    'name': nicName,
+                    'id': nicId,
                 }]
             },
             'tags' : tags,
             "osProfile": {
                 "adminUsername": "az-user",
+                "computerName": "myVM",
                 "adminPassword": "Infa@az@12346",
 
                 "linuxConfiguration": {
