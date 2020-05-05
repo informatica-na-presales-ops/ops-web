@@ -21,6 +21,8 @@ class Config:
     bootstrap_admin: str
     cloudability_auth_token: str
     cloudability_vendor_account_id: str
+    cdw104_pwd:str
+    cdw_jumpbox_pwd:str
     clouds_to_sync: str
     db: str
     debug_layout: bool
@@ -87,6 +89,8 @@ class Config:
         self.cloudability_auth_token = os.getenv('CLOUDABILITY_AUTH_TOKEN')
         self.cloudability_vendor_account_id = os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID')
         self.cloudability_vendor_account_id_az=os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID_AZ')
+        self.cdw104_pwd=os.getenv('CDW104_PWD')
+        self.cdw_jumpbox_pwd=os.getenv('CDW_JUMPBOX_PWD')
         self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws az')
         self.db = os.getenv('DB')
         self.debug_layout = as_bool(os.getenv('DEBUG_LAYOUT', 'False'))

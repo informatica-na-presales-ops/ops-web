@@ -462,7 +462,12 @@ def synchosts_az():
     for account in db.get_all_credentials_for_use('az'):
         az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                  account.get('azure_tenant_id'))
-        result = az.sync_hosts(idliststr)
+        app.logger.info(idliststr)
+        if '104' in idliststr:
+            app.logger.info("found new cdw image")
+            result = az.sync_hosts_104(idliststr)
+        else:
+         result = az.sync_hosts(idliststr)
         for i in id_list7:
             i = "'" + i + "'"
             instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
@@ -605,17 +610,19 @@ def az_launch():
     instance_info = []
     for account in db.get_all_credentials_for_use('az'):
         for i in range(q):
-            vmbase = name + str(i)
             az_idlist = []
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
             if cdwversion == 'CDW104-AZ':
+                vmbase = name+str("104") + "-" + str(i)
                 infa_result = az.launch_infa104(account.get('username'), account.get('password'),
                                                 account.get('azure_tenant_id'), vmbase, owner)
-                # windows_result = az.launch_windows104(account.get('username'), account.get('password'),
-                #                                       account.get('azure_tenant_id'), vmbase, owner)
+                windows_result = az.launch_windows104(account.get('username'), account.get('password'),
+                                                      account.get('azure_tenant_id'), vmbase, owner)
 
             else:
+                vmbase = name + "-" +str(i)
+
                 cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
                                                     account.get('azure_tenant_id'), vmbase, owner)
 
@@ -624,16 +631,18 @@ def az_launch():
                 infa_result = az.launch_infa(account.get('username'), account.get('password'),
                                              account.get('azure_tenant_id'), vmbase, owner)
                 az_idlist.append(cdh_result)
-                az_idlist.append(windows_result)
-                az_idlist.append(infa_result)
-                for i in az_idlist:
+
+            az_idlist.append(windows_result)
+            az_idlist.append(infa_result)
+            app.logger.info(az_idlist)
+            for i in az_idlist:
                     virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
                     instance_info.append(virtualmachine_info)
                     idlist.append(virtualmachine_info['id'])
                     virtualmachine_info['account_id'] = account.get('id')
                     db.add_machine(virtualmachine_info)
-                app.logger.info(idlist)
-                app.logger.info(instance_info)
+            app.logger.info(idlist)
+            app.logger.info(instance_info)
         return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
 
 

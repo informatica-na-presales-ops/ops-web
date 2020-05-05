@@ -138,7 +138,7 @@ class AWSClient:
                     MaxCount=1,
                     SecurityGroupIds=securitygrp,
                     SubnetId=info_dict['subnet'],
-                    KeyName="keyPresalesNA_Prod_Demo",
+                    KeyName="keyPresalesNA_Prod_Demo_2020",
                     TagSpecifications=[
                         {
                             'ResourceType': 'instance',
@@ -291,7 +291,7 @@ class AWSClient:
             if platform != 'windows':
                 if host_name == 'modulabs.master.infa.world':
                     try:
-                        key = RSAKey.from_private_key_file('/ops-web/data/keyPresalesNA_Prod_Demo.pem')
+                        key = RSAKey.from_private_key_file('/ops-web/data/keyPresalesNA_Prod_Demo_2020.pem')
                         time.sleep(10)
                         client = SSHClient()
                         client.set_missing_host_key_policy(AutoAddPolicy())
