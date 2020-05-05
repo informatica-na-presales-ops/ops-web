@@ -8,11 +8,11 @@ import ops_web.config
 import logging
 import time
 import botocore
+import botocore.config
 import paramiko
 import os
 import subprocess
 import requests
-from botocore.config import Config
 
 from typing import Dict, List
 
@@ -28,13 +28,6 @@ def tag_list_to_dict(tags: List[dict]) -> dict:
 def tag_dict_to_list(tags: dict) -> List[dict]:
     return [{'Key': k, 'Value': v} for k, v in tags.items()]
 
-def get_config():
-    config = Config(
-        retries=dict(
-            max_attempts=10
-        )
-    )
-    return config
 
 class AWSClient:
     def __init__(self, config: ops_web.config.Config, access_key_id: str, secret_access_key: str):
@@ -42,10 +35,17 @@ class AWSClient:
         self.access_key_id = access_key_id
         self.secret_access_key = secret_access_key
         self.session = boto3.session.Session(access_key_id, secret_access_key)
+        self.boto_config = botocore.config.Config(retries={'max_attempts': 10})
+
+    def get_service_client(self, service_name: str, region_name: str):
+        return self.session.client(service_name, region_name, config=self.boto_config)
+
+    def get_service_resource(self, service_name: str, region_name: str):
+        return self.session.resource(service_name, region_name, config=self.boto_config)
 
     def create_image(self, region: str, machine_id: str, name: str, owner: str, public: bool = False) -> str:
         log.debug(f'Creating image from {machine_id} for {owner}')
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(machine_id)
         image = instance.create_image(Name=name)
         image_tags = {
@@ -61,7 +61,7 @@ class AWSClient:
         Filters = [
             {'Name': 'tag:workshop', 'Values': [ws]}
         ]
-        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        ec2 = self.get_service_resource('ec2', 'us-west-2')
         img = []
         try:
             for image in ec2.images.filter(Filters=Filters):
@@ -83,7 +83,7 @@ class AWSClient:
             log.critical(e)
 
     def getimage_tags(self, region: str, imageid: str, key: str):
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         image_details = ec2.Image(imageid)
         x = 0
         for tags in image_details.tags:
@@ -107,7 +107,7 @@ class AWSClient:
         ws = new_str2.split(',')
         shrtowner = (info_dict['owneremail']).split('@')[0]
         datetime2 = datetime.datetime.utcnow().strftime('%Y%m%d%H')
-        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        ec2 = self.get_service_resource('ec2', 'us-west-2')
         qu = int(info_dict['quantity'])
         instanceid = []
         region = 'us-west-2'
@@ -197,12 +197,12 @@ class AWSClient:
         return instanceid
 
     def get_instance_attr(self, region: str, instanceid: str, value: str):
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(instanceid)
         return getattr(instance, value)
 
     def describe_instance_attribute(self, region: str, instance_id: str, attribute: str) -> Dict:
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(instance_id)
         return instance.describe_attribute(Attribute=attribute)
 
@@ -211,7 +211,7 @@ class AWSClient:
         return tp.get('DisableApiTermination').get('Value')
 
     def get_instance_tag(self, region: str, instanceid: str, tagkey: str):
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(instanceid)
         tags = tag_list_to_dict(instance.tags)
         tag_value = tags.get(tagkey, '')
@@ -219,7 +219,7 @@ class AWSClient:
 
     def addtag_WSecuritygrps(self, securitygrpid: str, owneremail: str):
         """Adds owner email tag to the workshop specific security group"""
-        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        ec2 = self.get_service_resource('ec2', 'us-west-2')
         security_group = ec2.SecurityGroup(securitygrpid)
         security_group.create_tags(Tags=[{'Key': 'OWNEREMAIL', 'Value': owneremail}, ])
 
@@ -236,7 +236,7 @@ class AWSClient:
 
     def get_instance_of_envgrp(self, envgrp):
         """ Returns the list of instances inside an environment group"""
-        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        ec2 = self.get_service_resource('ec2', 'us-west-2')
         log.info(envgrp)
         instances = ec2.instances.filter(
 
@@ -337,10 +337,10 @@ class AWSClient:
     def allocate_elasticip(self, instanceid: list):
         """Allocates elastic Ip's to only the windows machines """
 
-        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        ec2 = self.get_service_resource('ec2', 'us-west-2')
         idlist = self.convert_instanceidstr_list(instanceid)
         region = 'us-west-2'
-        ec2Client = self.session.client('ec2', region)
+        ec2_client = self.get_service_client('ec2', region)
         for i in idlist:
             log.info(i)
             platform = self.get_instance_attr(region, i, 'platform')
@@ -348,8 +348,8 @@ class AWSClient:
                 instance = ec2.Instance(i)
                 state = instance.state['Name']
                 if state == 'running':
-                    eip = ec2Client.allocate_address(Domain='vpc')
-                    ec2Client.associate_address(
+                    eip = ec2_client.allocate_address(Domain='vpc')
+                    ec2_client.associate_address(
                         InstanceId=i,
                         AllocationId=eip["AllocationId"])
             else:
@@ -357,7 +357,7 @@ class AWSClient:
 
     def add_inboundrule(self, sgid: str, ip: str):
         log.info(ip)
-        ec2 = self.session.resource('ec2', region_name='us-west-2')
+        ec2 = self.get_service_resource('ec2', 'us-west-2')
         sg = ec2.SecurityGroup(sgid)
         try:
             sg.authorize_ingress(
@@ -381,7 +381,7 @@ class AWSClient:
 
     def create_instance_defaultspecs(self, region: str, imageid: str, name: str, owner: str, environment: str,
                                      vpc: str):
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         if vpc == 'mdmdemo':
             security_group_ids = ['sg-0bfbf3dc3c4ea981d', 'sg-02525e6c6a426c479']
             SubnetId = 'subnet-0962f22cded669d8d'
@@ -455,18 +455,18 @@ class AWSClient:
     def create_instance(self, region: str, imageid: str, instanceid: str, name: str, owner: str, environment: str,
                         vpc: str):
 
-        ec2Client = self.session.client('ec2', region_name=region)
+        ec2_client = self.get_service_client('ec2', region)
         try:
-          response = ec2Client.describe_instances(InstanceIds=[instanceid])
+            response = ec2_client.describe_instances(InstanceIds=[instanceid])
         except:
-          return "Unsuccessful"
+            return "Unsuccessful"
 
         log.info(response['Reservations'])
 
         if not response['Reservations']:
             return "Unsuccessful"
         else:
-            ec2 = self.session.resource('ec2', region_name=region)
+            ec2 = self.get_service_resource('ec2', region)
             instance = ec2.Instance(instanceid)
             if vpc == 'mdmdemo':
                 security_group_ids = ['sg-0bfbf3dc3c4ea981d', 'sg-02525e6c6a426c479']
@@ -517,7 +517,7 @@ class AWSClient:
 
     def delete_image(self, region: str, image_id: str):
         log.debug(f'Delete image: {image_id}')
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         image = ec2.Image(image_id)
         snapshots = [ec2.Snapshot(m['Ebs']['SnapshotId']) for m in image.block_device_mappings if 'Ebs' in m]
         log.debug(f'Deregistering image: {image.id}')
@@ -535,7 +535,7 @@ class AWSClient:
         Do not call this function during a web request. Use a scheduled job instead."""
 
         log.debug(f'Delete machine: {machine_id}')
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(machine_id)
         log.info(f'Looking up volumes for machine {machine_id}')
         delete_after = []
@@ -553,7 +553,7 @@ class AWSClient:
             self.delete_volume(region, v)
 
     def delete_volume(self, region: str, volume_id: str):
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         volume = ec2.Volume(volume_id)
         if volume.state == 'in-use':
             log.info(f'Volume {volume_id} is {volume.state}, waiting 10 seconds ...')
@@ -564,7 +564,7 @@ class AWSClient:
     def get_all_images(self):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 images in {region}')
-            ec2 = self.session.resource('ec2', region_name=region, config=get_config())
+            ec2 = self.get_service_resource('ec2', region)
             try:
                 for image in ec2.images.filter(Owners=['self']):
                     tags = tag_list_to_dict(image.tags)
@@ -587,7 +587,7 @@ class AWSClient:
     def get_all_securitygrps(self):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 security groups in {region}')
-            ec2 = self.session.resource('ec2', region_name=region,config=get_config())
+            ec2 = self.get_service_resource('ec2', region)
             security_groups = ec2.security_groups.all()
             try:
                 for sgid in security_groups:
@@ -645,7 +645,7 @@ class AWSClient:
                 dictr[l] = g
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 instances in {region}')
-            ec2 = self.session.resource('ec2', region_name=region)
+            ec2 = self.get_service_resource('ec2', region)
             try:
                 for instance in ec2.instances.all():
                     yield self.get_instance_dict(region, instance, dictr)
@@ -730,7 +730,7 @@ class AWSClient:
         return params
 
     def get_single_instance(self, region: str, instanceid: str, report_id):
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(instanceid)
         url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
         response = requests.get(url)
@@ -752,7 +752,7 @@ class AWSClient:
 
     def get_whitelist_for_instance(self, region: str, instance):
         whitelist = set()
-        ec2 = self.session.resource('ec2', region_name=region,config=get_config())
+        ec2 = self.get_service_resource('ec2', region)
         for sg in instance.security_groups:
             sg_id = sg.get('GroupId')
             if sg_id in self.config.aws_ignored_security_groups:
@@ -764,21 +764,21 @@ class AWSClient:
 
     def start_machine(self, region: str, machine_id: str):
         log.debug(f'Start machine: {machine_id}')
-        ec2 = self.session.resource('ec2', region_name=region,config=get_config())
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(machine_id)
         instance.start()
         return instance
 
     def stop_machine(self, region: str, machine_id: str):
         log.debug(f'Stop machine: {machine_id}')
-        ec2 = self.session.resource('ec2', region_name=region,config=get_config())
+        ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(machine_id)
         instance.stop()
         return instance
 
     def update_resource_tags(self, region: str, resource_id: str, tags: Dict):
         log.debug(f'Update tags: {resource_id}')
-        ec2 = self.session.resource('ec2', region_name=region)
+        ec2 = self.get_service_resource('ec2', region)
         ec2.create_tags(
             Resources=[resource_id],
             Tags=[{'Key': k, 'Value': v} for k, v in tags.items()]
