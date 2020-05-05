@@ -635,10 +635,10 @@ class AWSClient:
         jsonresult = result['results']
         for i in jsonresult:
             for k, v in i.items():
-                if (k == 'resource_identifier'):
+                if k == 'resource_identifier':
                     l = v
                     continue
-                elif (k == 'unblended_cost'):
+                elif k == 'unblended_cost':
                     g = v
                 else:
                     g = None
@@ -658,7 +658,7 @@ class AWSClient:
 
     def get_unblendedcost(self, instanceid, result, volid):
         for i, f in result.items():
-            if (i == instanceid):
+            if i == instanceid:
                 ic = f
                 break
             else:
@@ -669,7 +669,7 @@ class AWSClient:
         else:
             instance_cost = instance_cost
         for i, f in result.items():
-            if (i == volid):
+            if i == volid:
                 vc = f
                 break
             else:
@@ -739,10 +739,10 @@ class AWSClient:
         jsonresult = result['results']
         for i in jsonresult:
             for k, v in i.items():
-                if (k == 'resource_identifier'):
+                if k == 'resource_identifier':
                     l = v
                     continue
-                elif (k == 'unblended_cost'):
+                elif k == 'unblended_cost':
                     g = v
                 else:
                     g = None
