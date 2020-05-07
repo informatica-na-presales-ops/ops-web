@@ -1,5 +1,7 @@
 {% extends 'index.html' %}
 
+{% block title %}{{ super() }} / Surveys / Configure{% endblock %}
+
 {% block breadcrumb %}
     <a class="btn btn-outline-light" href="{{ url_for('op_debrief') }}">
         <span class="oi oi-chevron-left"></span>
@@ -16,7 +18,7 @@
 
     <div class="row bump-top-padding">
         <div class="col-12">
-            <div class="border-left border-primary pl-2">
+            <div class="border-left border-primary border-2 pl-2">
                 <h2 class="text-light">Generate surveys for these roles</h2>
                 <form class="text-light" action="{{ url_for('op_debrief_configure_roles') }}" method="post">
                     <div class="form-group">
