@@ -502,6 +502,19 @@ class Database(fort.PostgresDatabase):
 
     # opportunity debrief surveys
 
+    def get_roles(self):
+        sql = 'select distinct role from sf_opportunity_team_members where role is not null'
+        current_sf_roles = [r.get('role') for r in self.q(sql)]
+        sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
+        known_roles = {r.get('role_name'): r for r in self.q(sql)}
+        for sf_role in current_sf_roles:
+            if sf_role not in known_roles:
+                sql = 'insert into op_debrief_roles (id, role_name) values (%(id)s, %(role_name)s)'
+                params = {'id': uuid.uuid4(), 'role_name': sf_role}
+                self.u(sql, params)
+        sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
+        return self.q(sql)
+
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:
         self.log.debug(f'Generating a survey for {opportunity_number} / {email}')
         sql = '''
@@ -664,10 +677,10 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('cloud_credentials', 'cost_tracking', 'images', 'log_entries', 'op_debrief_surveys',
-                      'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps', 'schema_versions',
-                      'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking',
-                      'virtual_machines', 'security_group'):
+        for table in ('cloud_credentials', 'cost_tracking', 'images', 'log_entries', 'op_debrief_roles',
+                      'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
+                      'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members',
+                      'sync_tracking', 'virtual_machines', 'security_group'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -1023,6 +1036,17 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(22)
+        if self.version < 23:
+            self.log.info('Migrating database to schema version 23')
+            self.u('''
+                CREATE TABLE op_debrief_roles (
+                    id uuid primary key,
+                    role_name text,
+                    generate_survey boolean DEFAULT FALSE,
+                    ignore boolean DEFAULT FALSE
+                )
+            ''')
+            self.add_schema_version(23)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
