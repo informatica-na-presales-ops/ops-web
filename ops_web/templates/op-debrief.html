@@ -5,6 +5,22 @@
         <div class="col-12">
             <h1 class="text-light">Opportunity debrief surveys</h1>
             <p class="text-light lead">for {{ 'everyone' if 'admin' in g.permissions or 'survey-admin' in g.permissions else g.email }}</p>
+        </div>
+    </div>
+
+    {% if 'survey-admin' in g.permissions %}
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <a class="btn btn-outline-light" href="{{ url_for('op_debrief_configure') }}">
+                <span class="oi oi-cog"></span>
+                Configure
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
             <div class="form-inline">
                 <label class="sr-only" for="filter-input">Filter surveys</label>
                 <input class="form-control" placeholder="Filter surveys..." id="filter-input" autofocus>
