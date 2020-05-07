@@ -1,0 +1,36 @@
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('op_debrief') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Surveys</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <h1 class="text-light">Configure opportunity debrief surveys</h1>
+        </div>
+    </div>
+
+    <div class="row bump-top-padding">
+        <div class="col-12">
+            <div class="border-left border-primary pl-2">
+                <h2 class="text-light">Generate surveys for these roles</h2>
+                <form class="text-light" action="{{ url_for('op_debrief_configure_roles') }}" method="post">
+                    <div class="form-group">
+                    {% for role in g.roles|sort(attribute='role_name') %}
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="{{ role.id }}" name="selected-roles" value="{{ role.id }}" {{ 'checked' if role.generate_survey }}>
+                            <label class="custom-control-label" for="{{ role.id }}">{{ role.role_name }}</label>
+                        </div>
+                    {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

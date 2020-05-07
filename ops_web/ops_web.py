@@ -896,6 +896,24 @@ def op_debrief():
     return flask.render_template('op-debrief.html')
 
 
+@app.route('/op-debrief/configure')
+@permission_required('survey-admin')
+def op_debrief_configure():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.roles = db.get_roles()
+    return flask.render_template('op-debrief-configure.html')
+
+
+@app.route('/op-debrief/configure/roles', methods=['POST'])
+@permission_required('survey-admin')
+def op_debrief_configure_roles():
+    db: ops_web.db.Database = flask.g.db
+    selected_roles = flask.request.values.getlist('selected-roles')
+    app.logger.debug(f'Selected roles: {selected_roles}')
+    db.update_roles(selected_roles)
+    return flask.redirect(flask.url_for('op_debrief_configure'))
+
+
 @app.route('/op-debrief/<uuid:survey_id>', methods=['GET', 'POST'])
 @login_required
 def op_debrief_survey(survey_id: uuid.UUID):

@@ -515,6 +515,13 @@ class Database(fort.PostgresDatabase):
         sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
         return self.q(sql)
 
+    def update_roles(self, selected_roles: List):
+        sql = 'update op_debrief_roles set generate_survey = false where generate_survey is true'
+        self.u(sql)
+        sql = 'update op_debrief_roles set generate_survey = true where id = %(id)s'
+        for role_id in selected_roles:
+            self.u(sql, {'id': role_id})
+
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:
         self.log.debug(f'Generating a survey for {opportunity_number} / {email}')
         sql = '''
