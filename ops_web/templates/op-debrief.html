@@ -4,7 +4,7 @@
     <div class="row bump-top-padding">
         <div class="col-12">
             <h1 class="text-light">Opportunity debrief surveys</h1>
-            <p class="text-light lead">for {{ 'everyone' if 'admin' in g.permissions or 'survey-admin' in g.permissions else g.email }}</p>
+            <p class="text-light lead">for {{ 'everyone' if 'survey-admin' in g.permissions else g.email }}</p>
         </div>
     </div>
 
@@ -34,7 +34,7 @@
             <table class="table table-dark table-striped table-hover table-sm d-none d-sm-block">
                 <thead>
                 <tr>
-                    {% if 'admin' in g.permissions or 'survey-admin' in g.permissions %}<th>Email</th>{% endif %}
+                    {% if 'survey-admin' in g.permissions %}<th>Email</th>{% endif %}
                     <th>Opportunity Number</th>
                     <th>Opportunity Name</th>
                     <th>Role</th>
@@ -45,7 +45,7 @@
                 <tbody>
                 {%  for s in g.surveys %}
                     <tr class="filter-candidate" data-filter-value="{{ s.filter_value }}" data-href="{{ url_for('op_debrief_survey', survey_id=s.id) }}">
-                        {% if 'admin' in g.permissions or 'survey-admin' in g.permissions %}<td>{{ s.email }}</td>{% endif %}
+                        {% if 'survey-admin' in g.permissions %}<td>{{ s.email }}</td>{% endif %}
                         <td>{{ s.opportunity_number }}</td>
                         <td>{{ s.name }}</td>
                         <td>{{ s.role }}</td>

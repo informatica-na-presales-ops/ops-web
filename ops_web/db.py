@@ -619,7 +619,7 @@ class Database(fort.PostgresDatabase):
             FROM op_debrief_surveys s
             LEFT JOIN sf_opportunities o ON s.opportunity_number = o.opportunity_number
         '''
-        if not (self.has_permission(email, 'admin') or self.has_permission(email, 'survey-admin')):
+        if not self.has_permission(email, 'survey-admin'):
             sql = f'{sql} WHERE email = %(email)s '
         sql = f'{sql} ORDER BY o.close_date DESC, s.opportunity_number, s.email'
         params = {'email': email}

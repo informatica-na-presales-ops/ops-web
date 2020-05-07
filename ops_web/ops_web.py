@@ -919,7 +919,7 @@ def op_debrief_configure_roles():
 def op_debrief_survey(survey_id: uuid.UUID):
     db: ops_web.db.Database = flask.g.db
     survey = db.get_survey(survey_id)
-    if 'admin' in flask.g.permissions or 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
+    if 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
         if flask.request.method == 'GET':
             flask.g.survey = survey
             flask.g.op_contacts = db.get_op_contacts(survey.get('opportunity_number'))
