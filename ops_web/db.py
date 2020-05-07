@@ -502,26 +502,6 @@ class Database(fort.PostgresDatabase):
 
     # opportunity debrief surveys
 
-    def get_roles(self):
-        sql = 'select distinct role from sf_opportunity_team_members where role is not null'
-        current_sf_roles = [r.get('role') for r in self.q(sql)]
-        sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
-        known_roles = {r.get('role_name'): r for r in self.q(sql)}
-        for sf_role in current_sf_roles:
-            if sf_role not in known_roles:
-                sql = 'insert into op_debrief_roles (id, role_name) values (%(id)s, %(role_name)s)'
-                params = {'id': uuid.uuid4(), 'role_name': sf_role}
-                self.u(sql, params)
-        sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
-        return self.q(sql)
-
-    def update_roles(self, selected_roles: List):
-        sql = 'update op_debrief_roles set generate_survey = false where generate_survey is true'
-        self.u(sql)
-        sql = 'update op_debrief_roles set generate_survey = true where id = %(id)s'
-        for role_id in selected_roles:
-            self.u(sql, {'id': role_id})
-
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:
         self.log.debug(f'Generating a survey for {opportunity_number} / {email}')
         sql = '''
@@ -588,6 +568,19 @@ class Database(fort.PostgresDatabase):
         params = {'opportunity_key': opportunity_key}
         return self.q(sql, params)
 
+    def get_roles(self):
+        sql = 'select distinct role from sf_opportunity_team_members where role is not null'
+        current_sf_roles = [r.get('role') for r in self.q(sql)]
+        sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
+        known_roles = {r.get('role_name'): r for r in self.q(sql)}
+        for sf_role in current_sf_roles:
+            if sf_role not in known_roles:
+                sql = 'insert into op_debrief_roles (id, role_name) values (%(id)s, %(role_name)s)'
+                params = {'id': uuid.uuid4(), 'role_name': sf_role}
+                self.u(sql, params)
+        sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
+        return self.q(sql)
+
     def get_survey(self, survey_id: uuid.UUID) -> Optional[Dict]:
         sql = '''
             SELECT
@@ -625,10 +618,29 @@ class Database(fort.PostgresDatabase):
         params = {'email': email}
         return self.q(sql, params)
 
+    def search_for_survey(self, email: str, opportunity_number: str) -> uuid.UUID:
+        sql = '''
+            select id from op_debrief_surveys
+            where opportunity_number = %(opportunity_number)s
+              and email = %(email)s
+        '''
+        params = {
+            'opportunity_number': opportunity_number,
+            'email': email
+        }
+        return self.q_val(sql, params)
+
     def update_op_debrief_tracking(self, last_check: datetime.datetime):
         sql = 'UPDATE op_debrief_tracking SET last_check = %(last_check)s WHERE only_row IS TRUE'
         params = {'last_check': last_check}
         self.u(sql, params)
+
+    def update_roles(self, selected_roles: List):
+        sql = 'update op_debrief_roles set generate_survey = false where generate_survey is true'
+        self.u(sql)
+        sql = 'update op_debrief_roles set generate_survey = true where id = %(id)s'
+        for role_id in selected_roles:
+            self.u(sql, {'id': role_id})
 
     # cost reporting
 

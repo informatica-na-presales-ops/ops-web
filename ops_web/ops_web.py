@@ -989,8 +989,13 @@ def op_debrief_survey(survey_id: uuid.UUID):
             db.complete_survey(params)
             db.add_log_entry(flask.g.email, f'Completed opportunity debrief survey {survey_id}')
             return flask.redirect(flask.url_for('op_debrief_survey', survey_id=survey_id))
+
     # see if there is another survey for this opportunity for the signed-in user
-    return flask.redirect(flask.url_for('op_debrief'))
+    new_survey_id = db.search_for_survey(flask.g.email, survey.get('opportunity_number'))
+    if new_survey_id is None:
+        return flask.redirect(flask.url_for('op_debrief'))
+    else:
+        return flask.redirect(flask.url_for('op_debrief_survey', survey_id=new_survey_id))
 
 
 @app.route('/rep-sc-pairs')
