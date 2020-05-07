@@ -16,6 +16,7 @@ def generate_op_debrief_surveys(config: ops_web.config.Config, app: flask.Flask)
     log.info(f'Looking for opportunities modified after {last_check}')
     modified_ops = db.get_modified_opportunities(last_check)
     existing_survey_op_numbers = db.get_op_numbers_for_existing_surveys()
+    selected_roles = [r.get('role_name') for r in db.get_roles() if r.get('generate_survey')]
     for op in modified_ops:
         op_number = op.get('opportunity_number')
         if op_number in existing_survey_op_numbers:
@@ -25,14 +26,18 @@ def generate_op_debrief_surveys(config: ops_web.config.Config, app: flask.Flask)
         team_members = db.get_op_team_members(op.get('opportunity_key'))
         for t in team_members:
             email = t.get('email')
-            survey_id = db.add_survey(op_number, email, t.get('role'))
-            c = {
-                'opportunity': op,
-                'person': t,
-                'survey_id': survey_id
-            }
-            with app.app_context():
-                body = flask.render_template('op-debrief-survey-email.html', c=c)
-            ops_web.send_email.send_email(config, email, 'Opportunity debrief survey', body)
+            role = t.get('role')
+            if role in selected_roles:
+                survey_id = db.add_survey(op_number, email, t.get('role'))
+                c = {
+                    'opportunity': op,
+                    'person': t,
+                    'survey_id': survey_id
+                }
+                with app.app_context():
+                    body = flask.render_template('op-debrief-survey-email.html', c=c)
+                ops_web.send_email.send_email(config, email, 'Opportunity debrief survey', body)
+            else:
+                log.debug(f'Skipping {email} because role {role!r} is not selected')
     log.info('Done generating opportunity debrief surveys')
     db.update_op_debrief_tracking(now)
