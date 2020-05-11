@@ -160,6 +160,44 @@ class Database(fort.PostgresDatabase):
         '''
         return self.q(sql)
 
+    def get_own_environments(self, email: str) -> List[Dict]:
+        if self.has_permission(email, 'admin'):
+            sql = '''
+                SELECT
+                cloud,
+                env_group,
+                owner,
+                SUM(CAST(cost AS float)) costsum,
+                count(*) instance_count,
+                bool_or(state = 'running') running,
+                max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
+                lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
+            FROM virtual_machines
+            WHERE visible IS TRUE
+            AND cloud = 'aws'
+            GROUP BY cloud, env_group, owner
+            ORDER BY env_group
+        '''
+        else:
+            sql = '''
+                SELECT  
+                cloud,
+                env_group,
+                owner,
+                SUM(CAST(cost AS float)) costsum,
+                count(*) instance_count,
+                bool_or(state = 'running') running,
+                max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
+                lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
+            FROM virtual_machines
+            WHERE visible IS TRUE
+            AND (owner = %(email)s) 
+            AND cloud = 'aws'
+            GROUP BY cloud, env_group, owner
+            ORDER BY env_group
+            '''
+        return self.q(sql, {'email': email})
+
     def get_all_visible_machines(self) -> List[Dict]:
         sql = '''
             SELECT account_id, cloud, region, id

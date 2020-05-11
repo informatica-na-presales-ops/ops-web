@@ -201,6 +201,48 @@ class AWSClient:
         instance = ec2.Instance(instanceid)
         return getattr(instance, value)
 
+    def add_sap_sg(self,region,machine_id,vpc):
+        ec2 = self.get_service_resource('ec2', region)
+        instance=ec2.Instance(machine_id)
+        log.info(instance.security_groups)
+        all_sg_ids = [sg['GroupId'] for sg in instance.security_groups]
+        if vpc == 'vpc-22e59a44':
+            sg='sg-057b81ca90704379e'
+        elif vpc =='vpc-81e798e7':
+            sg='sg-0d43b43dc43d087e1'
+        elif vpc =='vpc-09f621890d284a70c':
+            sg='sg-0d034eeb85e2f65a1'
+        else :
+            return "Unsuccessful"
+        if sg not in all_sg_ids:
+            all_sg_ids.append(sg)
+            log.info(all_sg_ids)
+            instance.modify_attribute(Groups=all_sg_ids)
+            return "Successful"
+        else:
+            return "Unsuccessful"
+
+    def remove_sap_sg(self,region,machine_id,vpc):
+        ec2 = self.get_service_resource('ec2', region)
+        instance=ec2.Instance(machine_id)
+        log.info(instance.security_groups)
+        all_sg_ids = [sg['GroupId'] for sg in instance.security_groups]
+        if vpc == 'vpc-22e59a44':
+            sg='sg-057b81ca90704379e'
+        elif vpc =='vpc-81e798e7':
+            sg='sg-0d43b43dc43d087e1'
+        elif vpc =='vpc-09f621890d284a70c':
+            sg='sg-0d034eeb85e2f65a1'
+        else :
+            return "Unsuccessful"
+        if sg in all_sg_ids:
+            all_sg_ids.remove(sg)
+            log.info(all_sg_ids)
+            instance.modify_attribute(Groups=all_sg_ids)
+            return "Successful"
+        else:
+            return "Unsuccessful"
+
     def describe_instance_attribute(self, region: str, instance_id: str, attribute: str) -> Dict:
         ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(instance_id)

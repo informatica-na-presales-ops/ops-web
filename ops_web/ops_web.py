@@ -259,6 +259,25 @@ def environments():
     return flask.render_template('environments.html')
 
 
+@app.route('/sap_access', methods=['GET', 'POST'])
+@login_required
+def sap_access():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.environments = add_running_time_human(db.get_own_environments(flask.g.email))
+    flask.g.default_filter = flask.request.values.get('filter', '').lower()
+    return flask.render_template('sap-access.html')
+
+@app.route('/sap_access/<environment>')
+@login_required
+def sap_access_detail(environment):
+    app.logger.debug(f'Getting information for environment {environment!r}')
+    db: ops_web.db.Database = flask.g.db
+    flask.g.environment = environment
+    flask.g.machines = add_running_time_human(db.get_machines_for_env(flask.g.email, environment))
+    flask.g.environments = db.get_env_list()
+    flask.g.today = datetime.date.today()
+    return flask.render_template('sap_access_detail.html')
+
 @app.route('/ws_sg')
 @login_required
 def ws_sg():
@@ -266,6 +285,54 @@ def ws_sg():
     app.logger.info(flask.g.email)
     flask.g.sg = db.get_groups(flask.g.email)
     return flask.render_template('securitygroups.html')
+
+@app.route('/sap_access/<environment>/attach_sap_sg', methods=['GET', 'POST'])
+@login_required
+def attach_sap_sg(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
+    db: ops_web.db.Database = flask.g.db
+    machines = db.get_machines_for_env(flask.g.email, environment)
+    final_result=[]
+    for machine in machines:
+        app.logger.info(machine.get('id'))
+        region = machine.get('region')
+        machine_id = machine.get('id')
+        vpc = machine.get('vpc')
+        account = db.get_one_credential_for_use(machine.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        app.logger.info(machine_id)
+        result = aws.add_sap_sg(region, machine_id, vpc)
+        final_result.append(result)
+    if all(c == 'Successful' for c in final_result):
+        return flask.redirect(flask.url_for('sap_access'))
+
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot give SAP Access to this environment. Check if the instances already have access or if they are in the correct vpc")
+
+
+@app.route('/sap_access/<environment>/detach_sap_sg', methods=['GET', 'POST'])
+@login_required
+def detach_sap_sg(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
+    db: ops_web.db.Database = flask.g.db
+    machines = db.get_machines_for_env(flask.g.email, environment)
+    final_result = []
+    for machine in machines:
+        region = machine.get('region')
+        machine_id = machine.get('id')
+        vpc = machine.get('vpc')
+        account = db.get_one_credential_for_use(machine.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        app.logger.info(machine_id)
+        result = aws.remove_sap_sg(region, machine_id, vpc)
+        final_result.append(result)
+    if all(c == 'Successful' for c in final_result):
+        return flask.redirect(flask.url_for('sap_access'))
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot remove SAP Access from this environment. Check if the Access has "
+                                           "already been revoked")
 
 
 @app.route('/environments/<environment>')
@@ -316,7 +383,7 @@ def environment_start(environment):
         if machine.get('can_control'):
             db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
             db.set_machine_state(machine_id, 'starting')
-            scheduler.add_job(start_machine, args=[machine_id],misfire_grace_time=900)
+            scheduler.add_job(start_machine, args=[machine_id], misfire_grace_time=900)
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -333,10 +400,51 @@ def environment_stop(environment):
         if machine.get('can_control'):
             db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
             db.set_machine_state(machine_id, 'stopping')
-            scheduler.add_job(stop_machine, args=[machine_id],misfire_grace_time=900)
+            scheduler.add_job(stop_machine, args=[machine_id], misfire_grace_time=900)
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+
+@app.route('/sap_access/attach_sap_sg_machine', methods=['POST'])
+def attach_sap_sg_machine():
+    machine_id = flask.request.values.get('machine-id')
+    environment = flask.request.values.get('environment')
+    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {machine_id}')
+    db: ops_web.db.Database = flask.g.db
+    machine = db.get_machine(machine_id, flask.g.email)
+    region = machine.get('region')
+    vpc = machine.get('vpc')
+    account = db.get_one_credential_for_use(machine.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    result = aws.add_sap_sg(region, machine_id, vpc)
+    if result == "Successful":
+        return flask.redirect(flask.url_for('sap_access_detail',environment=environment))
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot give SAP Access to this instance. Check if the instance already has access or if it is in the correct vpc")
+
+
+@app.route('/sap_access/detach_sap_sg_machine', methods=['POST'])
+def detach_sap_sg_machine():
+    machine_id = flask.request.values.get('machine-id')
+    environment = flask.request.values.get('environment')
+    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {machine_id}')
+    machine_id = flask.request.values.get('machine-id')
+    db: ops_web.db.Database = flask.g.db
+    machine = db.get_machine(machine_id, flask.g.email)
+    region = machine.get('region')
+    machine_id = machine.get('id')
+    vpc = machine.get('vpc')
+    account = db.get_one_credential_for_use(machine.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    app.logger.info(machine_id)
+    result = aws.remove_sap_sg(region, machine_id, vpc)
+    if result == "Successful":
+        return flask.redirect(flask.url_for('sap_access_detail',environment=environment))
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot remove SAP Access from this instance. Check if the Access has already been revoked")
 
 
 @app.route('/images')
@@ -468,7 +576,7 @@ def synchosts_az():
             app.logger.info("found new cdw image")
             result = az.sync_hosts_104(idliststr)
         else:
-         result = az.sync_hosts(idliststr)
+            result = az.sync_hosts(idliststr)
         for i in id_list7:
             i = "'" + i + "'"
             instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
@@ -615,14 +723,14 @@ def az_launch():
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
             if cdwversion == 'CDW104-AZ':
-                vmbase = name+str("104") + "-" + str(i)
+                vmbase = name + str("104") + "-" + str(i)
                 infa_result = az.launch_infa104(account.get('username'), account.get('password'),
                                                 account.get('azure_tenant_id'), vmbase, owner)
                 windows_result = az.launch_windows104(account.get('username'), account.get('password'),
                                                       account.get('azure_tenant_id'), vmbase, owner)
 
             else:
-                vmbase = name + "-" +str(i)
+                vmbase = name + "-" + str(i)
 
                 cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
                                                     account.get('azure_tenant_id'), vmbase, owner)
@@ -637,11 +745,11 @@ def az_launch():
             az_idlist.append(infa_result)
             app.logger.info(az_idlist)
             for i in az_idlist:
-                    virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
-                    instance_info.append(virtualmachine_info)
-                    idlist.append(virtualmachine_info['id'])
-                    virtualmachine_info['account_id'] = account.get('id')
-                    db.add_machine(virtualmachine_info)
+                virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
+                instance_info.append(virtualmachine_info)
+                idlist.append(virtualmachine_info['id'])
+                virtualmachine_info['account_id'] = account.get('id')
+                db.add_machine(virtualmachine_info)
             app.logger.info(idlist)
             app.logger.info(instance_info)
         return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
