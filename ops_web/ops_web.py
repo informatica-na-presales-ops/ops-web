@@ -1108,7 +1108,7 @@ def op_debrief_survey(survey_id: uuid.UUID):
 
 @app.route('/rep-sc-pairs')
 @permission_required('sc-assignments')
-def rep_sc_pairs():
+def sc_assignments_sales_reps():
     db: ops_web.db.Database = flask.g.db
     flask.g.sales_reps = db.get_rep_sc_pairs()
     flask.g.sales_consultants = db.get_sales_consultants()
@@ -1161,7 +1161,7 @@ def excel_sheet():
 
 @app.route('/rep-sc-pairs.xlsx')
 @permission_required('sc-assignments')
-def rep_sc_pairs_xlsx():
+def sc_assignments_sales_reps_xlsx():
     db: ops_web.db.Database = flask.g.db
     records = db.get_rep_sc_pairs()
     filter_input = flask.request.values.get('filter-input')
@@ -1193,7 +1193,7 @@ def rep_sc_pairs_xlsx():
 
 @app.route('/rep-sc-pairs/edit', methods=['POST'])
 @permission_required('sc-assignments')
-def rep_sc_pairs_edit():
+def sc_assignments_sales_reps_edit():
     db: ops_web.db.Database = flask.g.db
     rep_name = flask.request.values.get('rep_name')
     sc_name = flask.request.values.get('sc_name')
@@ -1201,7 +1201,7 @@ def rep_sc_pairs_edit():
     if sc_name == 'none':
         sc_name = None
     db.set_rep_sc_pair(rep_name, sc_name)
-    return flask.redirect(flask.url_for('rep_sc_pairs'))
+    return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
 
 
 @app.route('/sign-in')

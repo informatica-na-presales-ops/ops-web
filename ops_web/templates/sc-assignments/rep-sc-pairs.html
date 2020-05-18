@@ -7,7 +7,7 @@
         <div class="col-12">
             <h1 class="text-light">Rep/SC pairs</h1>
             <p class="text-light">Click an entry to edit.</p>
-            <form class="form-inline" action="{{ url_for('rep_sc_pairs_xlsx') }}" method="get">
+            <form class="form-inline" action="{{ url_for('sc_assignments_sales_reps_xlsx') }}" method="get">
                 <label for="filter-input" class="sr-only">Filter input</label>
                 <input class="form-control mr-2 mb-2" placeholder="Filter sales reps..." id="filter-input" name="filter-input" autofocus>
                 <button class="btn btn-outline-light mb-2" title="Active filter applies to downloaded XLSX file">
@@ -79,7 +79,7 @@
                 <div class="modal-body">
                     <p class="lead text-light">Sales Rep: <span id="edit-rep-name"></span></p>
                     <p class="text-light" id="edit-rep-territory">Rep territory here</p>
-                    <form id="form-edit-rep" action="{{ url_for('rep_sc_pairs_edit') }}" method="post">
+                    <form id="form-edit-rep" action="{{ url_for('sc_assignments_sales_reps_edit') }}" method="post">
                         <input type="hidden" id="form-edit-rep-name" name="rep_name">
                         <div class="form-group">
                             <label class="text-light" for="form-edit-rep-sc-name">Assigned Sales Consultant</label>
