@@ -110,7 +110,7 @@ def admin_users():
     flask.g.available_permissions = {
         'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
                   'cloud credentials'),
-        'rep-sc-pairs': 'view and manage pairings between Sales Reps and SCs',
+        'sc-assignments': 'view and manage sales consultant assignments',
         'survey-admin': 'view all opportunity debrief surveys'
     }
     flask.g.cloud_credentials = db.get_cloud_credentials()
@@ -1107,7 +1107,7 @@ def op_debrief_survey(survey_id: uuid.UUID):
 
 
 @app.route('/rep-sc-pairs')
-@permission_required('rep-sc-pairs')
+@permission_required('sc-assignments')
 def rep_sc_pairs():
     db: ops_web.db.Database = flask.g.db
     flask.g.sales_reps = db.get_rep_sc_pairs()
@@ -1160,7 +1160,7 @@ def excel_sheet():
 
 
 @app.route('/rep-sc-pairs.xlsx')
-@permission_required('rep-sc-pairs')
+@permission_required('sc-assignments')
 def rep_sc_pairs_xlsx():
     db: ops_web.db.Database = flask.g.db
     records = db.get_rep_sc_pairs()
@@ -1192,7 +1192,7 @@ def rep_sc_pairs_xlsx():
 
 
 @app.route('/rep-sc-pairs/edit', methods=['POST'])
-@permission_required('rep-sc-pairs')
+@permission_required('sc-assignments')
 def rep_sc_pairs_edit():
     db: ops_web.db.Database = flask.g.db
     rep_name = flask.request.values.get('rep_name')
