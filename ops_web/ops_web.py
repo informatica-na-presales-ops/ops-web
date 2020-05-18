@@ -1117,7 +1117,7 @@ def sc_assignments_sales_reps():
     db: ops_web.db.Database = flask.g.db
     flask.g.sales_reps = db.get_rep_sc_pairs()
     flask.g.sales_consultants = db.get_sales_consultants()
-    return flask.render_template('sc-assignments/rep-sc-pairs.html')
+    return flask.render_template('sc-assignments/sales-reps.html')
 
 
 @app.route('/excel_sheet', methods=['GET', 'POST'])
