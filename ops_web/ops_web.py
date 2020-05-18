@@ -1112,7 +1112,7 @@ def rep_sc_pairs():
     db: ops_web.db.Database = flask.g.db
     flask.g.sales_reps = db.get_rep_sc_pairs()
     flask.g.sales_consultants = db.get_sales_consultants()
-    return flask.render_template('rep-sc-pairs.html')
+    return flask.render_template('sc-assignments/rep-sc-pairs.html')
 
 
 @app.route('/excel_sheet', methods=['GET', 'POST'])
