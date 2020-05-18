@@ -1111,6 +1111,26 @@ def rep_sc_pairs_redirect():
     return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
 
 
+@app.route('/sc-assignments/regions')
+@permission_required('sc-assignments')
+def sc_assignments_regions():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.regions = db.get_regions()
+    flask.g.assignments = db.get_sc_region_assignments()
+    return flask.render_template('sc-assignments/regions.html')
+
+
+@app.route('/sc-assignments/regions/edit', methods=['POST'])
+@permission_required('sc-assignments')
+def sc_assignments_regions_edit():
+    db: ops_web.db.Database = flask.g.db
+    employee_id = flask.request.values.get('employee_id')
+    region = flask.request.values.get('region')
+    db.add_log_entry(flask.g.email, f'Update SC/region assignment: {employee_id}/{region}')
+    db.set_sc_region_assignment(employee_id, region)
+    return flask.redirect(flask.url_for('sc_assignments_regions'))
+
+
 @app.route('/sc-assignments/sales-reps')
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps():

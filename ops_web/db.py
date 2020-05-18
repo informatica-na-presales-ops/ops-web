@@ -538,6 +538,36 @@ class Database(fort.PostgresDatabase):
         sql = 'UPDATE sales_reps SET assigned_sc = %(sc_name)s WHERE sales_rep = %(rep_name)s'
         self.u(sql, {'sc_name': sc_name, 'rep_name': rep_name})
 
+    def get_regions(self):
+        sql = 'select geo, area, sub_area, region from sf_regions order by geo, area, sub_area, region'
+        return self. q(sql)
+
+    def get_sc_region_assignments(self):
+        sql = '''
+            select
+                sc.name, sc.employee_id, r.area, r.sub_area, coalesce(r.region, '') region,
+                lower(sc.name || ' ' || coalesce(r.area, '') || ' ' || coalesce(r.sub_area, '') || ' ' ||
+                      coalesce(r.region, '')) filter_value
+            from sales_consultants sc
+            left join sc_region_assignments a on a.sc_employee_id = sc.employee_id
+            left join sf_regions r on r.region = a.region
+            order by sc.name
+        '''
+        return self.q(sql)
+
+    def set_sc_region_assignment(self, employee_id, region):
+        params = {
+            'sc_employee_id': employee_id,
+            'region': region
+        }
+        sql = 'select sc_employee_id from sc_region_assignments where sc_employee_id = %(sc_employee_id)s'
+        existing = self.q_one(sql, params)
+        if existing is None:
+            sql = 'insert into sc_region_assignments (sc_employee_id, region) values (%(sc_employee_id)s, %(region)s)'
+        else:
+            sql = 'update sc_region_assignments set region = %(region)s where sc_employee_id = %(sc_employee_id)s'
+        self.u(sql, params)
+
     # opportunity debrief surveys
 
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:

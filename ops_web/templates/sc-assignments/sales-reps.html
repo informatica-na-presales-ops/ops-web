@@ -1,12 +1,23 @@
-{% extends 'one-up.html' %}
+{% extends 'sc-assignments/index.html' %}
 
-{% block title %}Rep/SC pairs{% endblock %}
+{% block title %}{{ super() }} / Sales Reps{% endblock %}
 
-{% block main_content %}
-    <div class="row bump-top-padding">
+{% block sub_content %}
+    <div class="row pt-3">
         <div class="col-12">
-            <h1 class="text-light">Rep/SC pairs</h1>
-            <p class="text-light">Click an entry to edit.</p>
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="{{ url_for('sc_assignments_regions') }}">Regions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Sales Reps</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
             <form class="form-inline" action="{{ url_for('sc_assignments_sales_reps_xlsx') }}" method="get">
                 <label for="filter-input" class="sr-only">Filter input</label>
                 <input class="form-control mr-2 mb-2" placeholder="Filter sales reps..." id="filter-input" name="filter-input" autofocus>
@@ -18,7 +29,7 @@
         </div>
     </div>
 
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12">
             <table class="table table-dark table-striped table-hover table-sm d-none d-sm-block">
                 <thead>
@@ -100,11 +111,4 @@
         <option value="{{ sc.sc_name }}">
     {% endfor %}
     </datalist>
-{% endblock %}
-
-{% block end_of_body %}
-    {{ super() }}
-    <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
-    <script src="{{ url_for('static', filename='filter.js') }}"></script>
-    <script src="{{ url_for('static', filename='rep-sc-pairs.js') }}"></script>
 {% endblock %}
