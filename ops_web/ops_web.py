@@ -1107,6 +1107,11 @@ def op_debrief_survey(survey_id: uuid.UUID):
 
 
 @app.route('/rep-sc-pairs')
+def rep_sc_pairs_redirect():
+    return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
+
+
+@app.route('/sc-assignments/sales-reps')
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps():
     db: ops_web.db.Database = flask.g.db
@@ -1160,6 +1165,11 @@ def excel_sheet():
 
 
 @app.route('/rep-sc-pairs.xlsx')
+def rep_sc_pairs_xlsx_redirect():
+    return flask.redirect(flask.url_for('sc_assignments_sales_reps_xlsx'))
+
+
+@app.route('/sc-assignments/sales-reps.xlsx')
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps_xlsx():
     db: ops_web.db.Database = flask.g.db
@@ -1191,7 +1201,7 @@ def sc_assignments_sales_reps_xlsx():
     return response
 
 
-@app.route('/rep-sc-pairs/edit', methods=['POST'])
+@app.route('/sc-assignments/sales-reps/edit', methods=['POST'])
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps_edit():
     db: ops_web.db.Database = flask.g.db
