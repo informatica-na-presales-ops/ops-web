@@ -1116,6 +1116,23 @@ class Database(fort.PostgresDatabase):
                 add column employee_email text
             ''')
             self.add_schema_version(24)
+        if self.version < 25:
+            self.log.info('Migrating database to schema version 25')
+            self.u('''
+                create table sc_region_assignments (
+                    sc_employee_id text primary key,
+                    region text
+                )
+            ''')
+            self.u('''
+                create table sf_regions (
+                    geo text,
+                    area text,
+                    sub_area text,
+                    region text
+                )
+            ''')
+            self.add_schema_version(25)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
