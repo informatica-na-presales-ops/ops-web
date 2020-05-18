@@ -736,8 +736,9 @@ class Database(fort.PostgresDatabase):
         self.log.warning('Database reset requested, dropping all tables')
         for table in ('cloud_credentials', 'cost_tracking', 'images', 'log_entries', 'op_debrief_roles',
                       'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
-                      'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members',
-                      'sync_tracking', 'virtual_machines', 'security_group'):
+                      'sc_region_assignments', 'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts',
+                      'sf_opportunity_team_members', 'sf_regions', 'sync_tracking', 'virtual_machines',
+                      'security_group'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
