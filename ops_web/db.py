@@ -538,36 +538,6 @@ class Database(fort.PostgresDatabase):
         sql = 'UPDATE sales_reps SET assigned_sc = %(sc_name)s WHERE sales_rep = %(rep_name)s'
         self.u(sql, {'sc_name': sc_name, 'rep_name': rep_name})
 
-    def get_regions(self):
-        sql = 'select geo, area, sub_area, region from sf_regions order by geo, area, sub_area, region'
-        return self. q(sql)
-
-    def get_sc_region_assignments(self):
-        sql = '''
-            select
-                sc.name, sc.employee_id, r.area, r.sub_area, coalesce(r.region, '') region,
-                lower(sc.name || ' ' || coalesce(r.area, '') || ' ' || coalesce(r.sub_area, '') || ' ' ||
-                      coalesce(r.region, '')) filter_value
-            from sales_consultants sc
-            left join sc_region_assignments a on a.sc_employee_id = sc.employee_id
-            left join sf_regions r on r.region = a.region
-            order by sc.name
-        '''
-        return self.q(sql)
-
-    def set_sc_region_assignment(self, employee_id, region):
-        params = {
-            'sc_employee_id': employee_id,
-            'region': region
-        }
-        sql = 'select sc_employee_id from sc_region_assignments where sc_employee_id = %(sc_employee_id)s'
-        existing = self.q_one(sql, params)
-        if existing is None:
-            sql = 'insert into sc_region_assignments (sc_employee_id, region) values (%(sc_employee_id)s, %(region)s)'
-        else:
-            sql = 'update sc_region_assignments set region = %(region)s where sc_employee_id = %(sc_employee_id)s'
-        self.u(sql, params)
-
     # opportunity debrief surveys
 
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:
@@ -766,9 +736,8 @@ class Database(fort.PostgresDatabase):
         self.log.warning('Database reset requested, dropping all tables')
         for table in ('cloud_credentials', 'cost_tracking', 'images', 'log_entries', 'op_debrief_roles',
                       'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
-                      'sc_region_assignments', 'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts',
-                      'sf_opportunity_team_members', 'sf_regions', 'sync_tracking', 'virtual_machines',
-                      'security_group'):
+                      'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members',
+                      'sync_tracking', 'virtual_machines', 'security_group'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -1164,6 +1133,15 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(25)
+        if self.version < 26:
+            self.log.info('Migrating to database schema version 26')
+            self.u('''
+                drop table sc_region_assignments
+            ''')
+            self.u('''
+                drop table sf_regions
+            ''')
+            self.add_schema_version(26)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
