@@ -198,6 +198,12 @@ class Database(fort.PostgresDatabase):
             '''
         return self.q(sql, {'email': email})
 
+    def get_instance_zone(self, machine_id: str):
+        sql = '''
+        SELECT region FROM virtual_machines WHERE id=%(id)s
+        '''
+        return self.q_one(sql, {'id': machine_id})
+
     def get_all_visible_machines(self) -> List[Dict]:
         sql = '''
             SELECT account_id, cloud, region, id

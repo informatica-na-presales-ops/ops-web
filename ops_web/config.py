@@ -18,6 +18,7 @@ class Config:
     az_client_id: str
     az_client_secret: str
     az_tenant_id: str
+    google_application_credentials: str
     bootstrap_admin: str
     cloudability_auth_token: str
     cloudability_vendor_account_id: str
@@ -43,6 +44,7 @@ class Config:
     smtp_password: str
     smtp_username: str
     support_email: str
+    gcp_project_id: str
     tz: str
     version: str
     web_server_threads: int
@@ -84,6 +86,7 @@ class Config:
         self.az_client_id = os.getenv('AZ_CLIENT_ID')
         self.az_client_secret = os.getenv('AZ_CLIENT_SECRET')
         self.az_tenant_id = os.getenv('AZ_TENANT_ID')
+        self.google_application_credentials = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
         self.az_workshop_subscription_id = os.getenv('AZ_WORKSHOP_SUBSCRIPTION_ID')
         self.bootstrap_admin = os.getenv('BOOTSTRAP_ADMIN')
         self.cloudability_auth_token = os.getenv('CLOUDABILITY_AUTH_TOKEN')
@@ -91,7 +94,8 @@ class Config:
         self.cloudability_vendor_account_id_az=os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID_AZ')
         self.cdw104_pwd=os.getenv('CDW104_PWD')
         self.cdw_jumpbox_pwd=os.getenv('CDW_JUMPBOX_PWD')
-        self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws az')
+        self.gcp_project_id = os.getenv('GCP_PROJECT_ID')
+        self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws az gcp')
         self.db = os.getenv('DB')
         self.debug_layout = as_bool(os.getenv('DEBUG_LAYOUT', 'False'))
         self.feature_flags = os.getenv('FEATURE_FLAGS', '').split()

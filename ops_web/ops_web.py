@@ -3,6 +3,7 @@ import datetime
 import requests
 import ops_web.aws
 import ops_web.az
+import ops_web.gcp
 import ops_web.config
 import ops_web.db
 import ops_web.op_debrief_surveys
@@ -21,7 +22,8 @@ import waitress
 import werkzeug.middleware.proxy_fix
 import xlsxwriter
 import ipaddress
-
+import googleapiclient.discovery
+from oauth2client.client import GoogleCredentials
 from typing import Dict, List
 
 config = ops_web.config.Config()
@@ -364,9 +366,13 @@ def environment_delete(environment):
     for machine in machines:
         machine_id = machine.get('id')
         if machine.get('can_modify'):
-            db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
-            db.set_machine_state(machine_id, 'terminating')
-            scheduler.add_job(delete_machine, args=[machine_id])
+            cloud = machine.get('cloud')
+            if cloud == 'gcp':
+                return flask.render_template('500.html', error="Cannot terminate GCP Instances")
+            else:
+                db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
+                db.set_machine_state(machine_id, 'terminating')
+                scheduler.add_job(delete_machine, args=[machine_id])
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -378,12 +384,17 @@ def environment_start(environment):
     app.logger.info(f'Got a request from {flask.g.email} to start machines in environment {environment!r}')
     db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
+    app.logger.info(machines)
     for machine in machines:
-        machine_id = machine.get('id')
         if machine.get('can_control'):
+            machine_id = machine.get('id')
+            cloud = machine.get('cloud')
             db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
             db.set_machine_state(machine_id, 'starting')
-            scheduler.add_job(start_machine, args=[machine_id], misfire_grace_time=900)
+            if cloud == 'gcp':
+                start_machine(machine_id)
+            else:
+                scheduler.add_job(start_machine, args=[machine_id], misfire_grace_time=900)
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -398,9 +409,14 @@ def environment_stop(environment):
     for machine in machines:
         machine_id = machine.get('id')
         if machine.get('can_control'):
+            machine_id = machine.get('id')
+            cloud = machine.get('cloud')
             db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
             db.set_machine_state(machine_id, 'stopping')
-            scheduler.add_job(stop_machine, args=[machine_id], misfire_grace_time=900)
+            if cloud == 'gcp':
+                stop_machine(machine_id)
+            else:
+                scheduler.add_job(stop_machine, args=[machine_id], misfire_grace_time=900)
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -908,9 +924,13 @@ def machine_delete():
     db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_modify'):
-        db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
-        db.set_machine_state(machine_id, 'terminating')
-        scheduler.add_job(delete_machine, args=[machine_id])
+        cloud = machine.get('cloud')
+        if cloud == 'gcp':
+            return flask.render_template('500.html', error="Cannot terminate GCP Instances")
+        else:
+            db.add_log_entry(flask.g.email, f'Delete machine {machine_id}')
+            db.set_machine_state(machine_id, 'terminating')
+            scheduler.add_job(delete_machine, args=[machine_id])
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
@@ -936,17 +956,32 @@ def machine_edit():
             'running_schedule': flask.request.values.get('running-schedule'),
             'dns_names': flask.request.values.get('dns-names')
         })
-        tags = {
-            'APPLICATIONENV': flask.request.values.get('application-env'),
-            'BUSINESSUNIT': flask.request.values.get('business-unit'),
-            'CONTRIBUTORS': flask.request.values.get('contributors'),
-            'machine__environment_group': flask.request.values.get('environment'),
-            'image__dns_names_private': flask.request.values.get('dns-names'),
-            'NAME': flask.request.values.get('machine-name'),
-            'OWNEREMAIL': flask.request.values.get('owner'),
-            'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
-        }
         cloud = machine.get('cloud')
+        app.logger.info(cloud)
+        if cloud == 'gcp':
+            tags2 = {
+                'applicationenv': flask.request.values.get('application-env'),
+                'business_unit': flask.request.values.get('business-unit'),
+                'contributors': '',
+                'machine__environment_group': flask.request.values.get('environment'),
+                'image__dns_names_private': '',
+                'name': flask.request.values.get('machine-name'),
+                'owneremail': flask.request.values.get('owner').split('@')[0],
+                'running_schedule': ''
+            }
+
+        else:
+            tags = {
+                'APPLICATIONENV': flask.request.values.get('application-env'),
+                'BUSINESSUNIT': flask.request.values.get('business-unit'),
+                'CONTRIBUTORS': flask.request.values.get('contributors'),
+                'machine__environment_group': flask.request.values.get('environment'),
+                'image__dns_names_private': flask.request.values.get('dns-names'),
+                'NAME': flask.request.values.get('machine-name'),
+                'OWNEREMAIL': flask.request.values.get('owner'),
+                'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
+            }
+
         account = db.get_one_credential_for_use(machine.get('account_id'))
         if cloud == 'aws':
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
@@ -956,6 +991,9 @@ def machine_edit():
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
             az.update_machine_tags(machine_id, tags)
+        elif cloud == 'gcp':
+            zone = machine.get('region')
+            ops_web.gcp.update_machine_tags(machine_id, zone, tags2)
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit machine {machine_id}')
     environment = flask.request.values.get('environment')
@@ -1314,6 +1352,11 @@ def start_machine(machine_id):
         az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                  account.get('azure_tenant_id'))
         az.start_machine(machine_id)
+    elif cloud == 'gcp':
+        zone = machine.get('region')
+        app.logger.info(zone)
+        ops_web.gcp.start_machine(machine_id, zone)
+
 
 
 def stop_machine(machine_id):
@@ -1336,6 +1379,9 @@ def stop_machine(machine_id):
         az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                  account.get('azure_tenant_id'))
         az.stop_machine(machine_id)
+    elif cloud == 'gcp':
+        zone = machine.get('region')
+        ops_web.gcp.stop_machine(machine_id, zone)
 
 
 def check_sync():
@@ -1410,6 +1456,12 @@ def sync_machines():
     else:
         app.logger.info(f'Skipping Azure because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     az_duration = datetime.datetime.utcnow() - az_start
+    if 'gcp' in config.clouds_to_sync:
+        db.pre_sync('gcp')
+        for vm in ops_web.gcp.get_all_virtual_machines():
+            vm['account_id'] = None
+            db.add_machine(vm)
+        db.post_sync('gcp')
 
     sync_duration = datetime.datetime.utcnow() - sync_start
     app.logger.info(f'Done syncing virtual machines / AWS {aws_duration} / Azure {az_duration} / total {sync_duration}')
