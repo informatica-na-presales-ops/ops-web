@@ -757,11 +757,12 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('cloud_credentials', 'cost_tracking', 'images', 'log_entries', 'op_debrief_roles',
-                      'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
-                      'sc_rep_assignments', 'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts',
-                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines', 'security_group'):
-            self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
+        for table in ('cloud_credentials', 'cost_tracking', 'environment_usage_events', 'images', 'log_entries',
+                      'op_debrief_roles', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
+                      'sales_consultants', 'sales_reps', 'sc_rep_assignments', 'schema_versions', 'security_group',
+                      'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking',
+                      'virtual_machines'):
+            self.u(f'drop table if exists {table} cascade ')
 
     def migrate(self):
         self.log.info(f'Database schema version is {self.version}')
@@ -1180,6 +1181,21 @@ class Database(fort.PostgresDatabase):
                 join sales_consultants c on c.name = r.assigned_sc
             ''')
             self.add_schema_version(27)
+        if self.version < 28:
+            self.log.info('Migrating to database schema version 28')
+            self.u('''
+                alter table sales_consultants
+                add column sc_email text
+            ''')
+            self.u('''
+                alter table sales_consultants
+                drop constraint sales_consultants_pkey
+            ''')
+            self.u('''
+                alter table sales_consultants
+                add constraint sales_consultants_pkey primary key (employee_id)
+            ''')
+            self.add_schema_version(28)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
