@@ -1205,12 +1205,13 @@ def sc_assignments_sales_reps_xlsx():
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps_edit():
     db: ops_web.db.Database = flask.g.db
-    rep_name = flask.request.values.get('rep_name')
-    sc_name = flask.request.values.get('sc_name')
-    db.add_log_entry(flask.g.email, f'Update Rep/SC pair: {rep_name}/{sc_name}')
-    if sc_name == 'none':
-        sc_name = None
-    db.set_rep_sc_pair(rep_name, sc_name)
+    territory_name = flask.request.values.get('territory_name')
+    sc_employee_id = flask.request.values.get('sc_employee_id')
+    app.logger.debug(f'sc assignment territory: {territory_name}, employee_id: {sc_employee_id}')
+    db.add_log_entry(flask.g.email, f'Update SC assignment: {territory_name}/{sc_employee_id}')
+    if sc_employee_id == 'none':
+        sc_employee_id = None
+    db.set_rep_sc_pair(territory_name, sc_employee_id)
     return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
 
 

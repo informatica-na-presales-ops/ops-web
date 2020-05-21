@@ -46,7 +46,8 @@
                     <tr class="filter-candidate" data-filter-value="{{ r.filter_value }}" data-toggle="modal"
                         data-target="#modal-edit-rep" data-href="#" data-rep-name="{{ r.rep_name }}"
                         data-rep-territory="{{ ' / '.join([r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name]) }}"
-                        data-sc-name="{{ r.sc_name }}">
+                        data-rep-territory-name="{{ r.territory_name }}" data-sc-name="{{ r.sc_name }}"
+                        data-sc-employee-id="{{ r.sc_employee_id }}">
                         <td>{{ r.geo }}</td>
                         <td>{{ r.area }}</td>
                         <td>{{ r.sub_area }}</td>
@@ -54,7 +55,7 @@
                         <td>{{ r.sub_region }}</td>
                         <td>{{ r.territory_name }}</td>
                         <td>{{ r.rep_name }}</td>
-                        <td>{{ r.sc_name }}</td>
+                        <td>{{ r.sc_name if r.sc_name}}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -65,11 +66,12 @@
                 <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ r.filter_value }}"
                      data-toggle="modal" data-target="#modal-edit-rep" data-href="#" data-rep-name="{{ r.rep_name }}"
                      data-rep-territory="{{ ' / '.join([r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name]) }}"
-                     data-sc-name="{{ r.sc_name }}">
+                     data-rep-territory-name="{{ r.territory_name }}" data-sc-name="{{ r.sc_name }}"
+                     data-sc-employee-id="{{ r.sc_employee_id }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ r.rep_name }}</h5>
                         <p class="card-text">{{ r.geo }} / {{ r.area }} / {{ r.sub_area }} / {{ r.region }} / {{ r.sub_region }} / {{ r.territory_name }}</p>
-                        <p class="card-text">Sales Consultant: {{ r.sc_name }}</p>
+                        <p class="card-text">Sales Consultant: {{ r.sc_name if r.sc_name }}</p>
                     </div>
                 </div>
             {% endfor %}
@@ -88,10 +90,15 @@
                     <p class="lead text-light">Sales Rep: <span id="edit-rep-name"></span></p>
                     <p class="text-light" id="edit-rep-territory">Rep territory here</p>
                     <form id="form-edit-rep" action="{{ url_for('sc_assignments_sales_reps_edit') }}" method="post">
-                        <input type="hidden" id="form-edit-rep-name" name="rep_name">
+                        <input type="hidden" id="form-edit-rep-territory-name" name="territory_name">
                         <div class="form-group">
-                            <label class="text-light" for="form-edit-rep-sc-name">Assigned Sales Consultant</label>
-                            <input type="text" class="form-control" id="form-edit-rep-sc-name" name="sc_name" list="sales-consultants">
+                            <label class="text-light" for="form-edit-rep-sc-employee-id">Assigned Sales Consultant</label>
+                            <select class="custom-select" id="form-edit-rep-sc-employee-id" name="sc_employee_id">
+                                <option value="none">-- none --</option>
+                            {% for sc in g.sales_consultants %}
+                                <option value="{{ sc.employee_id }}">{{ sc.sc_name }}</option>
+                            {% endfor %}
+                            </select>
                         </div>
                     </form>
                 </div>

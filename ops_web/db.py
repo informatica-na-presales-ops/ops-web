@@ -517,26 +517,49 @@ class Database(fort.PostgresDatabase):
             '''
         self.u(sql, params)
 
-    # rep/sc pairs
+    # sc assignments
 
     def get_rep_sc_pairs(self):
         sql = '''
-            SELECT geo, area, sub_area, region, sub_region, coalesce(territory_name, '') territory_name,
-                   sales_rep rep_name, coalesce(assigned_sc, '') sc_name,
-                   lower(geo || ' ' || area || ' ' || sub_area || ' ' || region || ' ' || sub_region || ' ' ||
-                         coalesce(territory_name, '') || ' ' || sales_rep) filter_value
-            FROM sales_reps
-            ORDER BY geo, area, sub_area, region, sub_region, territory_name, rep_name
+            select
+                geo, area, sub_area, region, sub_region, territory_name, sales_rep rep_name,
+                c.name sc_name, c.employee_id sc_employee_id,
+                lower(geo || ' ' || area || ' ' || sub_area || ' ' || region || ' ' || sub_region || ' ' ||
+                      territory_name || ' ' || sales_rep || ' ' || coalesce(c.name, '')) filter_value
+            from sales_reps r
+            left join sc_rep_assignments a on a.rep_territory = r.territory_name
+            left join sales_consultants c on c.employee_id = a.sc_employee_id
+            order by geo, area, sub_area, region, sub_region, territory_name, rep_name
         '''
         return self.q(sql)
 
     def get_sales_consultants(self):
-        sql = 'SELECT name sc_name FROM sales_consultants ORDER BY name'
+        sql = 'select name sc_name, employee_id from sales_consultants order by name'
         return self.q(sql)
 
-    def set_rep_sc_pair(self, rep_name, sc_name):
-        sql = 'UPDATE sales_reps SET assigned_sc = %(sc_name)s WHERE sales_rep = %(rep_name)s'
-        self.u(sql, {'sc_name': sc_name, 'rep_name': rep_name})
+    def set_rep_sc_pair(self, rep_territory, sc_employee_id):
+        sql = '''
+            select rep_territory, sc_employee_id
+            from sc_rep_assignments
+            where rep_territory = %(rep_territory)s
+        '''
+        params = {
+            'rep_territory': rep_territory,
+            'sc_employee_id': sc_employee_id
+        }
+        existing = self.q_one(sql, params)
+        if existing is None:
+            sql = '''
+                insert into sc_rep_assignments (rep_territory, sc_employee_id)
+                values (%(rep_territory)s, %(sc_employee_id)s)
+            '''
+        else:
+            sql = '''
+                update sc_rep_assignments
+                set sc_employee_id = %(sc_employee_id)s
+                where rep_territory = %(rep_territory)s
+            '''
+        self.u(sql, params)
 
     # opportunity debrief surveys
 
@@ -736,8 +759,8 @@ class Database(fort.PostgresDatabase):
         self.log.warning('Database reset requested, dropping all tables')
         for table in ('cloud_credentials', 'cost_tracking', 'images', 'log_entries', 'op_debrief_roles',
                       'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
-                      'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members',
-                      'sync_tracking', 'virtual_machines', 'security_group'):
+                      'sc_rep_assignments', 'schema_versions', 'sf_opportunities', 'sf_opportunity_contacts',
+                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines', 'security_group'):
             self.u(f'DROP TABLE IF EXISTS {table} CASCADE ')
 
     def migrate(self):
@@ -1142,6 +1165,21 @@ class Database(fort.PostgresDatabase):
                 drop table sf_regions
             ''')
             self.add_schema_version(26)
+        if self.version < 27:
+            self.log.info('Migrating to database schema version 27')
+            self.u('''
+                create table sc_rep_assignments (
+                    rep_territory text,
+                    sc_employee_id text
+                )
+            ''')
+            self.u('''
+                insert into sc_rep_assignments
+                select r.territory_name rep_territory, c.employee_id sc_employee_id
+                from sales_reps r
+                join sales_consultants c on c.name = r.assigned_sc
+            ''')
+            self.add_schema_version(27)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
