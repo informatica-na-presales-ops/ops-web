@@ -959,10 +959,13 @@ def machine_edit():
         cloud = machine.get('cloud')
         app.logger.info(cloud)
         if cloud == 'gcp':
+            contributor_tag = flask.request.values.get('contributors').replace("@informatica.com",'-')
+            contributor = contributor_tag.replace(' ','')
+
             tags2 = {
                 'applicationenv': flask.request.values.get('application-env'),
                 'business_unit': flask.request.values.get('business-unit'),
-                'contributors': '',
+                'contributors': contributor,
                 'machine__environment_group': flask.request.values.get('environment'),
                 'image__dns_names_private': '',
                 'name': flask.request.values.get('machine-name'),
@@ -1456,15 +1459,20 @@ def sync_machines():
     else:
         app.logger.info(f'Skipping Azure because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     az_duration = datetime.datetime.utcnow() - az_start
+
+    gcp_start = datetime.datetime.utcnow()
     if 'gcp' in config.clouds_to_sync:
         db.pre_sync('gcp')
         for vm in ops_web.gcp.get_all_virtual_machines():
             vm['account_id'] = None
             db.add_machine(vm)
         db.post_sync('gcp')
+    else:
+        app.logger.info(f'Skipping GCP because CLOUDS_TO_SYNC={config.clouds_to_sync}')
+    gcp_duration = datetime.datetime.utcnow() - gcp_start
 
     sync_duration = datetime.datetime.utcnow() - sync_start
-    app.logger.info(f'Done syncing virtual machines / AWS {aws_duration} / Azure {az_duration} / total {sync_duration}')
+    app.logger.info(f'Done syncing virtual machines / AWS {aws_duration} / Azure {az_duration} / GCP {gcp_duration} / total {sync_duration}')
     db.end_sync()
 
 

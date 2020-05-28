@@ -34,15 +34,14 @@ def list_instances(compute, project, zone):
 
 
 def checkInstancesInZone(ZONE):
-    log.info("in instances")
     instances = list_instances(compute, PROJECT_ID, ZONE)
     if instances is not None:
-        log.info("not none")
         for instance in instances:
-            print(type(instance))
-            print(instance)
             print('Instance name: ' + instance['name'] + "\nInstnace ID: " + instance['id'] + '\nZone: ' + ZONE)
-            print(instance['labels']['name'])
+            conributors_tag = instance['labels']['contributors'].split('-')
+            contributors_tag = list(filter(None,conributors_tag))
+            contributor = [s + "@informatica.com" for s in contributors_tag]
+            contributors = " ".join(contributor)
             params = {
                 'id': instance['id'],
                 'cloud': 'gcp',
@@ -65,11 +64,9 @@ def checkInstancesInZone(ZONE):
                 'vpc': None,
                 'disable_termination': None,
                 'cost': 0,
-                'contributors': None
+                'contributors': contributors
 
             }
-            print(params)
-
             return params
 
 
