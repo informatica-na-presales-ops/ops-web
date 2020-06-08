@@ -76,8 +76,9 @@
                             <div class="form-group col-6">
                             <h6>{{ v }}</h6>
                             {% for o_k, o_v in g.template.tech_gap_options.items() %}
+                                {% set field_name = 'tg_' + k + '_' + o_k %}
                                 <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="tg-{{ k }}-{{ o_k }}" name="tech-gap-type" value="tg-{{ k }}-{{ o_k }}">
+                                    <input type="checkbox" class="custom-control-input" id="tg-{{ k }}-{{ o_k }}" name="tech-gap-type" value="tg-{{ k }}-{{ o_k }}" {{ 'checked' if g.survey.get(field_name) }} {{ 'disabled' if g.survey.completed }}>
                                     <label class="custom-control-label" for="tg-{{ k }}-{{ o_k }}">{{ o_v }}</label>
                                 </div>
                             {% endfor %}
@@ -89,7 +90,7 @@
                         <h5>Who did you engage to escalate and manage the technology gap?</h5>
                         {% for k, v in g.template.who_engaged_options.items() %}
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="{{ k }}" name="who-engaged" value="{{ k }}">
+                                <input type="checkbox" class="custom-control-input" id="{{ k }}" name="who-engaged" value="{{ k }}" {{ 'checked' if g.survey.get(k) }} {{ 'disabled' if g.survey.completed }}>
                                 <label class="custom-control-label" for="{{ k }}">{{ v }}</label>
                             </div>
                         {% endfor %}
@@ -99,7 +100,7 @@
                     <h5>Which of these validation activities were used?</h5>
                     {% for k, v in g.template.validation_activities.items() %}
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="{{ k }}" name="validation-activities" value="{{ k }}">
+                            <input type="checkbox" class="custom-control-input" id="{{ k }}" name="validation-activities" value="{{ k }}" {{ 'checked' if g.survey.get(k) }} {{ 'disabled' if g.survey.completed }}>
                             <label class="custom-control-label" for="{{ k }}">{{ v }}</label>
                         </div>
                     {% endfor %}
@@ -109,17 +110,17 @@
                         <h5>What was the outcome of the POC?</h5>
                         {% for k, v in g.template.poc_outcomes.items() %}
                             <div class="custom-control custom-radio">
-                                <input class="custom-control-input" type="radio" name="poc-outcome" id="poc-outcome-{{ k }}" value="{{ k }}" {{ 'checked' if g.survey.poc_outcome == k }}>
+                                <input class="custom-control-input" type="radio" name="poc-outcome" id="poc-outcome-{{ k }}" value="{{ k }}" {{ 'checked' if g.survey.poc_outcome == k }} {{ 'disabled' if g.survey.completed }}>
                                 <label class="custom-control-label" for="poc-outcome-{{ k }}">{{ v }}</label>
                             </div>
                         {% endfor %}
                     </div>
-                    <div class="collapse show-on-bad-poc">
+                    <div class="collapse show-on-bad-poc {{ 'show' if g.survey.poc_outcome in ('no-tech-win', 'no-outcome', 'partner-no-tech-win') }}">
                         <div class="form-group">
                             <h5>Why did the POC fail?</h5>
                             {% for k, v in g.template.poc_failure_reasons.items() %}
                                 <div class="custom-control custom-radio">
-                                    <input class="custom-control-input" type="radio" name="poc-failure-reason" id="poc-failure-reason-{{ k }}" {{ 'checked' if g.survey.poc_failure_reason == k }}>
+                                    <input class="custom-control-input" type="radio" name="poc-failure-reason" id="poc-failure-reason-{{ k }}" {{ 'checked' if g.survey.poc_failure_reason == k }} {{ 'disabled' if g.survey.completed }}>
                                     <label class="custom-control-label" for="poc-failure-reason-{{ k }}">{{ v }}</label>
                                 </div>
                             {% endfor %}
@@ -130,7 +131,7 @@
                     <h5>Which contacts did you work with the closest?</h5>
                     {% for c in g.op_contacts %}
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="op-contact-{{ c.contact_key }}" name="close-contacts" value="{{ c.contact_key }}">
+                            <input type="checkbox" class="custom-control-input" id="op-contact-{{ c.contact_key }}" name="close-contacts" value="{{ c.contact_key }}" {{ 'checked' if c.contact_key|string in g.close_contacts }} {{ 'disabled' if g.survey.completed }}>
                             <label class="custom-control-label" for="op-contact-{{ c.contact_key }}">
                                 {{ c.name }}, {{ c.title if c.title else 'No title' }}<br>
                                 <span class="text-secondary">({{ c.phone if c.phone else 'no phone' }} / {{ c.email if c.email else 'no email' }})</span>

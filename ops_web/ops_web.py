@@ -1071,6 +1071,10 @@ def op_debrief_survey(survey_id: uuid.UUID):
     if 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
         if flask.request.method == 'GET':
             flask.g.survey = survey
+            flask.g.close_contacts = flask.g.survey.get('close_contacts', '')
+            if flask.g.close_contacts is None:
+                flask.g.close_contacts = ''
+            flask.g.close_contacts = flask.g.close_contacts.split()
             flask.g.op_contacts = db.get_op_contacts(survey.get('opportunity_number'))
             flask.g.template = ops_web.op_debrief_surveys.survey_template
             return flask.render_template('op-debrief/survey.html')
