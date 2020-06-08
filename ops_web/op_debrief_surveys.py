@@ -16,14 +16,10 @@ def remind(config: ops_web.config.Config, app: flask.Flask):
     db = ops_web.db.Database(config)
     for survey in db.get_surveys_for_reminding():
         context = {
-            'opportunity': {
-                'account_name': survey.get('account_name'),
-                'name': survey.get('name'),
-                'opportunity_number': survey.get('opportunity_number')
-            },
-            'person': {
-                'role': survey.get('role')
-            },
+            'account_name': survey.get('account_name'),
+            'opportunity_name': survey.get('name'),
+            'opportunity_number': survey.get('opportunity_number'),
+            'role': survey.get('role'),
             'survey_id': survey.get('id'),
             'email': survey.get('email')
         }
@@ -59,8 +55,10 @@ def generate(config: ops_web.config.Config, app: flask.Flask):
             if role in selected_roles:
                 survey_id = db.add_survey(op_number, email, t.get('role'))
                 context = {
-                    'opportunity': op,
-                    'person': t,
+                    'account_name': op.get('account_name'),
+                    'opportunity_name': op.get('name'),
+                    'opportunity_number': op.get('opportunity_number'),
+                    'role': t.get('role'),
                     'survey_id': survey_id,
                     'email': email
                 }
