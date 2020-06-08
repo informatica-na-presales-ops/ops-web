@@ -1464,8 +1464,9 @@ def main():
 
     scheduler.start()
 
+    app.logger.info(f'RUNNER: {config.runner}')
     if config.runner:
-        app.logger.info(f'AUTO_SYNC is {config.auto_sync}')
+        app.logger.info(f'AUTO_SYNC: {config.auto_sync}')
         if config.auto_sync:
             scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
             scheduler.add_job(sync_machines)
