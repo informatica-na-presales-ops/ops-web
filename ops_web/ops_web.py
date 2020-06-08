@@ -1464,20 +1464,21 @@ def main():
 
     scheduler.start()
 
-    app.logger.info(f'AUTO_SYNC is {config.auto_sync}')
-    if config.auto_sync:
-        scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
-        scheduler.add_job(sync_machines)
-        scheduler.add_job(check_sync, 'interval', minutes=1)
+    if config.runner:
+        app.logger.info(f'AUTO_SYNC is {config.auto_sync}')
+        if config.auto_sync:
+            scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
+            scheduler.add_job(sync_machines)
+            scheduler.add_job(check_sync, 'interval', minutes=1)
 
-    # op debrief survey jobs
-    if 'op-debrief' in config.feature_flags:
-        scheduler.add_job(ops_web.op_debrief_surveys.generate_op_debrief_surveys, args=[config, app])
-        scheduler.add_job(ops_web.op_debrief_surveys.generate_op_debrief_surveys, 'interval', hours=6,
-                          args=[config, app])
+        # op debrief survey jobs
+        if 'op-debrief' in config.feature_flags:
+            scheduler.add_job(ops_web.op_debrief_surveys.generate, args=[config, app])
+            scheduler.add_job(ops_web.op_debrief_surveys.generate, 'interval', hours=6, args=[config, app])
+            scheduler.add_job(ops_web.op_debrief_surveys.remind, 'interval', hours=24, args=[config, app])
 
-    if 'cloudability-cost' in config.feature_flags:
-        scheduler.add_job(generate_cloudability_reportid)
-        scheduler.add_job(generate_cloudability_reportid, 'interval', hours=24)
+        if 'cloudability-cost' in config.feature_flags:
+            scheduler.add_job(generate_cloudability_reportid)
+            scheduler.add_job(generate_cloudability_reportid, 'interval', hours=24)
 
     waitress.serve(app, ident=None, threads=config.web_server_threads)

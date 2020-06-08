@@ -35,6 +35,7 @@ class Config:
     permanent_sessions: bool
     power_control_domain: str
     reset_database: bool
+    runner: bool
     scheme: str
     secret_key: str
     send_email: bool
@@ -57,8 +58,8 @@ class Config:
         AWS_SES_CONFIGURATION_SET, AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, AZ_WORKSHOP_SUBSCRIPTION_ID,
         BOOTSTRAP_ADMIN, CLOUDABILITY_AUTH_TOKEN, CLOUDABILITY_VENDOR_ACCOUNT_ID, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT,
         FEATURE_FLAGS, LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN,
-        RESET_DATABASE, SCHEME, SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME,
-        SUPPORT_EMAIL, TZ, WEB_SERVER_THREADS, ZENDESK_WIDGET_KEY
+        RESET_DATABASE, RUNNER, SCHEME, SECRET_KEY, SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD,
+        SMTP_USERNAME, SUPPORT_EMAIL, TZ, WEB_SERVER_THREADS, ZENDESK_WIDGET_KEY
 
         Some variables have defaults if they are not found in the environment:
 
@@ -104,6 +105,7 @@ class Config:
         self.permanent_sessions = as_bool(os.getenv('PERMANENT_SESSIONS', 'False'))
         self.power_control_domain = os.getenv('POWER_CONTROL_DOMAIN')
         self.reset_database = as_bool(os.getenv('RESET_DATABASE', 'False'))
+        self.runner = as_bool(os.getenv('RUNNER', 'False'))
         self.scheme = os.getenv('SCHEME', 'http').lower()
         self.secret_key = os.getenv('SECRET_KEY')
         self.send_email = as_bool(os.getenv('SEND_EMAIL', 'False'))
