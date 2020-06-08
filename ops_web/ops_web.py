@@ -1072,69 +1072,14 @@ def op_debrief_survey(survey_id: uuid.UUID):
         if flask.request.method == 'GET':
             flask.g.survey = survey
             flask.g.op_contacts = db.get_op_contacts(survey.get('opportunity_number'))
-            # Primary loss reason
-            flask.g.plr_options = {
-                'price': 'Price',
-                'key-decision-maker-left': 'Key decision maker left',
-                'project-cancelled': 'Project cancelled or delayed',
-                'competitive-loss-tech': 'Competitive loss (technology gap)',
-                'competitive-loss-other': 'Competitive loss (other)',
-            }
-            # Technology gap type
-            flask.g.tech_gap_categories = {
-                'runtime': 'Runtime',
-                'design-time': 'Design-time',
-                'connectivity': 'Connectivity',
-                'install': 'Install',
-            }
-            # Technology gap options
-            flask.g.tech_gap_options = {
-                'performance': 'Performance',
-                'stability': 'Stability',
-                'missing-features': 'Missing features',
-                'compatibility': 'Compatibility',
-                'ease-of-use': 'Ease of use',
-            }
-            # who engaged to manage technology gap
-            flask.g.who_engaged_options = {
-                'engaged-other-specialists': 'Other specialists',
-                'engaged-gcs': 'Global Customer Support',
-                'engaged-pm': 'Product Management',
-                'engaged-dev': 'Development',
-            }
-            flask.g.validation_activities = {
-                'did-rfp': 'RFP',
-                'did-standard-demo': 'Standard demo',
-                'did-custom-demo': 'Custom demo',
-                'did-eval-trial': 'Evaluation / Trial',
-                'did-poc': 'POC',
-            }
-            flask.g.poc_outcomes = {
-                'tech-win': 'Secured technical win',
-                'no-tech-win': 'Did not secure technical win',
-                'no-outcome': 'No clear outcome',
-                'partner-tech-win': 'Partner led, technical win',
-                'partner-no-tech-win': 'Partner led, no technical win',
-                'not-sure': 'Not sure',
-            }
-            flask.g.poc_failure_reasons = {
-                'success-criteria': 'Undefined or poorly-defined success criteria',
-                'use-cases': 'Undefined or poorly-defined use cases',
-                'customer-not-engaged': 'Customer not engaged',
-                'tech-gap': 'Technology gap',
-            }
+            flask.g.template = ops_web.op_debrief_surveys.survey_template
             return flask.render_template('op-debrief-survey.html')
         elif flask.request.method == 'POST':
-            for k, v in flask.request.form.items():
+            for k, v in flask.request.form.lists():
                 app.logger.debug(f'{k}: {v}')
-            params = {
-                'survey_id': survey_id,
-                'completed': datetime.datetime.utcnow(),
-                'primary_loss_reason': flask.request.form.get('primary-loss-reason'),
-                'competitive_loss_reason': flask.request.form.get('competitive-loss-reason'),
-                'technology_gap_type': flask.request.form.get('technology-gap-type'),
-                'perceived_poor_fit_reason': flask.request.form.get('perceived-poor-fit-reason')
-            }
+            params = ops_web.op_debrief_surveys.convert_form_to_record(flask.request.form)
+            params['survey_id'] = survey_id
+            params['completed'] = datetime.datetime.utcnow()
             db.complete_survey(params)
             db.add_log_entry(flask.g.email, f'Completed opportunity debrief survey {survey_id}')
             return flask.redirect(flask.url_for('op_debrief_survey', survey_id=survey_id))

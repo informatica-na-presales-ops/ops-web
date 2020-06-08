@@ -587,11 +587,42 @@ class Database(fort.PostgresDatabase):
 
     def complete_survey(self, params: Dict):
         sql = '''
-            UPDATE op_debrief_surveys
-            SET completed = %(completed)s, primary_loss_reason = %(primary_loss_reason)s,
-                competitive_loss_reason = %(competitive_loss_reason)s, technology_gap_type = %(technology_gap_type)s,
-                perceived_poor_fit_reason = %(perceived_poor_fit_reason)s
-            WHERE id = %(survey_id)s
+            update op_debrief_surveys
+            set completed = %(completed)s,
+                primary_loss_reason = %(primary_loss_reason)s,
+                tg_runtime_performance = %(tg_runtime_performance)s,
+                tg_runtime_stability = %(tg_runtime_stability)s,
+                tg_runtime_missing_features = %(tg_runtime_missing_features)s,
+                tg_runtime_compatibility = %(tg_runtime_compatibility)s,
+                tg_runtime_ease_of_use = %(tg_runtime_ease_of_use)s,
+                tg_design_time_performance = %(tg_design_time_performance)s,
+                tg_design_time_stability = %(tg_design_time_stability)s,
+                tg_design_time_missing_features = %(tg_design_time_missing_features)s,
+                tg_design_time_compatibility = %(tg_design_time_compatibility)s,
+                tg_design_time_ease_of_use = %(tg_design_time_ease_of_use)s,
+                tg_connectivity_performance = %(tg_connectivity_performance)s,
+                tg_connectivity_stability = %(tg_connectivity_stability)s,
+                tg_connectivity_missing_features = %(tg_connectivity_missing_features)s,
+                tg_connectivity_compatibility = %(tg_connectivity_compatibility)s,
+                tg_connectivity_ease_of_use = %(tg_connectivity_ease_of_use)s,
+                tg_install_performance = %(tg_install_performance)s,
+                tg_install_stability = %(tg_install_stability)s,
+                tg_install_missing_features = %(tg_install_missing_features)s,
+                tg_install_compatibility = %(tg_install_compatibility)s,
+                tg_install_ease_of_use = %(tg_install_ease_of_use)s,
+                engaged_other_specialists = %(engaged_other_specialists)s,
+                engaged_gcs = %(engaged_gcs)s,
+                engaged_pm = %(engaged_pm)s,
+                engaged_dev = %(engaged_dev)s,
+                did_rfp = %(did_rfp)s,
+                did_standard_demo = %(did_standard_demo)s,
+                did_custom_demo = %(did_custom_demo)s,
+                did_eval_trial = %(did_eval_trial)s,
+                did_poc = %(did_poc)s,
+                poc_outcome = %(poc_outcome)s,
+                poc_failure_reason = %(poc_failure_reason)s,
+                close_contacts = %(close_contacts)s
+            where id = %(survey_id)s
         '''
         self.u(sql, params)
 
@@ -660,7 +691,7 @@ class Database(fort.PostgresDatabase):
                 s.tg_install_performance, s.tg_install_stability, s.tg_install_missing_features,
                 s.tg_install_compatibility, s.tg_install_ease_of_use, s.engaged_other_specialists, s.engaged_gcs,
                 s.engaged_pm, s.engaged_dev, s.did_rfp, s.did_standard_demo, s.did_custom_demo, s.did_eval_trial,
-                s.did_poc, s.poc_outcome, s.close_contacts,
+                s.did_poc, s.poc_outcome, s.poc_failure_reason, s.close_contacts,
                 o.name opportunity_name, o.account_name, o.close_date, o.technology_ecosystem, o.sales_journey,
                 o.competitors
             FROM op_debrief_surveys s
@@ -1202,6 +1233,13 @@ class Database(fort.PostgresDatabase):
                 add constraint sales_consultants_pkey primary key (employee_id)
             ''')
             self.add_schema_version(28)
+        if self.version < 29:
+            self.log.info('Migrating to database schema version 29')
+            self.u('''
+                alter table op_debrief_surveys
+                add column poc_failure_reason text
+            ''')
+            self.add_schema_version(29)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
