@@ -720,6 +720,20 @@ class Database(fort.PostgresDatabase):
         params = {'email': email}
         return self.q(sql, params)
 
+    def get_surveys_for_reminding(self, generated_before: datetime.datetime = None) -> List[Dict]:
+        if generated_before is None:
+            generated_before = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+        params = {'generated_before': generated_before}
+        sql = '''
+            select o.account_name, o.name, o.opportunity_number, s.role, s.id, s.email
+            from op_debrief_surveys s
+            left join sf_opportunities o on o.opportunity_number = s.opportunity_number
+            where generated < %(generated_before)s
+            and completed is null
+            and reminder_sent is false
+        '''
+        return self.q(sql)
+
     def search_for_survey(self, email: str, opportunity_number: str) -> uuid.UUID:
         sql = '''
             select id from op_debrief_surveys
@@ -731,6 +745,15 @@ class Database(fort.PostgresDatabase):
             'email': email
         }
         return self.q_val(sql, params)
+
+    def set_survey_reminder_sent(self, survey_id: uuid):
+        sql = '''
+            update op_debrief_surveys
+            set reminder_sent = true
+            where id = %(id)s
+        '''
+        params = {'id': survey_id}
+        self.u(sql, params)
 
     def update_op_debrief_tracking(self, last_check: datetime.datetime):
         sql = 'UPDATE op_debrief_tracking SET last_check = %(last_check)s WHERE only_row IS TRUE'
@@ -1244,6 +1267,13 @@ class Database(fort.PostgresDatabase):
                 add column poc_failure_reason text
             ''')
             self.add_schema_version(29)
+        if self.version < 30:
+            self.log.info('Migrating to database schema version 30')
+            self.u('''
+                alter table op_debrief_surveys
+                add column reminder_sent boolean not null default false
+            ''')
+            self.add_schema_version(30)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'

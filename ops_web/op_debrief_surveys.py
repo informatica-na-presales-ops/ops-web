@@ -11,7 +11,33 @@ from typing import Dict
 log = logging.getLogger(__name__)
 
 
-def generate_op_debrief_surveys(config: ops_web.config.Config, app: flask.Flask):
+def remind(config: ops_web.config.Config, app: flask.Flask):
+    log.info('Checking for opportunity debrief surveys that need reminders sent')
+    db = ops_web.db.Database(config)
+    for survey in db.get_surveys_for_reminding():
+        context = {
+            'opportunity': {
+                'account_name': survey.get('account_name'),
+                'name': survey.get('name'),
+                'opportunity_number': survey.get('opportunity_number')
+            },
+            'person': {
+                'role': survey.get('role')
+            },
+            'survey_id': survey.get('id'),
+            'email': survey.get('email')
+        }
+        send_survey_email(config, app, context)
+        db.set_survey_reminder_sent(survey.get('id'))
+
+
+def send_survey_email(config: ops_web.config.Config, app: flask.Flask, context: Dict):
+    with app.app_context():
+        body = flask.render_template('op-debrief/survey-email.html', c=context)
+    ops_web.send_email.send_email(config, context.get('email'), 'Opportunity debrief survey', body)
+
+
+def generate(config: ops_web.config.Config, app: flask.Flask):
     log.info('Generating opportunity debrief surveys')
     now = datetime.datetime.utcnow()
     db = ops_web.db.Database(config)
@@ -32,14 +58,13 @@ def generate_op_debrief_surveys(config: ops_web.config.Config, app: flask.Flask)
             role = t.get('role')
             if role in selected_roles:
                 survey_id = db.add_survey(op_number, email, t.get('role'))
-                c = {
+                context = {
                     'opportunity': op,
                     'person': t,
-                    'survey_id': survey_id
+                    'survey_id': survey_id,
+                    'email': email
                 }
-                with app.app_context():
-                    body = flask.render_template('op-debrief/survey-email.html', c=c)
-                ops_web.send_email.send_email(config, email, 'Opportunity debrief survey', body)
+                send_survey_email(config, app, context)
             else:
                 log.debug(f'Skipping {email} because role {role!r} is not selected')
     log.info('Done generating opportunity debrief surveys')
