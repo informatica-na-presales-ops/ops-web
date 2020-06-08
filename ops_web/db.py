@@ -62,13 +62,17 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def get_log_entries(self):
+    def get_log_entries(self, limit: int = None):
+        if limit is None:
+            limit = 100
+        params = {'limit': limit}
         sql = '''
-            SELECT id, log_time, actor, action, lower(actor || ' ' || action) filter_value
-            FROM log_entries
-            ORDER BY log_time DESC
+            select id, log_time, actor, action, lower(actor || ' ' || action) filter_value
+            from log_entries
+            order by log_time desc
+            limit %(limit)s
         '''
-        return self.q(sql)
+        return self.q(sql, params)
 
     # cloud credentials
 
