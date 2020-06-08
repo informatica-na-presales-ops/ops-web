@@ -1042,7 +1042,7 @@ def machine_stop():
 def op_debrief():
     db: ops_web.db.Database = flask.g.db
     flask.g.surveys = db.get_surveys(flask.g.email)
-    return flask.render_template('op-debrief.html')
+    return flask.render_template('op-debrief/index.html')
 
 
 @app.route('/op-debrief/configure')
@@ -1050,7 +1050,7 @@ def op_debrief():
 def op_debrief_configure():
     db: ops_web.db.Database = flask.g.db
     flask.g.roles = db.get_roles()
-    return flask.render_template('op-debrief-configure.html')
+    return flask.render_template('op-debrief/configure.html')
 
 
 @app.route('/op-debrief/configure/roles', methods=['POST'])
@@ -1073,7 +1073,7 @@ def op_debrief_survey(survey_id: uuid.UUID):
             flask.g.survey = survey
             flask.g.op_contacts = db.get_op_contacts(survey.get('opportunity_number'))
             flask.g.template = ops_web.op_debrief_surveys.survey_template
-            return flask.render_template('op-debrief-survey.html')
+            return flask.render_template('op-debrief/survey.html')
         elif flask.request.method == 'POST':
             for k, v in flask.request.form.lists():
                 app.logger.debug(f'{k}: {v}')

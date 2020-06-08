@@ -38,7 +38,7 @@ def generate_op_debrief_surveys(config: ops_web.config.Config, app: flask.Flask)
                     'survey_id': survey_id
                 }
                 with app.app_context():
-                    body = flask.render_template('op-debrief-survey-email.html', c=c)
+                    body = flask.render_template('op-debrief/survey-email.html', c=c)
                 ops_web.send_email.send_email(config, email, 'Opportunity debrief survey', body)
             else:
                 log.debug(f'Skipping {email} because role {role!r} is not selected')
