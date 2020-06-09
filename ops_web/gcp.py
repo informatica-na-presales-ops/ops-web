@@ -1,3 +1,4 @@
+import datetime
 import time
 
 import googleapiclient.discovery
@@ -6,24 +7,85 @@ import logging
 
 log = logging.getLogger(__name__)
 import ops_web.config
+
 config = ops_web.config.Config()
 
 PROJECT_ID = config.gcp_project_id
 compute = googleapiclient.discovery.build('compute', 'v1', cache_discovery=False)
+computebeta = googleapiclient.discovery.build('compute', 'beta', cache_discovery=False)
+
+
+def create_machine_image(souceinstance, zone, name):
+    instance = compute.instances().get(project = PROJECT_ID,zone = zone,instance = souceinstance).execute()
+    machinetype = instance['machineType']
+    log.info(machinetype)
+    operations = computebeta.machineImages().insert(project=PROJECT_ID,
+                                                    sourceInstance=f'projects/{PROJECT_ID}/zones/{zone}/instances/{souceinstance}',
+                                                    body={"name": name, "sourceInstanceProperties.machineType": machinetype}).execute()
+
+def create_instance(region,name,sourceimage,environment,owner):
+    sourceImage = f'projects/{PROJECT_ID}/global/machineImages/{sourceimage}'
+    image = computebeta.machineImages().get(project=PROJECT_ID,machineImage=sourceimage).execute()
+    log.info(image)
+    instancetype = image['sourceInstanceProperties']['machineType']
+    machinetype_url = f'zones/{region}/machineTypes/{instancetype}'
+    computebeta.instances().insert(project=PROJECT_ID,sourceMachineImage=sourceImage,zone=region,body = {"name":name ,"machineType": machinetype_url}).execute()
+    params = {
+        'id': 'pending',
+        'cloud': 'gcp',
+        'region': region,
+        'environment': environment,
+        'name': name,
+        'owner': owner,
+        'private_ip': None,
+        'public_ip': None,
+        'type': instancetype,
+        'running_schedule': None,
+        'state': 'pending',
+        'state_transition_time': None,
+        'application_env': None,
+        'business_unit': None,
+        'created': datetime.datetime.utcnow(),
+        'dns_names': None,
+        'whitelist': None,
+        'vpc': None,
+        'disable_termination': None,
+        'cost': 0,
+        'contributors': None,
+        'account_id':None
+    }
+    return params
+
+
+def get_all_images():
+    images = computebeta.machineImages().list(project=PROJECT_ID).execute()
+    image2 = images['items']
+    result = []
+
+    for image in image2:
+
+        params = {
+            'id': image['id'],
+            'name': image['name'],
+            'public': None,
+            'state': 'available' if (image['status'] == 'READY') else 'pending',
+            'created': image['creationTimestamp'],
+            'instanceid': image['sourceInstance'].split('/')[-1],
+            'owner': image['sourceInstanceProperties']['labels']['owneremail'] + '@informatica.com',
+            'region' : image['sourceInstance'].split('/')[-3],
+            'cloud' :'gcp'
+        }
+        log.info(params)
+        result.append(params)
+    return result
+
 
 def get_all_virtual_machines():
-    request = compute.zones().list(project=PROJECT_ID)
-
     result = []
-    while request is not None:
-        response = request.execute()
-
-        for zone in response['items']:
-            rest = checkInstancesInZone(zone['description'])
-            if rest is not None:
-                result.append(checkInstancesInZone(zone['description']))
-
-        request = compute.zones().list_next(previous_request=request, previous_response=response)
+    request = compute.zones().list(project=PROJECT_ID).execute()
+    for zone in request['items']:
+        for i in checkInstancesInZone(zone['description']):
+            result.append(i)
     print(result)
     return result
 
@@ -37,9 +99,9 @@ def checkInstancesInZone(ZONE):
     instances = list_instances(compute, PROJECT_ID, ZONE)
     if instances is not None:
         for instance in instances:
-            print('Instance name: ' + instance['name'] + "\nInstnace ID: " + instance['id'] + '\nZone: ' + ZONE)
+            log.info('Instance name: ' + instance['name'] + "\nInstnace ID: " + instance['id'] + '\nZone: ' + ZONE)
             conributors_tag = instance['labels']['contributors'].split('-')
-            contributors_tag = list(filter(None,conributors_tag))
+            contributors_tag = list(filter(None, conributors_tag))
             contributor = [s + "@informatica.com" for s in contributors_tag]
             contributors = " ".join(contributor)
             params = {
@@ -47,7 +109,7 @@ def checkInstancesInZone(ZONE):
                 'cloud': 'gcp',
                 'region': instance['zone'].split('/')[-1],
                 'environment': instance['labels']['machine__environment_group'],
-                'name': instance['labels']['name'],
+                'name': instance['name'],
                 'owner': instance['labels']['owneremail'] + '@informatica.com',
                 'private_ip': instance['networkInterfaces'][0]['networkIP'],
                 'public_ip': None if ('natIP' not in instance['networkInterfaces'][0]['accessConfigs'][0]) else
@@ -65,9 +127,8 @@ def checkInstancesInZone(ZONE):
                 'disable_termination': None,
                 'cost': 0,
                 'contributors': contributors
-
             }
-            return params
+            yield params
 
 
 def start_machine(machine_id, zone):
@@ -103,7 +164,7 @@ def update_machine_tags(machine_id, zone, tags):
     compute.instances().setLabels(project=PROJECT_ID, zone=zone, instance=machine_id, body=tags2).execute()
 
 
-def wait_for_operation(compute,project, zone, operation):
+def wait_for_operation(compute, project, zone, operation):
     print('Waiting for operation to finish...')
     while True:
         result = compute.zoneOperations().get(

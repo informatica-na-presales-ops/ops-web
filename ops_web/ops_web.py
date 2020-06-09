@@ -689,20 +689,21 @@ def image_create():
     if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
         cloud = flask.request.values.get('cloud')
-        if not cloud == 'aws':
-            app.logger.warning(f'Unable to create images for cloud {cloud}')
-            environment = flask.request.values.get('environment')
-            return flask.redirect(flask.url_for('environment_detail', environment=environment))
-
-        account = db.get_one_credential_for_use(machine.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-
         region = flask.request.values.get('region')
         name = flask.request.values.get('image-name')
         owner = flask.request.values.get('owner')
         public = 'public' in flask.request.values
-        image_id = aws.create_image(region, machine_id, name, owner, public)
-        params = {
+        if cloud == 'az':
+            app.logger.warning(f'Unable to create images for cloud {cloud}')
+            environment = flask.request.values.get('environment')
+            return flask.redirect(flask.url_for('environment_detail', environment=environment))
+        elif cloud == 'aws':
+         account = db.get_one_credential_for_use(machine.get('account_id'))
+         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+
+
+         image_id = aws.create_image(region, machine_id, name, owner, public)
+         params = {
             'id': image_id,
             'cloud': cloud,
             'region': region,
@@ -714,8 +715,26 @@ def image_create():
             'instanceid': machine_id,
             'account_id': machine.get('account_id')
         }
-        db.add_image(params)
-        return flask.redirect(flask.url_for('images'))
+         db.add_image(params)
+         return flask.redirect(flask.url_for('images'))
+        elif cloud == 'gcp':
+            ops_web.gcp.create_machine_image(machine.get('name'),machine.get('region'),name)
+            app.logger.info(name)
+            params = {
+                'id' : 'pending',
+                'cloud' : cloud,
+                'region' : machine.get('region'),
+                'name' : name,
+                'state' :'pending',
+                'created': datetime.datetime.utcnow(),
+                'instanceid' : machine.get('id'),
+                'account_id' : None,
+                'owner' : owner,
+                'public' : public
+            }
+            db.add_image(params)
+            return flask.redirect(flask.url_for('images'))
+
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to create an image from {machine_id}')
         return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
@@ -846,74 +865,82 @@ def launchmachine_default_specs():
 @app.route('/machines/create', methods=['POST'])
 @login_required
 def machine_create():
-    image_id = flask.request.values.get('image-id')
-    app.logger.info(f'Got a request from {flask.g.email} to create machine from image {image_id}')
-    db: ops_web.db.Database = flask.g.db
-    image = db.get_image(image_id)
-    if 'admin' in flask.g.permissions or image.get('public') or image.get('owner') == flask.g.email:
-        db.add_log_entry(flask.g.email, f'Create machine from image {image_id}')
-        region = image.get('region')
-        instance_id = image.get('instanceid')
-        name = flask.request.values.get('name')
-        owner = flask.request.values.get('owner')
-        environment = flask.request.values.get('environment')
-        vpc = flask.request.values.get('vpc')
-        app.logger.info(vpc)
-        account = db.get_one_credential_for_use(image.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        if instance_id == '':
-            return flask.render_template('Default_launchinstance.html', region=region, image_id=image_id, name=name,
-                                         owner=owner, environment=environment, vpc=vpc)
-        else:
-            if vpc == 'Default':
-                response = aws.create_instance(region, image_id, instance_id, name, owner, environment, '')
-                if response == 'Unsuccessful':
+        image_id = flask.request.values.get('image-id')
 
-                    return flask.render_template('Default_launchinstance.html', region=region, image_id=image_id,
-                                                 name=name,
-                                                 owner=owner, environment=environment, vpc=vpc)
-
-                else:
-                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
-                    instance['account_id'] = account.get('id')
-                    db.add_machine(instance)
-                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
-
-            elif vpc == 'MdmDemo':
-                response = aws.create_instance(region, image_id, instance_id, name, owner, environment, 'mdmdemo')
-                if response == 'Unsuccessful':
-                    response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'mdmdemo')
-                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
-                    instance['account_id'] = account.get('id')
-                    db.add_machine(instance)
-                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
-                else:
-                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
-                    instance['account_id'] = account.get('id')
-                    db.add_machine(instance)
-                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
-
-            elif vpc == 'PresalesDemo':
-                response = aws.create_instance(region, image_id, instance_id, name, owner, environment, 'presalesdemo')
-                app.logger.info(response)
-                if response == 'Unsuccessful':
-                    response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment,
-                                                                'presalesdemo')
-                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
-                    instance['account_id'] = account.get('id')
-                    db.add_machine(instance)
-                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
-                else:
-                    instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
-                    instance['account_id'] = account.get('id')
-                    db.add_machine(instance)
-                    return flask.redirect(flask.url_for('environment_detail', environment=environment))
+        app.logger.info(f'Got a request from {flask.g.email} to create machine from image {image_id}')
+        db: ops_web.db.Database = flask.g.db
+        image = db.get_image(image_id)
+        if 'admin' in flask.g.permissions or image.get('public') or image.get('owner') == flask.g.email:
+            db.add_log_entry(flask.g.email, f'Create machine from image {image_id}')
+            region = image.get('region')
+            instance_id = image.get('instanceid')
+            name = flask.request.values.get('name')
+            owner = flask.request.values.get('owner')
+            cloud = image.get('cloud')
+            environment = flask.request.values.get('environment')
+            if cloud == 'gcp':
+                instance = ops_web.gcp.create_instance(region, name, image.get('name'),environment,owner)
+                db.add_machine(instance)
+                return flask.redirect(flask.url_for('environment_detail', environment=environment))
             else:
-                pass
+                vpc = flask.request.values.get('vpc')
+                account = db.get_one_credential_for_use(image.get('account_id'))
+                aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+                if instance_id == '':
+                    return flask.render_template('Default_launchinstance.html', region=region, image_id=image_id, name=name,
+                                             owner=owner, environment=environment, vpc=vpc)
+                else:
+                    if vpc == 'Default':
+                        response = aws.create_instance(region, image_id, instance_id, name, owner, environment, '')
+                        if response == 'Unsuccessful':
 
-    else:
-        app.logger.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
-        return flask.redirect(flask.url_for('images'))
+                            return flask.render_template('Default_launchinstance.html', region=region, image_id=image_id,
+                                                     name=name,
+                                                     owner=owner, environment=environment, vpc=vpc)
+
+                        else:
+                            instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                            instance['account_id'] = account.get('id')
+                            db.add_machine(instance)
+                            return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+                    elif vpc == 'MdmDemo':
+                        response = aws.create_instance(region, image_id, instance_id, name, owner, environment, 'mdmdemo')
+                        if response == 'Unsuccessful':
+                            response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment,
+                                                                    'mdmdemo')
+                            instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                            instance['account_id'] = account.get('id')
+                            db.add_machine(instance)
+                            return flask.redirect(flask.url_for('environment_detail', environment=environment))
+                        else:
+                            instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                            instance['account_id'] = account.get('id')
+                            db.add_machine(instance)
+                            return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+                    elif vpc == 'PresalesDemo':
+                        response = aws.create_instance(region, image_id, instance_id, name, owner, environment,
+                                                   'presalesdemo')
+                        app.logger.info(response)
+                        if response == 'Unsuccessful':
+                            response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment,
+                                                                    'presalesdemo')
+                            instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                            instance['account_id'] = account.get('id')
+                            db.add_machine(instance)
+                            return flask.redirect(flask.url_for('environment_detail', environment=environment))
+                        else:
+                            instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                            instance['account_id'] = account.get('id')
+                            db.add_machine(instance)
+                            return flask.redirect(flask.url_for('environment_detail', environment=environment))
+                    else:
+                        pass
+
+        else:
+            app.logger.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
+            return flask.redirect(flask.url_for('images'))
 
 
 @app.route('/machines/delete', methods=['POST'])
@@ -1425,6 +1452,9 @@ def sync_machines():
         for vm in ops_web.gcp.get_all_virtual_machines():
             vm['account_id'] = None
             db.add_machine(vm)
+        for image in ops_web.gcp.get_all_images():
+            image['account_id'] = None
+            db.add_image(image)
         db.post_sync('gcp')
     else:
         app.logger.info(f'Skipping GCP because CLOUDS_TO_SYNC={config.clouds_to_sync}')

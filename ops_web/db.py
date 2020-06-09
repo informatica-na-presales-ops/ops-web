@@ -354,7 +354,7 @@ class Database(fort.PostgresDatabase):
                     name,
                     owner,
                     TRUE can_modify,
-                    cloud = 'aws' AND state = 'available' can_launch,
+                    cloud = 'aws' OR cloud ='gcp' AND state = 'available' can_launch,
                     public,
                     state,
                     created,
