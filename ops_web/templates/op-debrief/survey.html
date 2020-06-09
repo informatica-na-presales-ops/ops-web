@@ -168,7 +168,7 @@
                 </div>
                 <button type="submit" class="btn btn-outline-success"
                         {% if g.survey.completed %}
-                        disabled title="This survey was completed on {{ g.survey.completed.strftime('%Y-%m-%d') }}."
+                        disabled title="This survey was {{ 'cancelled' if g.survey.cancelled else 'completed' }} on {{ g.survey.completed.strftime('%Y-%m-%d') }}."
                         {% endif %}>
                     Submit
                 </button>

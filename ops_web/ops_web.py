@@ -1045,6 +1045,14 @@ def op_debrief():
     return flask.render_template('op-debrief/index.html')
 
 
+@app.route('/op-debrief/archive')
+@login_required
+def op_debrief_archive():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.surveys = db.get_completed_surveys(flask.g.email)
+    return flask.render_template('op-debrief/archive.html')
+
+
 @app.route('/op-debrief/configure')
 @permission_required('survey-admin')
 def op_debrief_configure():

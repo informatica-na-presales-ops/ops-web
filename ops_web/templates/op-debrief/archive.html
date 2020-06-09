@@ -1,25 +1,17 @@
-{% extends 'one-up.html' %}
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('op_debrief') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Surveys</strong>
+    </a>
+{% endblock %}
 
 {% block main_content %}
     <div class="row bump-top-padding">
         <div class="col-12">
             <h1 class="text-light">Opportunity debrief surveys</h1>
             <p class="text-light lead">for {{ 'everyone' if 'survey-admin' in g.permissions else g.email }}</p>
-        </div>
-    </div>
-
-    <div class="row bump-top-padding">
-        <div class="col-12">
-            <a class="btn btn-outline-light" href="{{ url_for('op_debrief_archive') }}">
-                <span class="oi oi-box"></span>
-                Archive
-            </a>
-            {% if 'survey-admin' in g.permissions %}
-            <a class="btn btn-outline-light" href="{{ url_for('op_debrief_configure') }}">
-                <span class="oi oi-cog"></span>
-                Configure
-            </a>
-            {% endif %}
         </div>
     </div>
 
@@ -39,11 +31,12 @@
                 <thead>
                 <tr>
                     {% if 'survey-admin' in g.permissions %}<th>Email</th>{% endif %}
-                    <th>Opportunity Number</th>
-                    <th>Opportunity Name</th>
+                    <th>Opportunity number</th>
+                    <th>Opportunity name</th>
                     <th>Role</th>
-                    <th class="text-center">Opportunity Close Date</th>
-                    <th class="text-center">Survey Completed</th>
+                    <th class="text-center">Opportunity close date</th>
+                    <th class="text-center">Survey completed</th>
+                    <th class="text-center">Survey cancelled</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -55,6 +48,7 @@
                         <td>{{ s.role }}</td>
                         <td class="text-center">{{ s.close_date }}</td>
                         <td class="text-center">{{ s.completed.strftime('%Y-%m-%d') if s.completed }}</td>
+                        <td class="text-center">{{ '✔' if s.cancelled }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -69,7 +63,10 @@
                         </h5>
                         <p class="card-text">{{ s.name }}</p>
                         <p class="card-text">{{ s.email }} / {{ s.role }}</p>
-                        <p class="card-text">Opportunity closed {{ s.close_date }}{% if s.completed %}<br>Survey completed {{ s.completed.strftime('%Y-%m-%d') }}{% endif %}</p>
+                        <p class="card-text">
+                            Opportunity closed on {{ s.close_date }}.
+                            {% if s.completed %}<br>Survey {{ 'cancelled' if s.cancelled else 'completed' }} on {{ s.completed.strftime('%Y-%m-%d') }}.{% endif %}
+                        </p>
                     </div>
                 </div>
             {% endfor %}
