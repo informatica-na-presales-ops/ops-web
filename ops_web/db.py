@@ -592,10 +592,10 @@ class Database(fort.PostgresDatabase):
     def cancel_survey(self, survey_id: uuid.UUID):
         sql = '''
             update op_debrief_surveys
-            set cancelled = true
+            set cancelled = true, completed = %(completed)s
             where id = %(id)s
         '''
-        params = {'id': survey_id}
+        params = {'id': survey_id, 'completed': datetime.datetime.utcnow()}
         self.u(sql, params)
 
     def complete_survey(self, params: Dict):
@@ -642,13 +642,28 @@ class Database(fort.PostgresDatabase):
     def get_active_surveys(self, email: str) -> List[Dict]:
         sql = '''
             select
-                s.id, s.opportunity_number, s.email, s.role, s.generated, s.completed,
+                s.id, s.opportunity_number, s.email, s.role, s.generated,
                 o.name, o.close_date,
                 lower(s.email || ' ' || s.opportunity_number || ' ' || o.name) filter_value
             from op_debrief_surveys s
             left join sf_opportunities o on s.opportunity_number = o.opportunity_number
             where s.completed is null
-            and s.cancelled is false
+        '''
+        if not self.has_permission(email, 'survey-admin'):
+            sql = f'{sql} and email = %(email)s '
+        sql = f'{sql} order by o.close_date desc, s.opportunity_number, s.email'
+        params = {'email': email}
+        return self.q(sql, params)
+
+    def get_completed_surveys(self, email: str) -> List[Dict]:
+        sql = '''
+            select
+                s.id, s.opportunity_number, s.email, s.role, s.generated, s.completed, s.cancelled,
+                o.name, o.close_date,
+                lower(s.email || ' ' || s.opportunity_number || ' ' || o.name) filter_value
+            from op_debrief_surveys s
+            left join sf_opportunities o on o.opportunity_number = s.opportunity_number
+            where s.completed is not null
         '''
         if not self.has_permission(email, 'survey-admin'):
             sql = f'{sql} and email = %(email)s '
@@ -741,7 +756,6 @@ class Database(fort.PostgresDatabase):
             left join sf_opportunities o on o.opportunity_number = s.opportunity_number
             where s.generated < %(generated_before)s
             and s.completed is null
-            and s.cancelled is false
             and s.reminder_sent is false
         '''
         return self.q(sql, params)

@@ -12,9 +12,15 @@
 
 <p>Will you please complete a short survey to help us improve? You can find the survey here:</p>
 
-<p><a href="{{ url_for('op_debrief_survey', survey_id=c.survey_id) }}">{{ url_for('op_debrief_survey', survey_id=c.survey_id) }}</a></p>
+<p>
+    <a href="{{ url_for('op_debrief_survey', survey_id=c.survey_id) }}">{{ url_for('op_debrief_survey', survey_id=c.survey_id) }}</a>
+</p>
 
-<p>If you were not involved in this opportunity, please <a href="#">click here</a> to cancel this survey.</p>
+<p>
+    In order for this survey to be worthwhile, please only complete it if you were actively involved in the opportunity.
+    If you were not involved in this opportunity, please
+    <a href="{{ url_for('op_debrief_survey_cancel', survey_id=c.survey_id) }}">click here</a> to cancel this survey.
+</p>
 
 <p>Thanks!</p>
 </body>

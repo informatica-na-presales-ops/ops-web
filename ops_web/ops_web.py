@@ -1072,6 +1072,14 @@ def op_debrief():
     return flask.render_template('op-debrief/index.html')
 
 
+@app.route('/op-debrief/archive')
+@login_required
+def op_debrief_archive():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.surveys = db.get_completed_surveys(flask.g.email)
+    return flask.render_template('op-debrief/archive.html')
+
+
 @app.route('/op-debrief/configure')
 @permission_required('survey-admin')
 def op_debrief_configure():
@@ -1129,8 +1137,9 @@ def op_debrief_survey_cancel(survey_id: uuid.UUID):
     db: ops_web.db.Database = flask.g.db
     survey = db.get_survey(survey_id)
     if 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
-        pass
-    return 'OK'
+        db.cancel_survey(survey_id)
+        db.add_log_entry(flask.g.email, f'Cancelled opportunity debrief survey {survey_id}')
+    return flask.redirect(flask.url_for('op_debrief_survey', survey_id=survey_id))
 
 
 @app.route('/rep-sc-pairs')
@@ -1345,7 +1354,6 @@ def start_machine(machine_id):
         zone = machine.get('region')
         app.logger.info(zone)
         ops_web.gcp.start_machine(machine_id, zone)
-
 
 
 def stop_machine(machine_id):
