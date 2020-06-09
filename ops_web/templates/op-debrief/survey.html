@@ -21,13 +21,17 @@
                 <div class="alert alert-warning">You are viewing someone else&#x02bc;s survey.</div>
             {% endif %}
             {% if g.survey.completed %}
-                <div class="alert alert-primary">This survey was completed on {{ g.survey.completed.strftime('%Y-%m-%d') }}.</div>
+                <div class="alert alert-primary">
+                    This survey was {{ 'cancelled' if g.survey.cancelled else 'completed' }}
+                    on {{ g.survey.completed.strftime('%Y-%m-%d') }}.
+                </div>
             {% endif %}
             <div class="card text-light bg-dark border-light mb-3">
                 <div class="card-header">
                     <h5 class="card-title">
                         Opportunity details
-                        <a class="text-light float-right btn btn-sm btn-outline-light" data-toggle="collapse" href="#opportunity-details-body">
+                        <a class="text-light float-right btn btn-sm btn-outline-light" data-toggle="collapse"
+                           href="#opportunity-details-body">
                             <span id="opportunity-details-toggle-text">hide</span>
                         </a>
                     </h5>
@@ -63,7 +67,10 @@
                     <h5>Primary loss reason</h5>
                     {% for k, v in g.template.plr_options.items() %}
                         <div class="custom-control custom-radio">
-                            <input class="custom-control-input" type="radio" name="primary-loss-reason" id="plr-{{ k }}" value="{{ k }}" required {{ 'checked' if g.survey.primary_loss_reason == k }} {{ 'disabled' if g.survey.completed }}>
+                            <input class="custom-control-input" type="radio" name="primary-loss-reason" id="plr-{{ k }}"
+                                   value="{{ k }}" required
+                                   {{ 'checked' if g.survey.primary_loss_reason == k }}
+                                   {{ 'disabled' if g.survey.completed }}>
                             <label class="custom-control-label" for="plr-{{ k }}">{{ v }}</label>
                         </div>
                     {% endfor %}
@@ -78,7 +85,10 @@
                             {% for o_k, o_v in g.template.tech_gap_options.items() %}
                                 {% set field_name = 'tg_' + k + '_' + o_k %}
                                 <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="tg-{{ k }}-{{ o_k }}" name="tech-gap-type" value="tg-{{ k }}-{{ o_k }}" {{ 'checked' if g.survey.get(field_name) }} {{ 'disabled' if g.survey.completed }}>
+                                    <input type="checkbox" class="custom-control-input" id="tg-{{ k }}-{{ o_k }}"
+                                           name="tech-gap-type" value="tg-{{ k }}-{{ o_k }}"
+                                           {{ 'checked' if g.survey.get(field_name) }}
+                                           {{ 'disabled' if g.survey.completed }}>
                                     <label class="custom-control-label" for="tg-{{ k }}-{{ o_k }}">{{ o_v }}</label>
                                 </div>
                             {% endfor %}
@@ -90,7 +100,10 @@
                         <h5>Who did you engage to escalate and manage the technology gap?</h5>
                         {% for k, v in g.template.who_engaged_options.items() %}
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="{{ k }}" name="who-engaged" value="{{ k }}" {{ 'checked' if g.survey.get(k) }} {{ 'disabled' if g.survey.completed }}>
+                                <input type="checkbox" class="custom-control-input" id="{{ k }}" name="who-engaged"
+                                       value="{{ k }}"
+                                       {{ 'checked' if g.survey.get(k) }}
+                                       {{ 'disabled' if g.survey.completed }}>
                                 <label class="custom-control-label" for="{{ k }}">{{ v }}</label>
                             </div>
                         {% endfor %}
@@ -100,7 +113,10 @@
                     <h5>Which of these validation activities were used?</h5>
                     {% for k, v in g.template.validation_activities.items() %}
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="{{ k }}" name="validation-activities" value="{{ k }}" {{ 'checked' if g.survey.get(k) }} {{ 'disabled' if g.survey.completed }}>
+                            <input type="checkbox" class="custom-control-input" id="{{ k }}"
+                                   name="validation-activities" value="{{ k }}"
+                                   {{ 'checked' if g.survey.get(k) }}
+                                    {{ 'disabled' if g.survey.completed }}>
                             <label class="custom-control-label" for="{{ k }}">{{ v }}</label>
                         </div>
                     {% endfor %}
@@ -110,7 +126,10 @@
                         <h5>What was the outcome of the POC?</h5>
                         {% for k, v in g.template.poc_outcomes.items() %}
                             <div class="custom-control custom-radio">
-                                <input class="custom-control-input" type="radio" name="poc-outcome" id="poc-outcome-{{ k }}" value="{{ k }}" {{ 'checked' if g.survey.poc_outcome == k }} {{ 'disabled' if g.survey.completed }}>
+                                <input class="custom-control-input" type="radio" name="poc-outcome"
+                                       id="poc-outcome-{{ k }}" value="{{ k }}"
+                                       {{ 'checked' if g.survey.poc_outcome == k }}
+                                       {{ 'disabled' if g.survey.completed }}>
                                 <label class="custom-control-label" for="poc-outcome-{{ k }}">{{ v }}</label>
                             </div>
                         {% endfor %}
@@ -120,7 +139,10 @@
                             <h5>Why did the POC fail?</h5>
                             {% for k, v in g.template.poc_failure_reasons.items() %}
                                 <div class="custom-control custom-radio">
-                                    <input class="custom-control-input" type="radio" name="poc-failure-reason" id="poc-failure-reason-{{ k }}" {{ 'checked' if g.survey.poc_failure_reason == k }} {{ 'disabled' if g.survey.completed }}>
+                                    <input class="custom-control-input" type="radio" name="poc-failure-reason"
+                                           id="poc-failure-reason-{{ k }}"
+                                           {{ 'checked' if g.survey.poc_failure_reason == k }}
+                                           {{ 'disabled' if g.survey.completed }}>
                                     <label class="custom-control-label" for="poc-failure-reason-{{ k }}">{{ v }}</label>
                                 </div>
                             {% endfor %}
@@ -131,15 +153,23 @@
                     <h5>Which contacts did you work with the closest?</h5>
                     {% for c in g.op_contacts %}
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="op-contact-{{ c.contact_key }}" name="close-contacts" value="{{ c.contact_key }}" {{ 'checked' if c.contact_key|string in g.close_contacts }} {{ 'disabled' if g.survey.completed }}>
+                            <input type="checkbox" class="custom-control-input" id="op-contact-{{ c.contact_key }}"
+                                   name="close-contacts" value="{{ c.contact_key }}"
+                                   {{ 'checked' if c.contact_key|string in g.close_contacts }}
+                                   {{ 'disabled' if g.survey.completed }}>
                             <label class="custom-control-label" for="op-contact-{{ c.contact_key }}">
                                 {{ c.name }}, {{ c.title if c.title else 'No title' }}<br>
-                                <span class="text-secondary">({{ c.phone if c.phone else 'no phone' }} / {{ c.email if c.email else 'no email' }})</span>
+                                <span class="text-secondary">
+                                    ({{ c.phone if c.phone else 'no phone' }} / {{ c.email if c.email else 'no email' }})
+                                </span>
                             </label>
                         </div>
                     {% endfor %}
                 </div>
-                <button type="submit" class="btn btn-outline-success" {% if g.survey.completed %}disabled title="This survey was completed on {{ g.survey.completed.strftime('%Y-%m-%d') }}."{% endif %}>
+                <button type="submit" class="btn btn-outline-success"
+                        {% if g.survey.completed %}
+                        disabled title="This survey was completed on {{ g.survey.completed.strftime('%Y-%m-%d') }}."
+                        {% endif %}>
                     Submit
                 </button>
             </form>

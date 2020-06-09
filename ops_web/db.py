@@ -592,10 +592,10 @@ class Database(fort.PostgresDatabase):
     def cancel_survey(self, survey_id: uuid.UUID):
         sql = '''
             update op_debrief_surveys
-            set cancelled = true
+            set cancelled = true, completed = %(completed)s
             where id = %(id)s
         '''
-        params = {'id': survey_id}
+        params = {'id': survey_id, 'completed': datetime.datetime.utcnow()}
         self.u(sql, params)
 
     def complete_survey(self, params: Dict):
