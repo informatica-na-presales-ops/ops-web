@@ -576,8 +576,8 @@ class Database(fort.PostgresDatabase):
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:
         self.log.debug(f'Generating a survey for {opportunity_number} / {email}')
         sql = '''
-            INSERT INTO op_debrief_surveys (id, opportunity_number, email, role, generated)
-            VALUES (%(id)s, %(opportunity_number)s, %(email)s, %(role)s, %(generated)s)
+            insert into op_debrief_surveys (id, opportunity_number, email, role, generated)
+            values (%(id)s, %(opportunity_number)s, %(email)s, %(role)s, %(generated)s)
         '''
         params = {
             'id': uuid.uuid4(),
@@ -588,6 +588,15 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
         return params.get('id')
+
+    def cancel_survey(self, survey_id: uuid.UUID):
+        sql = '''
+            update op_debrief_surveys
+            set cancelled = true
+            where id = %(id)s
+        '''
+        params = {'id': survey_id}
+        self.u(sql, params)
 
     def complete_survey(self, params: Dict):
         sql = '''
@@ -630,42 +639,59 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
+    def get_active_surveys(self, email: str) -> List[Dict]:
+        sql = '''
+            select
+                s.id, s.opportunity_number, s.email, s.role, s.generated, s.completed,
+                o.name, o.close_date,
+                lower(s.email || ' ' || s.opportunity_number || ' ' || o.name) filter_value
+            from op_debrief_surveys s
+            left join sf_opportunities o on s.opportunity_number = o.opportunity_number
+            where s.completed is null
+            and s.cancelled is false
+        '''
+        if not self.has_permission(email, 'survey-admin'):
+            sql = f'{sql} and email = %(email)s '
+        sql = f'{sql} order by o.close_date desc, s.opportunity_number, s.email'
+        params = {'email': email}
+        return self.q(sql, params)
+
     def get_last_op_debrief_check(self) -> datetime.datetime:
-        sql = 'SELECT last_check FROM op_debrief_tracking'
+        sql = 'select last_check from op_debrief_tracking'
         return self.q_val(sql)
 
     def get_modified_opportunities(self, since: datetime.datetime) -> List[Dict]:
         sql = '''
-            SELECT
+            select
                 opportunity_key, id, opportunity_number, name, account_name, stage_name, close_date, last_modified_date,
                 technology_ecosystem, sales_journey
-            FROM sf_opportunities
-            WHERE last_modified_date > %(since)s
-              AND stage_name = 'Closed Lost'
-              AND close_date > current_date - interval '5' day
+            from sf_opportunities
+            where last_modified_date > %(since)s
+              and stage_name = 'Closed Lost'
+              and close_date > current_date - interval '5' day
         '''
         params = {'since': since}
         return self.q(sql, params)
 
     def get_op_contacts(self, opportunity_number: str) -> List[Dict]:
         sql = '''
-            SELECT DISTINCT c.opportunity_key, c.contact_key, c.name, c.title, c.phone, c.email, c.is_primary
-            FROM sf_opportunity_contacts c
-            JOIN sf_opportunities o ON o.opportunity_key = c.opportunity_key
-            WHERE o.opportunity_number = %(opportunity_number)s
+            select distinct c.opportunity_key, c.contact_key, c.name, c.title, c.phone, c.email, c.is_primary
+            from sf_opportunity_contacts c
+            join sf_opportunities o on o.opportunity_key = c.opportunity_key
+            where o.opportunity_number = %(opportunity_number)s
         '''
         params = {'opportunity_number': opportunity_number}
         return self.q(sql, params)
 
     def get_op_numbers_for_existing_surveys(self) -> Set[str]:
-        sql = 'SELECT DISTINCT opportunity_number FROM op_debrief_surveys'
+        sql = 'select distinct opportunity_number from op_debrief_surveys'
         return set([r.get('opportunity_number') for r in self.q(sql)])
 
     def get_op_team_members(self, opportunity_key: int) -> List[Dict]:
         sql = '''
-            SELECT DISTINCT opportunity_key, name, email, role
-            FROM sf_opportunity_team_members
-            WHERE opportunity_key = %(opportunity_key)s
+            select distinct opportunity_key, name, email, role
+            from sf_opportunity_team_members
+            where opportunity_key = %(opportunity_key)s
         '''
         params = {'opportunity_key': opportunity_key}
         return self.q(sql, params)
@@ -685,7 +711,7 @@ class Database(fort.PostgresDatabase):
 
     def get_survey(self, survey_id: uuid.UUID) -> Optional[Dict]:
         sql = '''
-            SELECT
+            select
                 s.id, s.opportunity_number, s.email, s.generated, s.completed, s.role, s.primary_loss_reason,
                 s.tg_runtime_performance, s.tg_runtime_stability, s.tg_runtime_missing_features,
                 s.tg_runtime_compatibility, s.tg_runtime_ease_of_use, s.tg_design_time_performance,
@@ -695,30 +721,15 @@ class Database(fort.PostgresDatabase):
                 s.tg_install_performance, s.tg_install_stability, s.tg_install_missing_features,
                 s.tg_install_compatibility, s.tg_install_ease_of_use, s.engaged_other_specialists, s.engaged_gcs,
                 s.engaged_pm, s.engaged_dev, s.did_rfp, s.did_standard_demo, s.did_custom_demo, s.did_eval_trial,
-                s.did_poc, s.poc_outcome, s.poc_failure_reason, s.close_contacts,
+                s.did_poc, s.poc_outcome, s.poc_failure_reason, s.close_contacts, s.cancelled,
                 o.name opportunity_name, o.account_name, o.close_date, o.technology_ecosystem, o.sales_journey,
                 o.competitors
-            FROM op_debrief_surveys s
-            LEFT JOIN sf_opportunities o ON o.opportunity_number = s.opportunity_number
-            WHERE s.id = %(survey_id)s
+            from op_debrief_surveys s
+            left join sf_opportunities o on o.opportunity_number = s.opportunity_number
+            where s.id = %(survey_id)s
         '''
         params = {'survey_id': survey_id}
         return self.q_one(sql, params)
-
-    def get_surveys(self, email: str) -> List[Dict]:
-        sql = '''
-            SELECT
-                s.id, s.opportunity_number, s.email, s.role, s.generated, s.completed,
-                o.name, o.close_date,
-                lower(s.email || ' ' || s.opportunity_number || ' ' || o.name) filter_value
-            FROM op_debrief_surveys s
-            LEFT JOIN sf_opportunities o ON s.opportunity_number = o.opportunity_number
-        '''
-        if not self.has_permission(email, 'survey-admin'):
-            sql = f'{sql} WHERE email = %(email)s '
-        sql = f'{sql} ORDER BY o.close_date DESC, s.opportunity_number, s.email'
-        params = {'email': email}
-        return self.q(sql, params)
 
     def get_surveys_for_reminding(self, generated_before: datetime.datetime = None) -> List[Dict]:
         if generated_before is None:
@@ -728,17 +739,18 @@ class Database(fort.PostgresDatabase):
             select o.account_name, o.name, o.opportunity_number, s.role, s.id, s.email
             from op_debrief_surveys s
             left join sf_opportunities o on o.opportunity_number = s.opportunity_number
-            where generated < %(generated_before)s
-            and completed is null
-            and reminder_sent is false
+            where s.generated < %(generated_before)s
+            and s.completed is null
+            and s.cancelled is false
+            and s.reminder_sent is false
         '''
-        return self.q(sql)
+        return self.q(sql, params)
 
     def search_for_survey(self, email: str, opportunity_number: str) -> uuid.UUID:
         sql = '''
             select id from op_debrief_surveys
             where opportunity_number = %(opportunity_number)s
-              and email = %(email)s
+            and email = %(email)s
         '''
         params = {
             'opportunity_number': opportunity_number,
@@ -756,7 +768,7 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
 
     def update_op_debrief_tracking(self, last_check: datetime.datetime):
-        sql = 'UPDATE op_debrief_tracking SET last_check = %(last_check)s WHERE only_row IS TRUE'
+        sql = 'update op_debrief_tracking set last_check = %(last_check)s where only_row is true'
         params = {'last_check': last_check}
         self.u(sql, params)
 
@@ -769,23 +781,23 @@ class Database(fort.PostgresDatabase):
 
     # cost reporting
 
-    def add_reportid(self,last_check: datetime , report_id: str):
+    def add_reportid(self, report_id: str):
         sql = '''
-            INSERT INTO cost_tracking (last_check, report_id) 
-            VALUES (%(last_check)s, %(report_id)s)
+            insert into cost_tracking (last_check, report_id) 
+            values (%(last_check)s, %(report_id)s)
         '''
-        params ={
+        params = {
             'last_check': datetime.datetime.utcnow(),
             'report_id': report_id
         }
         self.u(sql, params)
 
     def get_reportid(self):
-        sql = 'SELECT report_id FROM cost_tracking'
+        sql = 'select report_id from cost_tracking'
         return self.q_val(sql)
 
     def update_reportid(self, last_check: datetime.datetime, report_id):
-        sql = 'UPDATE cost_tracking SET last_check = %(last_check)s, report_id = %(report_id)s WHERE only_row IS TRUE'
+        sql = 'update cost_tracking set last_check = %(last_check)s, report_id = %(report_id)s where only_row is true'
         params = {'last_check': last_check, 'report_id': report_id}
         self.u(sql, params)
 
@@ -793,9 +805,9 @@ class Database(fort.PostgresDatabase):
 
     def add_environment_usage_event(self, params: Dict):
         sql = '''
-            INSERT INTO environment_usage_events (
+            insert into environment_usage_events (
                 id, environment_name, event_name, user_name, event_time
-            ) VALUES (
+            ) values (
                 %(id)s, %(environment_name)s, %(event_name)s, %(user_name)s, %(event_time)s
             )
         '''
@@ -810,8 +822,8 @@ class Database(fort.PostgresDatabase):
     def add_schema_version(self, schema_version: int):
         self._version = schema_version
         sql = '''
-            INSERT INTO schema_versions (schema_version, migration_timestamp)
-            VALUES (%(schema_version)s, %(migration_timestamp)s)
+            insert into schema_versions (schema_version, migration_timestamp)
+            values (%(schema_version)s, %(migration_timestamp)s)
         '''
         params = {
             'migration_timestamp': datetime.datetime.utcnow(),
@@ -1274,9 +1286,16 @@ class Database(fort.PostgresDatabase):
                 add column reminder_sent boolean not null default false
             ''')
             self.add_schema_version(30)
+        if self.version < 31:
+            self.log.info('Migrating to database schema version 31')
+            self.u('''
+                alter table op_debrief_surveys
+                add column cancelled boolean not null default false
+            ''')
+            self.add_schema_version(31)
 
     def _table_exists(self, table_name: str) -> bool:
-        sql = 'SELECT count(*) table_count FROM information_schema.tables WHERE table_name = %(table_name)s'
+        sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
         for record in self.q(sql, {'table_name': table_name}):
             if record['table_count'] == 0:
                 return False
@@ -1287,7 +1306,7 @@ class Database(fort.PostgresDatabase):
         if self._version is None:
             self._version = 0
             if self._table_exists('schema_versions'):
-                sql = 'SELECT max(schema_version) current_version FROM schema_versions'
+                sql = 'select max(schema_version) current_version from schema_versions'
                 current_version: int = self.q_val(sql)
                 if current_version is not None:
                     self._version = current_version

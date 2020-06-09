@@ -1041,7 +1041,7 @@ def machine_stop():
 @login_required
 def op_debrief():
     db: ops_web.db.Database = flask.g.db
-    flask.g.surveys = db.get_surveys(flask.g.email)
+    flask.g.surveys = db.get_active_surveys(flask.g.email)
     return flask.render_template('op-debrief/index.html')
 
 
@@ -1094,6 +1094,16 @@ def op_debrief_survey(survey_id: uuid.UUID):
         return flask.redirect(flask.url_for('op_debrief'))
     else:
         return flask.redirect(flask.url_for('op_debrief_survey', survey_id=new_survey_id))
+
+
+@app.route('/op-debrief/<uuid:survey_id>/cancel')
+@login_required
+def op_debrief_survey_cancel(survey_id: uuid.UUID):
+    db: ops_web.db.Database = flask.g.db
+    survey = db.get_survey(survey_id)
+    if 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
+        pass
+    return 'OK'
 
 
 @app.route('/rep-sc-pairs')
@@ -1434,7 +1444,7 @@ def generate_cloudability_reportid():
     report_id = result['id']
     app.logger.info(report_id)
     if db.get_reportid() is None:
-        db.add_reportid(datetime.datetime.utcnow(), report_id)
+        db.add_reportid(report_id)
     else:
         db.update_reportid(datetime.datetime.utcnow(), report_id)
 
