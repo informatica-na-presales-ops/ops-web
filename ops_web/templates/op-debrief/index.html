@@ -43,7 +43,6 @@
                     <th>Opportunity Name</th>
                     <th>Role</th>
                     <th class="text-center">Opportunity Close Date</th>
-                    <th class="text-center">Survey Completed</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -54,7 +53,6 @@
                         <td>{{ s.name }}</td>
                         <td>{{ s.role }}</td>
                         <td class="text-center">{{ s.close_date }}</td>
-                        <td class="text-center">{{ s.completed.strftime('%Y-%m-%d') if s.completed }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -69,7 +67,7 @@
                         </h5>
                         <p class="card-text">{{ s.name }}</p>
                         <p class="card-text">{{ s.email }} / {{ s.role }}</p>
-                        <p class="card-text">Opportunity closed {{ s.close_date }}{% if s.completed %}<br>Survey completed {{ s.completed.strftime('%Y-%m-%d') }}{% endif %}</p>
+                        <p class="card-text">Opportunity closed {{ s.close_date }}</p>
                     </div>
                 </div>
             {% endfor %}

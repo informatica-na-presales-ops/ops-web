@@ -642,7 +642,7 @@ class Database(fort.PostgresDatabase):
     def get_active_surveys(self, email: str) -> List[Dict]:
         sql = '''
             select
-                s.id, s.opportunity_number, s.email, s.role, s.generated, s.completed,
+                s.id, s.opportunity_number, s.email, s.role, s.generated,
                 o.name, o.close_date,
                 lower(s.email || ' ' || s.opportunity_number || ' ' || o.name) filter_value
             from op_debrief_surveys s
