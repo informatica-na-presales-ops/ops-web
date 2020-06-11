@@ -673,6 +673,15 @@ class AZClient:
         ImageName = "CDW-Master-Azure-10.4-Linux_image_2020-04-07-1530"
         ImageId = "/subscriptions/950a5f1a-97b6-4c9c-b79b-e32d951b5e66/resourceGroups/rg-cdw-workshops-201904/providers/Microsoft.Compute/images/CDW-Master-Azure-10.4-Linux_image_2020-04-07-1530"
         virtualMachineSize = 'Standard_B12ms'
+        tags2 = {
+            "NAME":virtual_machine_name,
+            "APPLICATIONENV":"PROD",
+            "APPLICATIONROLE":"APPSVR",
+            "BUSINESSUNIT":"NA-Presales",
+            "OWNEREMAIL":owner,
+            "RUNNINGSCHEDULE":"00:03:20:00:1-7",
+            "machine__environment_group":vmbase
+        }
         tags = "APPLICATIONENV=PROD APPLICATIONROLE=APPSVR BUSINESSUNIT=NA-Presales OWNEREMAIL=" + owner + " RUNNINGSCHEDULE=00:03:20:00:1-7 NAME=" + virtual_machine_name + " machine__environment_group=" + vmbase
         osDiskName = virtual_machine_name + "_os"
         DiskName_data = virtual_machine_name + "_data"
@@ -686,7 +695,8 @@ class AZClient:
         def create_publicip(network_client):
             public_ip_params = {
                 'location': 'westus',
-                'public_ip_allocation_method': 'Static'
+                'public_ip_allocation_method': 'Static',
+                'tags': tags2
             }
             creation_result = network_client.public_ip_addresses.create_or_update(
                 resourceGroupName,
@@ -717,7 +727,8 @@ class AZClient:
                       }
 
                   }],
-                  'network_security_group': {'id': nsgId}
+                  'network_security_group': {'id': nsgId},
+                  'tags':tags2
 
                   }
 
@@ -731,6 +742,7 @@ class AZClient:
                     'os_type': osType
                 }
             },
+            'tags':tags2,
             'sku': {
                 'name': storageType,
 
@@ -746,6 +758,7 @@ class AZClient:
             snapshotId_data = compute_client.snapshots.get(resourceGroupName, snapshotName_data).id
             result2 = compute_client.disks.create_or_update(resourceGroupName, DiskName_data, {
                 'location': 'westus',
+                'tags':tags2,
                 'storage_profile': {
                     'os_disk': {
                         'os_type': osType
@@ -793,6 +806,15 @@ class AZClient:
         virtualNetworkName = 'vnet-cdw-workshops-201904'
         snapshotName_os = 'cdwjumpbox104_os_master'
         storageType = 'Standard_LRS'
+        tags2 = {
+            "NAME":virtual_machine_name,
+            "APPLICATIONENV":"PROD",
+            "APPLICATIONROLE":"APPSVR",
+            "BUSINESSUNIT":"NA-Presales",
+            "OWNEREMAIL":owner,
+            "RUNNINGSCHEDULE":"00:03:20:00:1-7",
+            "machine__environment_group":vmbase
+        }
         tags = "APPLICATIONENV=PROD APPLICATIONROLE=APPSVR BUSINESSUNIT=NA-Presales OWNEREMAIL=" + owner + " RUNNINGSCHEDULE=00:03:20:00:1-7 NAME=" + virtual_machine_name + " machine__environment_group=" + vmbase
         # Provide the OS type
         osType = 'windows'
@@ -806,7 +828,8 @@ class AZClient:
         def create_publicip(network_client):
             public_ip_params = {
                 'location': 'westus',
-                'public_ip_allocation_method': 'Static'
+                'public_ip_allocation_method': 'Static',
+                'tags':tags2
             }
             creation_result = network_client.public_ip_addresses.create_or_update(
                 resourceGroupName,
@@ -825,6 +848,7 @@ class AZClient:
         publicipid = publicip.id
 
         params = {'location': 'westus',
+                  'tags':tags2,
                   'ip_configurations': [{
                       'name': nicName,
 
@@ -844,6 +868,7 @@ class AZClient:
         log.info(snapshotId_os)
         result = compute_client.disks.create_or_update(resourceGroupName, osDiskName, {
             'location': 'westus',
+            'tags':tags2,
             'storage_profile': {
                 'os_disk': {
                     'os_type': osType
