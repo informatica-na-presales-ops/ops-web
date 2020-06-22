@@ -1,0 +1,5 @@
+ops.example.com {
+ proxy / ops-web:8080 {
+  transparent
+ }
+}
