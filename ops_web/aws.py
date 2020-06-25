@@ -699,29 +699,31 @@ class AWSClient:
     def get_available_regions(self):
         return self.session.get_available_regions('ec2')
 
-    def get_unblendedcost(self, instanceid, result, volid):
+    def get_unblended_cost(self, instanceid, result, vol_id):
+        ic = '$0'
         for i, f in result.items():
             if i == instanceid:
                 ic = f
                 break
-            else:
-                ic = '$0'
         instance_cost = ic[1:]
+
         if ',' in instance_cost:
             instance_cost = instance_cost.replace(',', '')
         else:
             instance_cost = instance_cost
+
+        vc = '$0'
         for i, f in result.items():
-            if i == volid:
+            if i == vol_id:
                 vc = f
                 break
-            else:
-                vc = '$0'
         volume_cost = vc[1:]
+
         if ',' in volume_cost:
             volume_cost = volume_cost.replace(',', '')
         else:
             volume_cost = volume_cost
+
         unblended_cost = float(instance_cost) + float(volume_cost)
         return round(unblended_cost, 2)
 
@@ -750,7 +752,7 @@ class AWSClient:
             'dns_names': tags.get('image__dns_names_private', ''),
             'whitelist': self.get_whitelist_for_instance(region, instance),
             'vpc': instance.vpc_id,
-            'cost': self.get_unblendedcost(instance.id, result, self.get_volume(instance.block_device_mappings))
+            'cost': self.get_unblended_cost(instance.id, result, self.get_volume(instance.block_device_mappings))
         }
         if params['environment'] == '':
             params['environment'] = 'default-environment'

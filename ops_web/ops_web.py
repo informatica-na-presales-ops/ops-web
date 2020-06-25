@@ -1422,8 +1422,9 @@ def sync_machines():
                 for sgid in aws.get_all_securitygrps():
                     sgid['account_id'] = account.get('id')
                     db.add_group(sgid)
-            except Exception:
+            except Exception as e:
                 apm.capture_exception()
+                app.logger.exception(e)
         db.post_sync('aws')
         scheduler.add_job(ops_web.tasks.update_termination_protection, args=[db])
     else:
