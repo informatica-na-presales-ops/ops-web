@@ -1,5 +1,6 @@
 import concurrent.futures
 import datetime
+import elasticapm
 import logging
 import ops_web.aws
 import ops_web.db
@@ -7,6 +8,7 @@ import ops_web.db
 log = logging.getLogger(__name__)
 
 
+@elasticapm.capture_span()
 def update_termination_protection(db: ops_web.db.Database):
     log.info('Checking termination protection for all AWS machines')
     sync_start = datetime.datetime.utcnow()
