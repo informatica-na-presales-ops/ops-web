@@ -8,8 +8,8 @@ import ops_web.db
 log = logging.getLogger(__name__)
 
 
-@elasticapm.capture_span()
-def update_termination_protection(db: ops_web.db.Database):
+def update_termination_protection(apm: elasticapm.Client, db: ops_web.db.Database):
+    apm.begin_transaction('update_termination_protection')
     log.info('Checking termination protection for all AWS machines')
     sync_start = datetime.datetime.utcnow()
 
@@ -34,3 +34,4 @@ def update_termination_protection(db: ops_web.db.Database):
         concurrent.futures.wait(fs)
     sync_duration = datetime.datetime.utcnow() - sync_start
     log.info(f'Done checking termination protection for all AWS machines / {sync_duration}')
+    apm.end_transaction()

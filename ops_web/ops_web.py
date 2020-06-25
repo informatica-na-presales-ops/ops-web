@@ -1396,6 +1396,7 @@ def check_sync():
 
 
 def sync_machines():
+    apm.client.begin_transaction('sync_machines')
     app.logger.info('Syncing information from cloud providers now ...')
 
     db = ops_web.db.Database(config)
@@ -1426,7 +1427,7 @@ def sync_machines():
                 apm.capture_exception()
                 app.logger.exception(e)
         db.post_sync('aws')
-        scheduler.add_job(ops_web.tasks.update_termination_protection, args=[db])
+        scheduler.add_job(ops_web.tasks.update_termination_protection, args=[apm.client, db])
     else:
         app.logger.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     aws_duration = datetime.datetime.utcnow() - aws_start
@@ -1478,6 +1479,7 @@ def sync_machines():
     app.logger.info(
         f'Done syncing virtual machines / AWS {aws_duration} / Azure {az_duration} / GCP {gcp_duration} / total {sync_duration}')
     db.end_sync()
+    apm.client.end_transaction()
 
 
 def generate_cloudability_reportid():
