@@ -1,5 +1,6 @@
 import apscheduler.schedulers.background
 import datetime
+import elasticapm.contrib.flask
 import requests
 import ops_web.aws
 import ops_web.az
@@ -22,8 +23,7 @@ import waitress
 import werkzeug.middleware.proxy_fix
 import xlsxwriter
 import ipaddress
-import googleapiclient.discovery
-from oauth2client.client import GoogleCredentials
+
 from typing import Dict, List
 
 config = ops_web.config.Config()
@@ -31,6 +31,8 @@ scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={
 
 app = flask.Flask(__name__)
 app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_port=1)
+
+apm = elasticapm.contrib.flask.ElasticAPM(app, service_name='ops-web', service_version=config.version)
 
 app.secret_key = config.secret_key
 
@@ -1410,15 +1412,18 @@ def sync_machines():
         db.pre_sync('aws')
         for account in db.get_all_credentials_for_use('aws'):
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            for instance in aws.get_all_instances(db.get_reportid()):
-                instance['account_id'] = account.get('id')
-                db.add_machine(instance)
-            for image in aws.get_all_images():
-                image['account_id'] = account.get('id')
-                db.add_image(image)
-            for sgid in aws.get_all_securitygrps():
-                sgid['account_id'] = account.get('id')
-                db.add_group(sgid)
+            try:
+                for instance in aws.get_all_instances(db.get_reportid()):
+                    instance['account_id'] = account.get('id')
+                    db.add_machine(instance)
+                for image in aws.get_all_images():
+                    image['account_id'] = account.get('id')
+                    db.add_image(image)
+                for sgid in aws.get_all_securitygrps():
+                    sgid['account_id'] = account.get('id')
+                    db.add_group(sgid)
+            except Exception:
+                apm.capture_exception()
         db.post_sync('aws')
         scheduler.add_job(ops_web.tasks.update_termination_protection, args=[db])
     else:

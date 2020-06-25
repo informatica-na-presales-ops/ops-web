@@ -658,39 +658,40 @@ class AWSClient:
                 log.critical(f'Skipping {region}')
 
     def get_all_instances(self, report_id):
-
-        url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
-        response = requests.get(url)
-        log.info(response)
-        result = response.json()
-        log.info(result)
-        dictr = {}
-        while 'error' in result:
+        cost_data = {}
+        if 'cloudability-cost' in self.config.feature_flags:
+            url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
             response = requests.get(url)
-            log.info(response)
+            log.debug(f'Cloudability report response: {response}')
             result = response.json()
-
-            if 'results' in result:
-                log.info("got json data")
+            log.debug(f'Cloudability report result: {result}')
+            while 'error' in result:
+                response = requests.get(url)
+                log.info(response)
                 result = response.json()
-                break
-        jsonresult = result['results']
-        for i in jsonresult:
-            for k, v in i.items():
-                if k == 'resource_identifier':
-                    l = v
-                    continue
-                elif k == 'unblended_cost':
-                    g = v
-                else:
-                    g = None
-                dictr[l] = g
+
+                if 'results' in result:
+                    log.info("got json data")
+                    result = response.json()
+                    break
+            jsonresult = result['results']
+            for i in jsonresult:
+                for k, v in i.items():
+                    if k == 'resource_identifier':
+                        l = v
+                        continue
+                    elif k == 'unblended_cost':
+                        g = v
+                    else:
+                        g = None
+                    cost_data[l] = g
+
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 instances in {region}')
             ec2 = self.get_service_resource('ec2', region)
             try:
                 for instance in ec2.instances.all():
-                    yield self.get_instance_dict(region, instance, dictr)
+                    yield self.get_instance_dict(region, instance, cost_data)
             except botocore.exceptions.ClientError as e:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
