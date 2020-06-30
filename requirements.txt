@@ -5,7 +5,7 @@ Werkzeug==1.0.1
 XlsxWriter==1.2.9
 azure-cli==2.8.0
 azure-mgmt-compute==12.1.0
-azure-mgmt-network==10.2.0
+azure-mgmt-network==11.0.0
 azure-mgmt-subscription==0.5.0
 boto3==1.14.13
 botocore==1.17.13
