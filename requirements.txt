@@ -9,7 +9,7 @@ azure-mgmt-network==11.0.0
 azure-mgmt-subscription==0.5.0
 boto3==1.14.13
 botocore==1.17.13
-elastic-apm[flask]==5.7.0
+elastic-apm[flask]==5.8.0
 fort==0.0.8
 google-api-python-client==1.9.3
 oauth2client==4.1.3
