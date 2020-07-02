@@ -41,7 +41,12 @@
                         <dt>Account name</dt>
                         <dd>{{ g.survey.account_name }}</dd>
                         <dt>Opportunity name</dt>
-                        <dd>{{ g.survey.opportunity_name }}</dd>
+                        <dd>
+                            <a href="https://infa.lightning.force.com/lightning/r/Opportunity/{{ g.survey.opportunity_id }}/view"
+                               target="_blank">
+                                {{ g.survey.opportunity_name }}
+                            </a>
+                        </dd>
                         <dt>Opportunity number</dt>
                         <dd>{{ g.survey.opportunity_number }}</dd>
                         <dt>Opportunity closed</dt>
@@ -116,7 +121,7 @@
                             <input type="checkbox" class="custom-control-input" id="{{ k }}"
                                    name="validation-activities" value="{{ k }}"
                                    {{ 'checked' if g.survey.get(k) }}
-                                    {{ 'disabled' if g.survey.completed }}>
+                                   {{ 'disabled' if g.survey.completed }}>
                             <label class="custom-control-label" for="{{ k }}">{{ v }}</label>
                         </div>
                     {% endfor %}

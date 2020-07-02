@@ -738,7 +738,7 @@ class Database(fort.PostgresDatabase):
                 s.engaged_pm, s.engaged_dev, s.did_rfp, s.did_standard_demo, s.did_custom_demo, s.did_eval_trial,
                 s.did_poc, s.poc_outcome, s.poc_failure_reason, s.close_contacts, s.cancelled,
                 o.name opportunity_name, o.account_name, o.close_date, o.technology_ecosystem, o.sales_journey,
-                o.competitors
+                o.competitors, o.id opportunity_id
             from op_debrief_surveys s
             left join sf_opportunities o on o.opportunity_number = s.opportunity_number
             where s.id = %(survey_id)s
