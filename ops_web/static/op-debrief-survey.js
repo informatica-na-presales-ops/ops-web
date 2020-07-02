@@ -15,7 +15,7 @@ $('input[name="primary-loss-reason"]').on('click', function () {
     }
 });
 
-$('input[name="did-poc"]').on('click', function () {
+$('#did_poc').on('click', function () {
     let nodes = $('.show-on-did-poc');
     if (this.checked) {
         nodes.collapse('show');
