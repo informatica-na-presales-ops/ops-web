@@ -4,9 +4,7 @@ RUN /sbin/apk add --no-cache libpq openssl-dev samba-client
 
 COPY requirements.txt /ops-web/requirements.txt
 
-RUN /sbin/apk add --no-cache --virtual .deps gcc libffi-dev make musl-dev postgresql-dev \
- && /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt \
- && /sbin/apk del --no-cache .deps
+RUN /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt
 
 ENV APP_VERSION="2020.17" \
     PYTHONUNBUFFERED="1" \
