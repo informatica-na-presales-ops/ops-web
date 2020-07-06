@@ -10,7 +10,7 @@ services:
       - 8080:8080
 
   postgres:
-    image: postgres:11.7-alpine
+    image: postgres:11.8-alpine
     environment:
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/11
