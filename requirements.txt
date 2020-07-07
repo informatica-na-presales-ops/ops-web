@@ -5,7 +5,7 @@ PyJWT==1.7.1
 Werkzeug==1.0.1
 XlsxWriter==1.2.9
 azure-cli==2.8.0
-azure-mgmt-compute==12.1.0
+azure-mgmt-compute==13.0.0
 azure-mgmt-network==11.0.0
 azure-mgmt-subscription==0.6.0
 boto3==1.14.17
