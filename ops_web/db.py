@@ -841,6 +841,22 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
+    # settings
+
+    def get_setting(self, setting_id: str) -> str:
+        sql = 'select setting_value from settings where setting_id = %(setting_id)s'
+        params = {'setting_id': setting_id}
+        return self.q_val(sql, params)
+
+    def set_setting(self, setting_id: str, setting_value: str):
+        sql = '''
+            insert into settings (setting_id, setting_value)
+            values (%(settings_id)s, %(setting_value)s)
+            on conflict (setting_id) do update set setting_value = %(setting_value)s
+        '''
+        params = {'setting_id': setting_id, 'setting_value': setting_value}
+        self.u(sql, params)
+
     # migrations and metadata
 
     def add_schema_version(self, schema_version: int):
@@ -860,8 +876,8 @@ class Database(fort.PostgresDatabase):
         for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'environment_usage_events', 'images',
                       'log_entries', 'op_debrief_roles', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
                       'sales_consultants', 'sales_reps', 'sc_rep_assignments', 'schema_versions', 'security_group',
-                      'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking',
-                      'virtual_machines'):
+                      'settings', 'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members',
+                      'sync_tracking', 'virtual_machines'):
             self.u(f'drop table if exists {table} cascade ')
 
     def migrate(self):
@@ -1327,6 +1343,15 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(32)
+        if self.version < 33:
+            self.log.info('Migrating to database schema version 33')
+            self.u('''
+                create table settings (
+                    setting_id text primary key,
+                    setting_value text
+                )
+            ''')
+            self.add_schema_version(33)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
