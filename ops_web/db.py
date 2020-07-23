@@ -142,66 +142,66 @@ class Database(fort.PostgresDatabase):
 
     def get_env_list(self) -> List[str]:
         sql = '''
-            SELECT DISTINCT env_group
-            FROM virtual_machines
-            WHERE visible IS TRUE
-            ORDER BY env_group
+            select distinct env_group
+            from virtual_machines
+            where visible is true
+            order by env_group
         '''
         return [r['env_group'] for r in self.q(sql)]
 
     def get_environments(self) -> List[Dict]:
         sql = '''
-            SELECT
+            select
                 cloud,
                 env_group,
                 owner,
-                SUM(CAST(cost AS float)) costsum,
+                sum(cost::numeric) costsum,
                 count(*) instance_count,
                 bool_or(state = 'running') running,
-                max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
+                max(case when state = 'running' then now() - created else null end) running_time,
                 lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
-            FROM virtual_machines
-            WHERE visible IS TRUE
-            GROUP BY cloud, env_group, owner
-            ORDER BY env_group
+            from virtual_machines
+            where visible is true
+            group by cloud, env_group, owner
+            order by env_group
         '''
         return self.q(sql)
 
     def get_own_environments(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT
-                cloud,
-                env_group,
-                owner,
-                SUM(CAST(cost AS float)) costsum,
-                count(*) instance_count,
-                bool_or(state = 'running') running,
-                max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
-                lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
-            FROM virtual_machines
-            WHERE visible IS TRUE
-            AND cloud = 'aws'
-            GROUP BY cloud, env_group, owner
-            ORDER BY env_group
-        '''
+                select
+                    cloud,
+                    env_group,
+                    owner,
+                    sum(cost::numeric) costsum,
+                    count(*) instance_count,
+                    bool_or(state = 'running') running,
+                    max(case when state = 'running' then now() - created else null end) running_time,
+                    lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
+                from virtual_machines
+                where visible is true
+                and cloud = 'aws'
+                group by cloud, env_group, owner
+                order by env_group
+            '''
         else:
             sql = '''
-                SELECT  
-                cloud,
-                env_group,
-                owner,
-                SUM(CAST(cost AS float)) costsum,
-                count(*) instance_count,
-                bool_or(state = 'running') running,
-                max(CASE WHEN state = 'running' THEN now() - created ELSE NULL END) running_time,
-                lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
-            FROM virtual_machines
-            WHERE visible IS TRUE
-            AND (owner = %(email)s) 
-            AND cloud = 'aws'
-            GROUP BY cloud, env_group, owner
-            ORDER BY env_group
+                select  
+                    cloud,
+                    env_group,
+                    owner,
+                    sum(cost::numeric) costsum,
+                    count(*) instance_count,
+                    bool_or(state = 'running') running,
+                    max(case when state = 'running' then now() - created else null end) running_time,
+                    lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
+                from virtual_machines
+                where visible is true
+                and (owner = %(email)s) 
+                and cloud = 'aws'
+                group by cloud, env_group, owner
+                order by env_group
             '''
         return self.q(sql, {'email': email})
 
