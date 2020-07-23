@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import fort
 import ops_web.config
 import uuid
@@ -815,6 +816,35 @@ class Database(fort.PostgresDatabase):
         params = {'last_check': last_check, 'report_id': report_id}
         self.u(sql, params)
 
+    def add_cost_data(self, resource_identifier: str, unblended_cost: str):
+        sql = '''
+            insert into cost_data (resource_id, unblended_cost, synced)
+            values (%(resource_id)s, %(unblended_cost)s, true)
+            on conflict (resource_id) do update set unblended_cost = %(unblended_cost)s, synced = true
+        '''
+        params = {
+            'resource_id': resource_identifier,
+            'unblended_cost': unblended_cost
+        }
+        self.u(sql, params)
+
+    def cost_data_pre_sync(self):
+        sql = 'update cost_data set synced = false where synced is true'
+        self.u(sql)
+
+    def cost_data_post_sync(self):
+        sql = 'delete from cost_data where synced is false'
+        self.u(sql)
+
+    def get_cost_for_resource(self, resource_id: str) -> decimal.Decimal:
+        sql = '''
+            select sum(unblended_cost)::numeric
+            from cost_data
+            where position(lower(%(resource_id)s) in lower(resource_id)) > 0
+        '''
+        params = {'resource_id': resource_id}
+        return self.q_val(sql, params) or decimal.Decimal(0)
+
     # environment usage events
 
     def add_environment_usage_event(self, params: Dict):
@@ -847,8 +877,8 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('cloud_credentials', 'cost_tracking', 'environment_usage_events', 'images', 'log_entries',
-                      'op_debrief_roles', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
+        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'environment_usage_events', 'images',
+                      'log_entries', 'op_debrief_roles', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
                       'sales_consultants', 'sales_reps', 'sc_rep_assignments', 'schema_versions', 'security_group',
                       'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking',
                       'virtual_machines'):
@@ -1307,6 +1337,16 @@ class Database(fort.PostgresDatabase):
                 add column cancelled boolean not null default false
             ''')
             self.add_schema_version(31)
+        if self.version < 32:
+            self.log.info('Migrating to database schema version 32')
+            self.u('''
+                create table cost_data (
+                    resource_id text primary key,
+                    unblended_cost money,
+                    synced boolean
+                )
+            ''')
+            self.add_schema_version(32)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

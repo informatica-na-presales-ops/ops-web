@@ -21,7 +21,7 @@ class Config:
     google_application_credentials: str
     bootstrap_admin: str
     cloudability_auth_token: str
-    cloudability_vendor_account_id: str
+    cloudability_vendor_account_ids: Set
     cdw104_pwd:str
     cdw_jumpbox_pwd:str
     clouds_to_sync: str
@@ -91,8 +91,7 @@ class Config:
         self.az_workshop_subscription_id = os.getenv('AZ_WORKSHOP_SUBSCRIPTION_ID')
         self.bootstrap_admin = os.getenv('BOOTSTRAP_ADMIN')
         self.cloudability_auth_token = os.getenv('CLOUDABILITY_AUTH_TOKEN')
-        self.cloudability_vendor_account_id = os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID')
-        self.cloudability_vendor_account_id_az=os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_ID_AZ')
+        self.cloudability_vendor_account_ids = set(os.getenv('CLOUDABILITY_VENDOR_ACCOUNT_IDS', '').split())
         self.cdw104_pwd=os.getenv('CDW104_PWD')
         self.cdw_jumpbox_pwd=os.getenv('CDW_JUMPBOX_PWD')
         self.gcp_project_id = os.getenv('GCP_PROJECT_ID')

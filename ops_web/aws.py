@@ -1,19 +1,16 @@
-import datetime
-
 import boto3
-import botocore.exceptions
-from paramiko import RSAKey, SSHClient, AutoAddPolicy
-
-import ops_web.config
-import logging
-import time
 import botocore
 import botocore.config
-import paramiko
+import botocore.exceptions
+import datetime
+import logging
+import ops_web.config
+import ops_web.db
 import os
 import subprocess
-import requests
+import time
 
+from paramiko import RSAKey, SSHClient, AutoAddPolicy
 from typing import Dict, List
 
 log = logging.getLogger(__name__)
@@ -32,6 +29,7 @@ def tag_dict_to_list(tags: dict) -> List[dict]:
 class AWSClient:
     def __init__(self, config: ops_web.config.Config, access_key_id: str, secret_access_key: str):
         self.config = config
+        self.db = ops_web.db.Database(config)
         self.access_key_id = access_key_id
         self.secret_access_key = secret_access_key
         self.session = boto3.session.Session(access_key_id, secret_access_key)
@@ -658,40 +656,12 @@ class AWSClient:
                 log.critical(f'Skipping {region}')
 
     def get_all_instances(self, report_id):
-        cost_data = {}
-        if 'cloudability-cost' in self.config.feature_flags:
-            url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
-            response = requests.get(url)
-            log.debug(f'Cloudability report response: {response}')
-            result = response.json()
-            log.debug(f'Cloudability report result: {result}')
-            while 'error' in result:
-                response = requests.get(url)
-                log.info(response)
-                result = response.json()
-
-                if 'results' in result:
-                    log.info("got json data")
-                    result = response.json()
-                    break
-            jsonresult = result['results']
-            for i in jsonresult:
-                for k, v in i.items():
-                    if k == 'resource_identifier':
-                        l = v
-                        continue
-                    elif k == 'unblended_cost':
-                        g = v
-                    else:
-                        g = None
-                    cost_data[l] = g
-
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 instances in {region}')
             ec2 = self.get_service_resource('ec2', region)
             try:
                 for instance in ec2.instances.all():
-                    yield self.get_instance_dict(region, instance, cost_data)
+                    yield self.get_instance_dict(region, instance)
             except botocore.exceptions.ClientError as e:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
@@ -699,39 +669,7 @@ class AWSClient:
     def get_available_regions(self):
         return self.session.get_available_regions('ec2')
 
-    def get_unblended_cost(self, instanceid, result, vol_id):
-        ic = '$0'
-        for i, f in result.items():
-            if i == instanceid:
-                ic = f
-                break
-        instance_cost = ic[1:]
-
-        if ',' in instance_cost:
-            instance_cost = instance_cost.replace(',', '')
-        else:
-            instance_cost = instance_cost
-
-        vc = '$0'
-        for i, f in result.items():
-            if i == vol_id:
-                vc = f
-                break
-        volume_cost = vc[1:]
-
-        if ',' in volume_cost:
-            volume_cost = volume_cost.replace(',', '')
-        else:
-            volume_cost = volume_cost
-
-        unblended_cost = float(instance_cost) + float(volume_cost)
-        return round(unblended_cost, 2)
-
-    def get_volume(self, vol_list):
-        for vol in vol_list:
-            return vol['Ebs']['VolumeId']
-
-    def get_instance_dict(self, region, instance, result) -> Dict:
+    def get_instance_dict(self, region, instance) -> Dict:
         tags = tag_list_to_dict(instance.tags)
         params = {
             'id': instance.id,
@@ -751,8 +689,7 @@ class AWSClient:
             'business_unit': tags.get('BUSINESSUNIT', ''),
             'dns_names': tags.get('image__dns_names_private', ''),
             'whitelist': self.get_whitelist_for_instance(region, instance),
-            'vpc': instance.vpc_id,
-            'cost': self.get_unblended_cost(instance.id, result, self.get_volume(instance.block_device_mappings))
+            'vpc': instance.vpc_id
         }
         if params['environment'] == '':
             params['environment'] = 'default-environment'
@@ -772,28 +709,23 @@ class AWSClient:
         contributors_tag = tags.get('CONTRIBUTORS', '')
         contributors.update(contributors_tag.strip().split())
         params['contributors'] = ' '.join(sorted(contributors))
+
+        # Find cost of instance and all attached volumes and network interfaces
+        cost = self.db.get_cost_for_resource(instance.id)
+        for m in instance.block_device_mappings:
+            volume_id = m.get('Ebs', {}).get('VolumeId')
+            cost += self.db.get_cost_for_resource(volume_id)
+        for n in instance.network_interfaces_attribute:
+            network_interface_id = n.get('NetworkInterfaceId')
+            cost += self.db.get_cost_for_resource(network_interface_id)
+        params['cost'] = cost
+
         return params
 
-    def get_single_instance(self, region: str, instanceid: str, report_id):
+    def get_single_instance(self, region: str, instanceid: str):
         ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(instanceid)
-        url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{report_id}/results?auth_token={self.config.cloudability_auth_token}'
-        response = requests.get(url)
-        dictr = {}
-        result = response.json()
-        jsonresult = result['results']
-        for i in jsonresult:
-            for k, v in i.items():
-                if k == 'resource_identifier':
-                    l = v
-                    continue
-                elif k == 'unblended_cost':
-                    g = v
-                else:
-                    g = None
-                dictr[l] = g
-
-        return self.get_instance_dict(region, instance, dictr)
+        return self.get_instance_dict(region, instance)
 
     def get_whitelist_for_instance(self, region: str, instance):
         whitelist = set()

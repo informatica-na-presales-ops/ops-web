@@ -5,11 +5,12 @@ import azure.mgmt.subscription
 import logging
 import msrestazure.azure_exceptions
 import ops_web.config
-import subprocess
-from typing import Dict
+import ops_web.db
 import os
-from azure.cli.core import get_default_cli
+import subprocess
+
 from paramiko import RSAKey, SSHClient, AutoAddPolicy
+from typing import Dict
 
 log = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ VM_STATE_MAP = {
 class AZClient:
     def __init__(self, config: ops_web.config.Config, client_id: str, secret: str, tenant: str):
         self.config = config
+        self.db = ops_web.db.Database(config)
         self.credentials = azure.common.credentials.ServicePrincipalCredentials(
             client_id=client_id, secret=secret, tenant=tenant
         )
@@ -59,21 +61,6 @@ class AZClient:
                 yield params
             compute_client.close()
 
-    def get_unblendedcost(self, instanceid, result):
-        id_lower = instanceid.lower()
-        if id_lower in result:
-            log.info(result.values())
-            log.info(result[id_lower])
-            cost = result[id_lower][1:]
-            if ',' in cost:
-                instance_cost = cost.replace(',', '')
-                return instance_cost
-            else:
-                return cost
-
-        else:
-            return 0
-
     def get_all_virtual_machines(self):
         for subscription_id in self.subscriptions:
 
@@ -87,21 +74,6 @@ class AZClient:
             log.debug(network_interfaces)
             public_ips = {public_ip.id: public_ip for public_ip in network_client.public_ip_addresses.list_all()}
             log.debug(public_ips)
-            # dictr={}
-            # jsonresult = result['results']
-            # for i in jsonresult:
-            #     for k, v in i.items():
-            #         if (k == 'resource_identifier'):
-            #             if('::' in v):
-            #                 isy = v.split('/', 1)[1]
-            #                 it = "/" + isy
-            #                 l = it
-            #                 continue
-            #         elif (k == 'unblended_cost'):
-            #             g = v
-            #         else:
-            #             g = None
-            #         dictr[l] = g
 
             for vm in compute_client.virtual_machines.list_all():
                 log.debug(f'Found a virtual machine: {vm.id}')
@@ -128,10 +100,8 @@ class AZClient:
                     'dns_names': vm.tags.get('image__dns_names_private', ''),
                     'whitelist': None,
                     'vpc': None,
-                    'disable_termination': None,
-                    'cost': 0
+                    'disable_termination': None
                 }
-                # self.get_unblendedcost(vm.id, dictr)
 
                 if params['dns_names'] == '':
                     params['dns_names'] = params.get('name')
@@ -154,6 +124,9 @@ class AZClient:
                     if ip_config.public_ip_address is not None:
                         public_ip = public_ips.get(ip_config.public_ip_address.id)
                         params['public_ip'] = public_ip.ip_address
+
+                cost = self.db.get_cost_for_resource(vm.id)
+                params['cost'] = cost
 
                 yield params
             compute_client.close()
@@ -200,7 +173,7 @@ class AZClient:
             'dns_names': vm.tags.get('image__dns_names_private', ''),
             'whitelist': None,
             'vpc': None,
-            'cost': 0
+            'cost': self.db.get_cost_for_resource(vm.id)
         }
 
         return params

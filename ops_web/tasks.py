@@ -3,9 +3,61 @@ import datetime
 import elasticapm
 import logging
 import ops_web.aws
+import ops_web.config
 import ops_web.db
+import requests
+import time
+import urllib.parse
 
 log = logging.getLogger(__name__)
+
+
+def get_cost_data():
+    config = ops_web.config.Config()
+    log.info('Getting cost data from Cloudability')
+    db = ops_web.db.Database(config)
+
+    base_url = 'https://app.cloudability.com/api/1/reporting/cost'
+    token_only = {'auth_token': config.cloudability_auth_token}
+    query = {
+        'auth_token': config.cloudability_auth_token,
+        'dimensions': 'resource_identifier',
+        'metrics': 'unblended_cost',
+        'start_date': '30 days ago at 00:00:00',
+        'end_date': '23:59:59'
+    }
+    filters = [f'vendor_account_identifier=={i}' for i in config.cloudability_vendor_account_ids]
+    filters.append('resource_identifier!=@(not set)')
+    query['filters'] = ','.join(filters)
+
+    url = f'{base_url}/enqueue?{urllib.parse.urlencode(query)}'
+    log.debug(f'Cloudability url is {url}')
+    enqueue_response = requests.get(url)
+    enqueue_response.raise_for_status()
+    enqueue_data = enqueue_response.json()
+    job_id = enqueue_data.get('id')
+    log.debug(f'Cloudability report job_id is {job_id}')
+    url = f'{base_url}/reports/{job_id}/state?{urllib.parse.urlencode(token_only)}'
+    job_status = 'requested'
+    while job_status not in ('errored', 'finished'):
+        time.sleep(5)
+        state_response = requests.get(url)
+        state_response.raise_for_status()
+        state_data = state_response.json()
+        job_status = state_data.get('status')
+    if job_status == 'finished':
+        url = f'{base_url}/reports/{job_id}/results?{urllib.parse.urlencode(token_only)}'
+        results_response = requests.get(url)
+        results_response.raise_for_status()
+        results_data = results_response.json()
+        db.cost_data_pre_sync()
+        for result in results_data.get('results', []):
+            log.debug(f'Adding result to database: {result}')
+            db.add_cost_data(**result)
+        db.cost_data_post_sync()
+    else:
+        log.critical(f'Cloudability report job {job_id} is {job_status}')
+    log.info('Done getting cost data from Cloudability')
 
 
 def update_termination_protection(apm: elasticapm.Client, db: ops_web.db.Database):

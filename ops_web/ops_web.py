@@ -1,7 +1,6 @@
 import apscheduler.schedulers.background
 import datetime
 import elasticapm.contrib.flask
-import requests
 import ops_web.aws
 import ops_web.az
 import ops_web.gcp
@@ -508,7 +507,7 @@ def ws_postdep_filter():
         instance_list = aws.get_instance_of_envgrp(env_group)
         instances_list2 = []
         for i in instance_list:
-            result = aws.get_single_instance('us-west-2', i, db.get_reportid())
+            result = aws.get_single_instance('us-west-2', i)
             instances_list2.append(result)
         return flask.render_template('postdep.html', idlist=str(instance_list), instance=instances_list2)
 
@@ -547,7 +546,7 @@ def elasticip():
         instances_list = []
         idlist = aws.convert_instanceidstr_list(idlist_str)
         for i in idlist:
-            result = aws.get_single_instance(region, i, db.get_reportid())
+            result = aws.get_single_instance(region, i)
             instances_list.append(result)
     return flask.render_template('postdep.html', idlist=idlist_str, instance=instances_list)
 
@@ -564,7 +563,7 @@ def synchosts():
         idlist = aws.convert_instanceidstr_list(idliststr)
         instanceslist = []
         for i in idlist:
-            instance = aws.get_single_instance(region, i, db.get_reportid())
+            instance = aws.get_single_instance(region, i)
             instanceslist.append(instance)
         if result is None:
             return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
@@ -670,7 +669,7 @@ def launch():
         instanceslist = []
         instanceidlist = []
         for i in idlist:
-            result = aws.get_single_instance(region, i, db.get_reportid())
+            result = aws.get_single_instance(region, i)
             state = aws.get_instance_attr(region, i, 'state')
             idlist2 = result['id']
             instanceslist.append(result)
@@ -859,7 +858,7 @@ def launchmachine_default_specs():
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'default')
         app.logger.info(response[0])
-        instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+        instance = aws.get_single_instance(region, response[0].id)
         instance['account_id'] = account.get('id')
         db.add_machine(instance)
         return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -901,7 +900,7 @@ def machine_create():
                                                      owner=owner, environment=environment, vpc=vpc)
 
                     else:
-                        instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                        instance = aws.get_single_instance(region, response[0].id)
                         instance['account_id'] = account.get('id')
                         db.add_machine(instance)
                         return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -911,12 +910,12 @@ def machine_create():
                     if response == 'Unsuccessful':
                         response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment,
                                                                     'mdmdemo')
-                        instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                        instance = aws.get_single_instance(region, response[0].id)
                         instance['account_id'] = account.get('id')
                         db.add_machine(instance)
                         return flask.redirect(flask.url_for('environment_detail', environment=environment))
                     else:
-                        instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                        instance = aws.get_single_instance(region, response[0].id)
                         instance['account_id'] = account.get('id')
                         db.add_machine(instance)
                         return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -928,12 +927,12 @@ def machine_create():
                     if response == 'Unsuccessful':
                         response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment,
                                                                     'presalesdemo')
-                        instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                        instance = aws.get_single_instance(region, response[0].id)
                         instance['account_id'] = account.get('id')
                         db.add_machine(instance)
                         return flask.redirect(flask.url_for('environment_detail', environment=environment))
                     else:
-                        instance = aws.get_single_instance(region, response[0].id, db.get_reportid())
+                        instance = aws.get_single_instance(region, response[0].id)
                         instance['account_id'] = account.get('id')
                         db.add_machine(instance)
                         return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -1172,7 +1171,7 @@ def excel_sheet():
         valdir = {}
         for i in idlist2:
 
-            instance_info = aws.get_single_instance('us-west-2', i, db.get_reportid())
+            instance_info = aws.get_single_instance('us-west-2', i)
             instance_name = instance_info['name']
             instance_ip = instance_info['public_ip']
 
@@ -1438,18 +1437,6 @@ def sync_machines():
         for account in db.get_all_credentials_for_use('az'):
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
-            # url = f'https://app.cloudability.com/api/1/reporting/cost/reports/{db.get_reportid()}/results?auth_token={config.cloudability_auth_token}'
-            # response = requests.get(url)
-            # result = response.json()
-            # while 'error' in result:
-            #     response = requests.get(url)
-            #     app.logger.info(response)
-            #     result = response.json()
-            #
-            #     if 'results' in result:
-            #         result = response.json()
-            #         break
-            #
             for vm in az.get_all_virtual_machines():
                 vm['account_id'] = account.get('id')
                 db.add_machine(vm)
@@ -1480,20 +1467,6 @@ def sync_machines():
         f'Done syncing virtual machines / AWS {aws_duration} / Azure {az_duration} / GCP {gcp_duration} / total {sync_duration}')
     db.end_sync()
     apm.client.end_transaction()
-
-
-def generate_cloudability_reportid():
-    db = ops_web.db.Database(config)
-    # url = f'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier,enhanced_service_name&start_date=30 days ago at 00:00:00&auth_token={config.cloudability_auth_token}&filters=vendor_account_identifier=={config.cloudability_vendor_account_id},service_name==Amazon Elastic Compute Cloud'
-    url = f'https://app.cloudability.com/api/1/reporting/cost/enqueue?end_date=23:59:59&metrics=unblended_cost&dimensions=resource_identifier&start_date=30 days ago at 00:00:00&auth_token={config.cloudability_auth_token}&filters=vendor_account_identifier=={config.cloudability_vendor_account_id},vendor_account_identifier=={config.cloudability_vendor_account_id_az},resource_identifier!=@(not set)'
-    response = requests.get(url)
-    result = response.json()
-    report_id = result['id']
-    app.logger.info(report_id)
-    if db.get_reportid() is None:
-        db.add_reportid(report_id)
-    else:
-        db.update_reportid(datetime.datetime.utcnow(), report_id)
 
 
 def main():
@@ -1536,7 +1509,7 @@ def main():
             scheduler.add_job(ops_web.op_debrief_surveys.remind, 'interval', hours=24, args=[config, app])
 
         if 'cloudability-cost' in config.feature_flags:
-            scheduler.add_job(generate_cloudability_reportid)
-            scheduler.add_job(generate_cloudability_reportid, 'interval', hours=24)
+            scheduler.add_job(ops_web.tasks.get_cost_data)
+            scheduler.add_job(ops_web.tasks.get_cost_data, 'interval', hours=24)
 
     waitress.serve(app, ident=None, threads=config.web_server_threads)
