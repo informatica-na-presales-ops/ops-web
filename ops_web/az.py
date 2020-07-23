@@ -127,7 +127,8 @@ class AZClient:
 
                 # Find cost of virtual machine and all attached disks and network interfaces
                 cost = self.db.get_cost_for_resource(vm.id)
-                cost += self.db.get_cost_for_resource(vm.storage_profile.os_disk.managed_disk.id)
+                if vm.storage_profile.os_disk.managed_disk is not None:
+                    cost += self.db.get_cost_for_resource(vm.storage_profile.os_disk.managed_disk.id)
                 for disk in vm.storage_profile.data_disks:
                     cost += self.db.get_cost_for_resource(disk.managed_disk.id)
                 for interface in vm.network_profile.network_interfaces:
