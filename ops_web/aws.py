@@ -655,7 +655,7 @@ class AWSClient:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
 
-    def get_all_instances(self, report_id):
+    def get_all_instances(self):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 instances in {region}')
             ec2 = self.get_service_resource('ec2', region)

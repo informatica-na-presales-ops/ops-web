@@ -1413,7 +1413,7 @@ def sync_machines():
         for account in db.get_all_credentials_for_use('aws'):
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
             try:
-                for instance in aws.get_all_instances(db.get_reportid()):
+                for instance in aws.get_all_instances():
                     instance['account_id'] = account.get('id')
                     db.add_machine(instance)
                 for image in aws.get_all_images():

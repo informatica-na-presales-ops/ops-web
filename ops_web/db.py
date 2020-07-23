@@ -796,26 +796,6 @@ class Database(fort.PostgresDatabase):
 
     # cost reporting
 
-    def add_reportid(self, report_id: str):
-        sql = '''
-            insert into cost_tracking (last_check, report_id) 
-            values (%(last_check)s, %(report_id)s)
-        '''
-        params = {
-            'last_check': datetime.datetime.utcnow(),
-            'report_id': report_id
-        }
-        self.u(sql, params)
-
-    def get_reportid(self):
-        sql = 'select report_id from cost_tracking'
-        return self.q_val(sql)
-
-    def update_reportid(self, last_check: datetime.datetime, report_id):
-        sql = 'update cost_tracking set last_check = %(last_check)s, report_id = %(report_id)s where only_row is true'
-        params = {'last_check': last_check, 'report_id': report_id}
-        self.u(sql, params)
-
     def add_cost_data(self, resource_identifier: str, unblended_cost: str):
         sql = '''
             insert into cost_data (resource_id, unblended_cost, synced)
