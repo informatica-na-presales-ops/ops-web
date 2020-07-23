@@ -22,8 +22,8 @@
                     <th>Cloud</th>
                     <th>Environment</th>
                     <th>Owner</th>
-                    <th>30 Day env cost</th>
-                    <th>Running Time</th>
+                    <th class="text-right">30 Day Cost</th>
+                    <th class="text-center">Running Time</th>
                     <th class="text-right">Machines</th>
                 </tr>
                 </thead>
@@ -36,16 +36,8 @@
                         <td>{{ e.cloud }}</td>
                         <td><a href="{{ url_for('environment_detail', environment=e.env_group) }}">{{ e.env_group }}</a></td>
                         <td>{{ e.owner }}</td>
-                        <td>
-                        {% if e.costsum >=500.00 %}
-                        <div class="text-danger">
-                        {% else %}
-                        <div class="text-light">
-                        {% endif %}
-                            ${{ e.costsum }}
-                        </div>
-                        </td>
-                        <td>{{ e.running_time_human }}</td>
+                        <td class="text-right {{ 'text-danger' if e.costsum >= 500 }}">$ {{ '%.2f' | format(e.costsum) }}</td>
+                        <td class="text-center">{{ e.running_time_human }}</td>
                         <td class="text-right">{{ e.instance_count }}</td>
                     </tr>
                 {% endfor %}
