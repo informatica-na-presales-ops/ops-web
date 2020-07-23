@@ -105,27 +105,12 @@ def admin():
     return flask.redirect(flask.url_for('admin_users'))
 
 
-@app.route('/admin/users')
-@permission_required('admin')
-def admin_users():
-    db: ops_web.db.Database = flask.g.db
-    flask.g.users = db.get_users()
-    flask.g.available_permissions = {
-        'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
-                  'cloud credentials'),
-        'sc-assignments': 'view and manage sales consultant assignments',
-        'survey-admin': 'view all opportunity debrief surveys'
-    }
-    flask.g.cloud_credentials = db.get_cloud_credentials()
-    return flask.render_template('admin-users.html')
-
-
 @app.route('/admin/cloud-credentials')
 @permission_required('admin')
 def admin_cloud_credentials():
     db: ops_web.db.Database = flask.g.db
     flask.g.cloud_credentials = db.get_cloud_credentials()
-    return flask.render_template('admin-cloud-credentials.html')
+    return flask.render_template('admin/cloud-credentials.html')
 
 
 @app.route('/admin/cloud-credentials/delete', methods=['POST'])
@@ -156,9 +141,49 @@ def admin_cloud_credentials_edit():
     return flask.redirect(flask.url_for('admin_cloud_credentials'))
 
 
-@app.route('/admin/edit-user', methods=['POST'])
+@app.route('/admin/cost-data', methods=['GET', 'POST'])
 @permission_required('admin')
-def admin_edit_user():
+def admin_cost_data():
+    db: ops_web.db.Database = flask.g.db
+    if flask.request.method == 'GET':
+        flask.g.cloudability_auth_token = db.get_setting('cloudability-auth-token')
+        flask.g.cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
+        return flask.render_template('admin/cost-data.html')
+    app.logger.debug(f'Cost data settings updated: {list(flask.request.values.lists())}')
+    db.add_log_entry(flask.g.email, 'Updated cost data settings (auth token or vendor account ids)')
+    db.set_setting('cloudability-auth-token', flask.request.values.get('cloudability-auth-token').strip())
+    vendor_account_ids = ' '.join(flask.request.values.get('cloudability-vendor-account-ids').strip().split())
+    db.set_setting('cloudability-vendor-account-ids', vendor_account_ids)
+    return flask.redirect(flask.url_for('admin_cost_data'))
+
+
+@app.route('/admin/cost-data/sync', methods=['POST'])
+@permission_required('admin')
+def admin_cost_data_sync():
+    db: ops_web.db.Database = flask.g.db
+    db.add_log_entry(flask.g.email, 'Manual cost data sync')
+    scheduler.add_job(ops_web.tasks.get_cost_data)
+    return flask.redirect(flask.url_for('admin_cost_data'))
+
+
+@app.route('/admin/users')
+@permission_required('admin')
+def admin_users():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.users = db.get_users()
+    flask.g.available_permissions = {
+        'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
+                  'cloud credentials'),
+        'sc-assignments': 'view and manage sales consultant assignments',
+        'survey-admin': 'view all opportunity debrief surveys'
+    }
+    flask.g.cloud_credentials = db.get_cloud_credentials()
+    return flask.render_template('admin/users.html')
+
+
+@app.route('/admin/users/edit', methods=['POST'])
+@permission_required('admin')
+def admin_users_edit():
     db: ops_web.db.Database = flask.g.db
     email = flask.request.values.get('email')
     permissions = flask.request.values.getlist('permissions')
@@ -167,9 +192,9 @@ def admin_edit_user():
     return flask.redirect(flask.url_for('admin'))
 
 
-@app.route('/admin/impersonate', methods=['POST'])
+@app.route('/admin/users/impersonate', methods=['POST'])
 @permission_required('admin')
-def admin_impersonate():
+def admin_users_impersonate():
     db: ops_web.db.Database = flask.g.db
     target = flask.request.form.get('target')
     db.add_log_entry(flask.g.email, f'Impersonate user {target}')

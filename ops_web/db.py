@@ -844,14 +844,14 @@ class Database(fort.PostgresDatabase):
     # settings
 
     def get_setting(self, setting_id: str) -> str:
-        sql = 'select setting_value from settings where setting_id = %(setting_id)s'
+        sql = '''select coalesce(setting_value, '') from settings where setting_id = %(setting_id)s'''
         params = {'setting_id': setting_id}
         return self.q_val(sql, params)
 
     def set_setting(self, setting_id: str, setting_value: str):
         sql = '''
             insert into settings (setting_id, setting_value)
-            values (%(settings_id)s, %(setting_value)s)
+            values (%(setting_id)s, %(setting_value)s)
             on conflict (setting_id) do update set setting_value = %(setting_value)s
         '''
         params = {'setting_id': setting_id, 'setting_value': setting_value}

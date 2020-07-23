@@ -15,21 +15,28 @@ log = logging.getLogger(__name__)
 def get_cost_data():
     config = ops_web.config.Config()
     log.info('Getting cost data from Cloudability')
-    if len(config.cloudability_vendor_account_ids) < 1:
-        log.info('CLOUDABILITY_VENDOR_ACCOUNT_IDS is empty')
-        return
+
     db = ops_web.db.Database(config)
+    account_ids = set(db.get_setting('cloudability-vendor-account-ids').split())
+    if len(account_ids) < 1:
+        log.info('cloudability-vendor-account-ids is empty')
+        return
+
+    auth_token = db.get_setting('cloudability-auth-token')
+    if auth_token == '':
+        log.info('cloudability-auth-token is empty')
+        return
 
     base_url = 'https://app.cloudability.com/api/1/reporting/cost'
-    token_only = {'auth_token': config.cloudability_auth_token}
+    token_only = {'auth_token': auth_token}
     query = {
-        'auth_token': config.cloudability_auth_token,
+        'auth_token': auth_token,
         'dimensions': 'resource_identifier',
         'metrics': 'unblended_cost',
         'start_date': '30 days ago at 00:00:00',
         'end_date': '23:59:59'
     }
-    filters = [f'vendor_account_identifier=={i}' for i in config.cloudability_vendor_account_ids]
+    filters = [f'vendor_account_identifier=={i}' for i in account_ids]
     filters.append('resource_identifier!=@(not set)')
     query['filters'] = ','.join(filters)
 
