@@ -206,88 +206,86 @@ class Database(fort.PostgresDatabase):
         return self.q(sql, {'email': email})
 
     def get_instance_zone(self, machine_id: str):
-        sql = '''
-        SELECT region FROM virtual_machines WHERE id=%(id)s
-        '''
+        sql = 'select region from virtual_machines where id=%(id)s'
         return self.q_one(sql, {'id': machine_id})
 
     def get_all_visible_machines(self) -> List[Dict]:
         sql = '''
-            SELECT account_id, cloud, region, id
-            FROM virtual_machines
-            WHERE visible IS TRUE
+            select account_id, cloud, region, id
+            from virtual_machines
+            where visible is true
         '''
         return self.q(sql)
 
     def get_machines_for_env(self, email: str, env_group: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT
+                select
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    CONCAT('$',cost) cost_agg, account_id,
-                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
-                    TRUE can_control,
-                    TRUE can_modify
-                FROM virtual_machines
-                WHERE visible IS TRUE
-                  AND env_group = %(env_group)s
-                ORDER BY name
+                    concat('$',cost) cost_agg, account_id,
+                    case when state = 'running' then now() - created else null end running_time,
+                    true can_control,
+                    true can_modify
+                from virtual_machines
+                where visible is true
+                  and env_group = %(env_group)s
+                order by name
             '''
         else:
             sql = '''
-                SELECT
+                select
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    CONCAT('$',cost) cost_agg, account_id,
-                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
-                    owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
+                    concat('$',cost) cost_agg, account_id,
+                    case when state = 'running' then now() - created else null end running_time,
+                    owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
-                FROM virtual_machines
-                WHERE visible IS TRUE
-                  AND env_group = %(env_group)s
-                ORDER BY name
+                from virtual_machines
+                where visible is true
+                  and env_group = %(env_group)s
+                order by name
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
 
     def get_machine(self, machine_id: str, email: str = None) -> Dict:
         if email is None or self.has_permission(email, 'admin'):
             sql = '''
-                SELECT
+                select
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, CONCAT('$',cost) cost_agg, account_id,
-                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
-                    TRUE can_control,
-                    TRUE can_modify
-                FROM virtual_machines
-                WHERE id = %(id)s
+                    dns_names, whitelist, vpc, termination_protection, concat('$', cost) cost_agg, account_id,
+                    case when state = 'running' then now() - created else null end running_time,
+                    true can_control,
+                    true can_modify
+                from virtual_machines
+                where id = %(id)s
             '''
         else:
             sql = '''
-                SELECT
+                select
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, CONCAT('$',cost) cost_agg, account_id,
-                    CASE WHEN state = 'running' THEN now() - created ELSE NULL END running_time,
-                    owner = %(email)s OR position(%(email)s in contributors) > 0 can_control,
+                    dns_names, whitelist, vpc, termination_protection, concat('$', cost) cost_agg, account_id,
+                    case when state = 'running' then now() - created else null end running_time,
+                    owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
-                FROM virtual_machines
-                WHERE id = %(id)s
+                from virtual_machines
+                where id = %(id)s
             '''
         return self.q_one(sql, {'id': machine_id, 'email': email})
 
     def set_machine_created(self, machine_id: str, created):
-        sql = 'UPDATE virtual_machines SET created = %(created)s WHERE id = %(id)s'
+        sql = 'update virtual_machines set created = %(created)s where id = %(id)s'
         self.u(sql, {'id': machine_id, 'created': created})
 
     def set_machine_public_ip(self, machine_id: str, public_ip: str = None):
-        sql = 'UPDATE virtual_machines SET public_ip = %(public_ip)s WHERE id = %(id)s'
+        sql = 'update virtual_machines set public_ip = %(public_ip)s where id = %(id)s'
         self.u(sql, {'id': machine_id, 'public_ip': public_ip})
 
     def set_machine_state(self, machine_id: str, state: str):
         params = {'id': machine_id, 'state': state}
-        sql = 'UPDATE virtual_machines SET state = %(state)s WHERE id = %(id)s'
+        sql = 'update virtual_machines set state = %(state)s where id = %(id)s'
         self.u(sql, params)
 
     def set_machine_tags(self, params: Dict):
@@ -296,19 +294,19 @@ class Database(fort.PostgresDatabase):
         #   'business_unit': '', 'environment': '', 'dns_names': ''
         # }
         sql = '''
-            UPDATE virtual_machines
-            SET running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
+            update virtual_machines
+            set running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
                 contributors = %(contributors)s, application_env = %(application_env)s,
                 business_unit = %(business_unit)s, env_group = %(environment)s, dns_names = %(dns_names)s
-            WHERE id = %(id)s
+            where id = %(id)s
         '''
         self.u(sql, params)
 
     def set_machine_termination_protection(self, machine_id: str, termination_protection: bool):
         sql = '''
-            UPDATE virtual_machines
-            SET termination_protection = %(termination_protection)s
-            WHERE id = %(id)s
+            update virtual_machines
+            set termination_protection = %(termination_protection)s
+            where id = %(id)s
         '''
         params = {
             'id': machine_id,
