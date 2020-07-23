@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 def get_cost_data():
     config = ops_web.config.Config()
     log.info('Getting cost data from Cloudability')
+    if len(config.cloudability_vendor_account_ids) < 1:
+        log.info('CLOUDABILITY_VENDOR_ACCOUNT_IDS is empty')
+        return
     db = ops_web.db.Database(config)
 
     base_url = 'https://app.cloudability.com/api/1/reporting/cost'
