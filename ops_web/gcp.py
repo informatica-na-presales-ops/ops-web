@@ -1,18 +1,22 @@
 import datetime
+import google.auth.exceptions
+import googleapiclient.discovery
+import logging
+import ops_web.config
 import time
 
-import googleapiclient.discovery
-from oauth2client.client import GoogleCredentials
-import logging
-
 log = logging.getLogger(__name__)
-import ops_web.config
 
 config = ops_web.config.Config()
 
 PROJECT_ID = config.gcp_project_id
-compute = googleapiclient.discovery.build('compute', 'v1', cache_discovery=False)
-computebeta = googleapiclient.discovery.build('compute', 'beta', cache_discovery=False)
+
+try:
+    compute = googleapiclient.discovery.build('compute', 'v1', cache_discovery=False)
+    computebeta = googleapiclient.discovery.build('compute', 'beta', cache_discovery=False)
+except google.auth.exceptions.DefaultCredentialsError as e:
+    log.critical('Could not find GCP credentials in environment')
+
 
 
 def create_machine_image(souceinstance, zone, name):
