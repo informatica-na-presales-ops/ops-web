@@ -23,7 +23,7 @@ class Database(fort.PostgresDatabase):
         self.add_permission(self.config.bootstrap_admin, 'admin')
 
     def get_users(self):
-        sql = 'SELECT email, permissions FROM permissions ORDER BY email'
+        sql = 'select email, permissions from permissions order by email'
         for record in self.q(sql):
             yield {'email': record['email'], 'permissions': record['permissions'].split()}
 
@@ -33,7 +33,7 @@ class Database(fort.PostgresDatabase):
         self.set_permissions(email, sorted(current_permissions))
 
     def get_permissions(self, email: str) -> List[str]:
-        sql = 'SELECT permissions FROM permissions WHERE email = %(email)s'
+        sql = 'select permissions from permissions where email = %(email)s'
         permissions = self.q_val(sql, {'email': email})
         if permissions is None:
             return []
@@ -41,9 +41,9 @@ class Database(fort.PostgresDatabase):
 
     def set_permissions(self, email: str, permissions: List[str]):
         params = {'email': email, 'permissions': ' '.join(sorted(set(permissions)))}
-        self.u('DELETE FROM permissions WHERE email = %(email)s', params)
+        self.u('delete from permissions where email = %(email)s', params)
         if permissions:
-            self.u('INSERT INTO permissions (email, permissions) VALUES (%(email)s, %(permissions)s)', params)
+            self.u('insert into permissions (email, permissions) values (%(email)s, %(permissions)s)', params)
 
     def has_permission(self, email: str, permission: str) -> bool:
         return permission in self.get_permissions(email)
