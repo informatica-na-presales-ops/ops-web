@@ -818,12 +818,12 @@ class Database(fort.PostgresDatabase):
 
     def get_cost_for_resource(self, resource_id: str) -> decimal.Decimal:
         sql = '''
-            select sum(unblended_cost)::numeric
+            select coalesce(sum(unblended_cost), '0')::numeric
             from cost_data
             where position(lower(%(resource_id)s) in lower(resource_id)) > 0
         '''
         params = {'resource_id': resource_id}
-        return self.q_val(sql, params) or decimal.Decimal(0)
+        return self.q_val(sql, params)
 
     # environment usage events
 
