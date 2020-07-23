@@ -42,6 +42,7 @@
                 <thead>
                 <tr>
                     <th>State</th>
+                    <th class="text-center">ID</th>
                     <th>Name</th>
                     <th>Public IP</th>
                     <th>Cloud</th>
@@ -49,12 +50,11 @@
                     <th>Type</th>
                     <th>Running Time</th>
                     <th>Running Schedule</th>
-                    <th>Instance ID</th>
                     <th class="text-right">30 Day Cost</th>
                     <th>Owner</th>
-                    <th class="text-center">Whitelist</th>
+                    <th class="text-center">Firewall</th>
                     <th></th>
-                    <th></th>
+                    <th class="text-center">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -64,26 +64,38 @@
                             <span class="oi oi-lock-{{ 'un' if not m.termination_protection }}locked {{ g.machine_state_class_map[m.state] }}" title="This machine can{{ 'not' if m.termination_protection }} be deleted"></span>
                             {{ m.state }}
                         </td>
-                        <td title="{{ m.id }}">{{ m.name }}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="popover"
+                                    data-container="body" data-placement="bottom" data-html="true"
+                                    data-content="<span class='select-all'>{{ m.id }}</span>">
+                                <span class="oi oi-info"></span>
+                            </button>
+                        </td>
+                        <td>{{ m.name }}</td>
                         <td>{{ m.public_ip or '' }}</td>
                         <td>{{ m.cloud }}</td>
                         <td>{{ m.region }}</td>
                         <td>{{ m.type }}</td>
                         <td>{{ m.running_time_human }}</td>
                         <td>{{ m.running_schedule }}</td>
-                        <td>{{ m.id }}</td>
                         <td class="text-right">{{ m.cost_agg }}</td>
                         <td>{{ m.owner }}</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="popover" title="Whitelist" data-content="{{ m.whitelist if m.whitelist else 'No whitelist' }}">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="popover"
+                                    title="Firewall" data-content="{{ m.whitelist if m.whitelist else 'No extra IPs allowed' }}">
                                 <span class="oi oi-key"></span>
                             </button>
                         </td>
-                        <td>{% if m.vpc == 'vpc-07a70370f586a244d' %} <button type="button" class="btn btn-sm btn-outline-warning"  title="This instance cannot be copied" data-toggle="popover" data-trigger="focus" data-content="This instance is in the training or customer facing VPC and cannot be copied. Instances deployed into this VPC can only be shut down or terminated.Contact Ops team if you need help.">
-                            <span class="oi oi-warning"> </span>
-                        </button>
-                        {%  endif %}</td>
                         <td>
+                        {% if m.vpc == 'vpc-07a70370f586a244d' %}
+                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                    title="This machine cannot be copied" data-toggle="popover" data-trigger="focus"
+                                    data-content="This machine is in the training or customer-facing VPC and cannot be copied. Machines deployed into this VPC can only be shut down or terminated. Contact Ops team if you need help.">
+                                <span class="oi oi-warning"></span>
+                            </button>
+                        {% endif %}
+                        </td>
+                        <td class="text-center">
                             <div class="btn-group btn-group-sm">
                                 <button type="submit" class="btn btn-sm btn-outline-light" title="Start machine" {{ 'disabled' if m.state != 'stopped' or not m.can_control }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_start') }}">
                                     <span class="oi oi-media-play"></span>
@@ -95,13 +107,13 @@
                                     <span class="oi oi-pencil"></span>
                                 </button>
                                 {% if m.cloud == 'gcp' %}
-                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-gcpimage-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-gcpimage-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
                                     <span class="oi oi-hard-drive"></span>
-                                 </button>
+                                </button>
                                 {% else %}
-                                  <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
                                     <span class="oi oi-hard-drive"></span>
-                                 </button>
+                                </button>
                                 {% endif %}
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine" {{ 'disabled' if m.state in ['terminated', 'terminating'] or m.termination_protection or not m.can_modify }}>
                                     <span class="oi oi-trash"></span>
@@ -126,7 +138,7 @@
                             <span class="badge badge-light">Type: {{ m.type }}</span>
                             {% if m.running_time_human %}<span class="badge badge-light">Running Time: {{ m.running_time_human }}</span>{% endif %}
                             <span class="badge badge-light">Running Schedule: {{ m.running_schedule }}</span>
-                            <span class="badge badge-light">Instance ID: {{ m.id }}</span>
+                            <span class="badge badge-light">Machine ID: {{ m.id }}</span>
                             <span class="badge badge-light">Cost: {{ m.cost_agg }}</span>
                             <span class="badge badge-light">Protected: {{ m.termination_protection }}</span>
                             <span class="badge badge-light">Owner: {{ m.owner }}</span>

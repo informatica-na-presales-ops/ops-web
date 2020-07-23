@@ -15,7 +15,7 @@
 
     <div class="row bump-top-padding">
         <div class="col-12">
-            <table class="table table-dark table-striped table-sm d-none d-sm-block">
+            <table class="table table-dark table-striped table-hover table-sm d-none d-sm-block">
                 <thead>
                 <tr>
                     <th></th>
@@ -29,12 +29,12 @@
                 </thead>
                 <tbody>
                 {% for e in g.environments %}
-                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}">
+                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}" data-href="{{ url_for('environment_detail', environment=e.env_group) }}">
                         <td>
                             <span class="oi oi-media-record {{ 'text-success' if e.running else 'text-danger' }}"></span>
                         </td>
                         <td>{{ e.cloud }}</td>
-                        <td><a href="{{ url_for('environment_detail', environment=e.env_group) }}">{{ e.env_group }}</a></td>
+                        <td>{{ e.env_group }}</td>
                         <td>{{ e.owner }}</td>
                         <td class="text-right {{ 'text-danger' if e.costsum >= 500 }}">$ {{ '%.2f' | format(e.costsum) }}</td>
                         <td class="text-center">{{ e.running_time_human }}</td>
@@ -66,4 +66,5 @@
     {{ super() }}
     <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
     <script src="{{ url_for('static', filename='filter.js') }}"></script>
+    <script src="{{ url_for('static', filename='data-href-clickable.js') }}"></script>
 {% endblock %}
