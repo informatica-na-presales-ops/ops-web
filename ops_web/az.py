@@ -125,7 +125,13 @@ class AZClient:
                         public_ip = public_ips.get(ip_config.public_ip_address.id)
                         params['public_ip'] = public_ip.ip_address
 
+                # Find cost of virtual machine and all attached disks and network interfaces
                 cost = self.db.get_cost_for_resource(vm.id)
+                cost += self.db.get_cost_for_resource(vm.storage_profile.os_disk.managed_disk.id)
+                for disk in vm.storage_profile.data_disks:
+                    cost += self.db.get_cost_for_resource(disk.managed_disk.id)
+                for interface in vm.network_profile.network_interfaces:
+                    cost += self.db.get_cost_for_resource(interface.id)
                 params['cost'] = cost
 
                 yield params
