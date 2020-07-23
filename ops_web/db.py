@@ -58,8 +58,8 @@ class Database(fort.PostgresDatabase):
             'action': action
         }
         sql = '''
-            INSERT INTO log_entries (id, log_time, actor, action)
-            VALUES (%(id)s, %(log_time)s, %(actor)s, %(action)s)
+            insert into log_entries (id, log_time, actor, action)
+            values (%(id)s, %(log_time)s, %(actor)s, %(action)s)
         '''
         self.u(sql, params)
 
@@ -79,8 +79,8 @@ class Database(fort.PostgresDatabase):
 
     def add_cloud_credentials(self, params: Dict) -> uuid.UUID:
         sql = '''
-            INSERT INTO cloud_credentials (id, cloud, description, username, password, azure_tenant_id)
-            VALUES (%(id)s, %(cloud)s, %(description)s, %(username)s, %(password)s, %(azure_tenant_id)s)
+            insert into cloud_credentials (id, cloud, description, username, password, azure_tenant_id)
+            values (%(id)s, %(cloud)s, %(description)s, %(username)s, %(password)s, %(azure_tenant_id)s)
         '''
         params['id'] = uuid.uuid4()
         if params.get('cloud') == 'aws':
@@ -90,31 +90,33 @@ class Database(fort.PostgresDatabase):
 
     def delete_cloud_credentials(self, cred_id: uuid.UUID):
         params = {'id': cred_id}
-        for sql in ['DELETE FROM cloud_credentials WHERE id = %(id)s',
-                    'UPDATE images SET visible = FALSE WHERE account_id = %(id)s',
-                    'UPDATE virtual_machines SET visible = FALSE WHERE account_id = %(id)s']:
+        for sql in ['delete from cloud_credentials where id = %(id)s',
+                    'update images set visible = false where account_id = %(id)s',
+                    'update virtual_machines set visible = false where account_id = %(id)s']:
             self.u(sql, params)
 
     def get_cloud_credentials(self):
         sql = '''
-            SELECT id, cloud, description, username, azure_tenant_id FROM cloud_credentials ORDER BY cloud, description
+            select id, cloud, description, username, azure_tenant_id
+            from cloud_credentials
+            order by cloud, description
         '''
         return self.q(sql)
 
     def get_all_credentials_for_use(self, cloud: str) -> List[Dict]:
         sql = '''
-            SELECT id, username, password, azure_tenant_id
-            FROM cloud_credentials
-            WHERE cloud = %(cloud)s
+            select id, username, password, azure_tenant_id
+            from cloud_credentials
+            where cloud = %(cloud)s
         '''
         params = {'cloud': cloud}
         return self.q(sql, params)
 
     def get_one_credential_for_use(self, account_id: uuid.UUID) -> Dict:
         sql = '''
-            SELECT id, username, password, azure_tenant_id
-            FROM cloud_credentials
-            WHERE id = %(id)s
+            select id, username, password, azure_tenant_id
+            from cloud_credentials
+            where id = %(id)s
         '''
         params = {'id': account_id}
         return self.q_one(sql, params)
@@ -122,17 +124,17 @@ class Database(fort.PostgresDatabase):
     def update_cloud_credentials(self, params: Dict):
         if 'password' in params:
             sql = '''
-                UPDATE cloud_credentials
-                SET cloud = %(cloud)s, description = %(description)s, username = %(username)s, password = %(password)s,
+                update cloud_credentials
+                set cloud = %(cloud)s, description = %(description)s, username = %(username)s, password = %(password)s,
                     azure_tenant_id = %(azure_tenant_id)s
-                WHERE id = %(id)s
+                where id = %(id)s
             '''
         else:
             sql = '''
-                UPDATE cloud_credentials
-                SET cloud = %(cloud)s, description = %(description)s, username = %(username)s,
+                update cloud_credentials
+                set cloud = %(cloud)s, description = %(description)s, username = %(username)s,
                     azure_tenant_id = %(azure_tenant_id)s
-                WHERE id = %(id)s
+                where id = %(id)s
             '''
         self.u(sql, params)
 
