@@ -14,7 +14,7 @@
 <body class="bg-dark">
 
 <div class="container-fluid">
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-6">
             {% block breadcrumb %}
             <a class="btn btn-outline-light" href="#">
@@ -33,9 +33,24 @@
         </div>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="row pt-3">
+        <div class="col-12">
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
     {% block main_content %}{% endblock %}
 
-    <div class="row bump-top-padding pb-2">
+    <div class="row pt-3 pb-2">
         <div class="col-12">
             <hr class="border-light">
             <small class="text-muted">

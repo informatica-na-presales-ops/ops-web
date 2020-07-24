@@ -163,6 +163,7 @@ def admin_cost_data_sync():
     db: ops_web.db.Database = flask.g.db
     db.add_log_entry(flask.g.email, 'Manual cost data sync')
     scheduler.add_job(ops_web.tasks.get_cost_data)
+    flask.flash('Cost data synchronization has started.', 'primary')
     return flask.redirect(flask.url_for('admin_cost_data'))
 
 
