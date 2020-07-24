@@ -24,7 +24,8 @@
                     <div class="form-group">
                     {% for role in g.roles|sort(attribute='role_name') %}
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="{{ role.id }}" name="selected-roles" value="{{ role.id }}" {{ 'checked' if role.generate_survey }}>
+                            <input type="checkbox" class="custom-control-input" id="{{ role.id }}" name="selected-roles"
+                                   value="{{ role.id }}" {{ 'checked' if role.generate_survey }}>
                             <label class="custom-control-label" for="{{ role.id }}">{{ role.role_name }}</label>
                         </div>
                     {% endfor %}
