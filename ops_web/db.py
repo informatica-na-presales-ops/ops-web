@@ -843,8 +843,8 @@ class Database(fort.PostgresDatabase):
 
     # settings
 
-    def get_setting(self, setting_id: str) -> str:
-        sql = '''select coalesce(setting_value, '') from settings where setting_id = %(setting_id)s'''
+    def get_setting(self, setting_id: str) -> Optional[str]:
+        sql = '''select setting_value from settings where setting_id = %(setting_id)s'''
         params = {'setting_id': setting_id}
         return self.q_val(sql, params)
 
