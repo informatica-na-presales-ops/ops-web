@@ -26,7 +26,7 @@ import ipaddress
 from typing import Dict, List
 
 config = ops_web.config.Config()
-scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 10})
+scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 900})
 
 app = flask.Flask(__name__)
 app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_port=1)
@@ -423,7 +423,7 @@ def environment_start(environment):
             if cloud == 'gcp':
                 start_machine(machine_id)
             else:
-                scheduler.add_job(start_machine, args=[machine_id], misfire_grace_time=900)
+                scheduler.add_job(start_machine, args=[machine_id])
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -445,7 +445,7 @@ def environment_stop(environment):
             if cloud == 'gcp':
                 stop_machine(machine_id)
             else:
-                scheduler.add_job(stop_machine, args=[machine_id], misfire_grace_time=900)
+                scheduler.add_job(stop_machine, args=[machine_id])
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
