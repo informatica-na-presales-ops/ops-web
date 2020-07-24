@@ -17,15 +17,16 @@ def get_cost_data():
     log.info('Getting cost data from Cloudability')
 
     db = ops_web.db.Database(config)
-    account_ids = set(db.get_setting('cloudability-vendor-account-ids').split())
-    if len(account_ids) < 1:
-        log.info('cloudability-vendor-account-ids is empty')
+    auth_token = db.get_setting('cloudability-auth-token')
+    if not auth_token:
+        log.info('cloudability-auth-token is not set')
         return
 
-    auth_token = db.get_setting('cloudability-auth-token')
-    if auth_token == '':
-        log.info('cloudability-auth-token is empty')
+    cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
+    if not cloudability_vendor_account_ids:
+        log.info('cloudability-vendor-account-ids is not set')
         return
+    account_ids = set(cloudability_vendor_account_ids.split())
 
     base_url = 'https://app.cloudability.com/api/1/reporting/cost'
     token_only = {'auth_token': auth_token}
