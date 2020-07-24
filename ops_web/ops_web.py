@@ -162,7 +162,7 @@ def admin_cost_data():
 def admin_cost_data_sync():
     db: ops_web.db.Database = flask.g.db
     db.add_log_entry(flask.g.email, 'Manual cost data sync')
-    scheduler.add_job(ops_web.tasks.get_cost_data)
+    scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
     flask.flash('Cost data synchronization has started.', 'primary')
     return flask.redirect(flask.url_for('admin_cost_data'))
 
@@ -1528,14 +1528,14 @@ def main():
             scheduler.add_job(sync_machines)
             scheduler.add_job(check_sync, 'interval', minutes=1)
 
+        # cost data synchronization
+        scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
+        scheduler.add_job(ops_web.tasks.get_cost_data, 'interval', hours=24, args=[apm.client])
+
         # op debrief survey jobs
         if 'op-debrief' in config.feature_flags:
             scheduler.add_job(ops_web.op_debrief_surveys.generate, args=[config, app])
             scheduler.add_job(ops_web.op_debrief_surveys.generate, 'interval', hours=6, args=[config, app])
             scheduler.add_job(ops_web.op_debrief_surveys.remind, 'interval', hours=24, args=[config, app])
-
-        if 'cloudability-cost' in config.feature_flags:
-            scheduler.add_job(ops_web.tasks.get_cost_data)
-            scheduler.add_job(ops_web.tasks.get_cost_data, 'interval', hours=24)
 
     waitress.serve(app, ident=None, threads=config.web_server_threads)

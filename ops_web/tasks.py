@@ -12,7 +12,8 @@ import urllib.parse
 log = logging.getLogger(__name__)
 
 
-def get_cost_data():
+def get_cost_data(apm: elasticapm.Client):
+    apm.begin_transaction('task')
     config = ops_web.config.Config()
     log.info('Getting cost data from Cloudability')
 
@@ -20,12 +21,15 @@ def get_cost_data():
     auth_token = db.get_setting('cloudability-auth-token')
     if not auth_token:
         log.info('cloudability-auth-token is not set')
+        apm.end_transaction('get-cost-data')
         return
 
     cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
     if not cloudability_vendor_account_ids:
         log.info('cloudability-vendor-account-ids is not set')
+        apm.end_transaction('get-cost-data')
         return
+
     account_ids = set(cloudability_vendor_account_ids.split())
 
     base_url = 'https://app.cloudability.com/api/1/reporting/cost'
@@ -69,10 +73,11 @@ def get_cost_data():
     else:
         log.critical(f'Cloudability report job {job_id} is {job_status}')
     log.info('Done getting cost data from Cloudability')
+    apm.end_transaction('get-cost-data')
 
 
 def update_termination_protection(apm: elasticapm.Client, db: ops_web.db.Database):
-    apm.begin_transaction('update_termination_protection')
+    apm.begin_transaction('task')
     log.info('Checking termination protection for all AWS machines')
     sync_start = datetime.datetime.utcnow()
 
@@ -97,4 +102,4 @@ def update_termination_protection(apm: elasticapm.Client, db: ops_web.db.Databas
         concurrent.futures.wait(fs)
     sync_duration = datetime.datetime.utcnow() - sync_start
     log.info(f'Done checking termination protection for all AWS machines / {sync_duration}')
-    apm.end_transaction()
+    apm.end_transaction('update-termination-protection')
