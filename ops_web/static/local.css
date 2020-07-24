@@ -1,17 +1,13 @@
-.bump-top-padding {
-    padding-top: 10px;
-}
-
 .date-column { width: 100px; }
 
 .mw-800px { max-width: 800px; }
 
-/* for displaying hosts file in environment detail pages */
+/* for displaying hosts file and machine id in environment detail pages */
 .select-all {
     user-select: all;
 }
 
-/* for making just about anything look clickable (used on table rows in op-debrief) */
+/* for making just about anything look clickable (used on table rows in environment list and op-debrief) */
 [data-href] {
     cursor: pointer;
 }

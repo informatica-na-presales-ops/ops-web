@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block main_content %}
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12">
             <h1 class="text-light">Sync info</h1>
             <p class="text-light">The information in this tool is synced from cloud providers (Amazon Web Services, Azure, &c.) periodically.</p>
@@ -26,7 +26,7 @@
     </div>
 
     {% if 'admin' in g.permissions %}
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12">
             <form action="{{ url_for('sync_now') }}" method="post">
                 <button type="submit" class="btn btn-outline-success" {% if g.sync_data.syncing_now %}disabled{% endif %}>
@@ -42,13 +42,13 @@
     </div>
     {% endif %}
 
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12">
             <p class="text-light">The following settings affect the sync process:</p>
         </div>
     </div>
 
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12 col-sm-6 col-md-5 col-lg-4 col-xl-3">
             <table class="table table-dark table-striped">
                 <tbody>

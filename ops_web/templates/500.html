@@ -1,18 +1,17 @@
 {% extends 'index.html' %}
 
 {% block breadcrumb %}
-    <a class="btn btn-outline-light" href="#" onclick="history.go(-1)">Go Back</a>
+    <a class="btn btn-outline-light" href="#" onclick="history.go(-1)">
         <span class="oi oi-chevron-left"></span>
-
+        Go Back
     </a>
 {% endblock %}
 
 {% block main_content %}
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12">
             <h1 class="text-light">Exception!</h1>
             <p class="text-light">{{ error }}</p>
-            </p>
         </div>
     </div>
 {% endblock %}

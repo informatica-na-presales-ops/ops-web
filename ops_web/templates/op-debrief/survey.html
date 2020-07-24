@@ -8,14 +8,14 @@
 {% endblock %}
 
 {% block main_content %}
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12">
             <h1 class="text-light">Opportunity debrief survey</h1>
             <p class="text-light lead">{{ g.survey.opportunity_number }} / {{ g.survey.email }}</p>
         </div>
     </div>
 
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
             {% if g.survey.email != g.email %}
                 <div class="alert alert-warning">You are viewing someone else&#x02bc;s survey.</div>
@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <div class="row bump-top-padding">
+    <div class="row pt-3">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
             <form method="post" class="text-light">
                 <div class="form-group">
