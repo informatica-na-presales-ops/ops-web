@@ -1340,6 +1340,7 @@ def toolbox():
 
 
 def delete_machine(machine_id):
+    apm.client.begin_transaction('task')
     app.logger.info(f'Attempting to delete machine {machine_id}')
     db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
@@ -1355,9 +1356,11 @@ def delete_machine(machine_id):
         ops_web.az.delete_machine(az, machine_id)
     db.set_machine_public_ip(machine_id)
     db.set_machine_state(machine_id, 'terminated')
+    apm.client.end_transaction('delete-machine')
 
 
 def start_machine(machine_id):
+    apm.client.begin_transaction('task')
     app.logger.info(f'Attempting to start machine {machine_id}')
     db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
@@ -1381,9 +1384,11 @@ def start_machine(machine_id):
         zone = machine.get('region')
         app.logger.info(zone)
         ops_web.gcp.start_machine(machine_id, zone)
+    apm.client.end_transaction('start-machine')
 
 
 def stop_machine(machine_id):
+    apm.client.begin_transaction('task')
     app.logger.info(f'Attempting to stop machine {machine_id}')
     db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
@@ -1406,9 +1411,11 @@ def stop_machine(machine_id):
     elif cloud == 'gcp':
         zone = machine.get('region')
         ops_web.gcp.stop_machine(machine_id, zone)
+    apm.client.end_transaction('stop-machine')
 
 
 def check_sync():
+    apm.client.begin_transaction('task')
     app.logger.debug('Checking for a stuck sync ...')
     db = ops_web.db.Database(config)
     sync_data = db.get_sync_data()
@@ -1418,10 +1425,11 @@ def check_sync():
         if duration > datetime.timedelta(minutes=config.auto_sync_max_duration):
             app.logger.warning(f'Sync has been running for {duration}, aborting now ...')
             db.end_sync()
+    apm.client.end_transaction('check-sync')
 
 
 def sync_machines():
-    apm.client.begin_transaction('sync_machines')
+    apm.client.begin_transaction('task')
     app.logger.info('Syncing information from cloud providers now ...')
 
     db = ops_web.db.Database(config)
@@ -1492,7 +1500,7 @@ def sync_machines():
     app.logger.info(
         f'Done syncing virtual machines / AWS {aws_duration} / Azure {az_duration} / GCP {gcp_duration} / total {sync_duration}')
     db.end_sync()
-    apm.client.end_transaction()
+    apm.client.end_transaction('sync-machines')
 
 
 def main():
