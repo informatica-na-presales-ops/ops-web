@@ -159,7 +159,7 @@ class Database(fort.PostgresDatabase):
                 sum(cost)::numeric cost_n,
                 count(*) instance_count,
                 bool_or(state = 'running') running,
-                max(case when state = 'running' then now() - created else null end) running_time,
+                max(case when state = 'running' then now() - created end) running_time,
                 lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
             from virtual_machines
             where visible is true
@@ -179,7 +179,7 @@ class Database(fort.PostgresDatabase):
                     sum(cost)::numeric cost_n,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
-                    max(case when state = 'running' then now() - created else null end) running_time,
+                    max(case when state = 'running' then now() - created end) running_time,
                     lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
                 from virtual_machines
                 where visible is true
@@ -197,7 +197,7 @@ class Database(fort.PostgresDatabase):
                     sum(cost)::numeric cost_n,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
-                    max(case when state = 'running' then now() - created else null end) running_time,
+                    max(case when state = 'running' then now() - created end) running_time,
                     lower(env_group || ' ' || owner || string_agg(id, ', ') ) filter_value
                 from virtual_machines
                 where visible is true
@@ -227,7 +227,7 @@ class Database(fort.PostgresDatabase):
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
                     cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created else null end running_time,
+                    case when state = 'running' then now() - created end running_time,
                     true can_control,
                     true can_modify
                 from virtual_machines
@@ -241,7 +241,7 @@ class Database(fort.PostgresDatabase):
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
                     cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created else null end running_time,
+                    case when state = 'running' then now() - created end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
                 from virtual_machines
@@ -258,7 +258,7 @@ class Database(fort.PostgresDatabase):
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
                     dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created else null end running_time,
+                    case when state = 'running' then now() - created end running_time,
                     true can_control,
                     true can_modify
                 from virtual_machines
@@ -270,7 +270,7 @@ class Database(fort.PostgresDatabase):
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
                     dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created else null end running_time,
+                    case when state = 'running' then now() - created end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
                 from virtual_machines
@@ -322,29 +322,20 @@ class Database(fort.PostgresDatabase):
     def get_groups(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT
-                    id,
-                    cloud,
-                    inbound_rules,
-                    group_name,
-                    owner,
-                    account_id,
-                    lower(coalesce(id,'') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) filter_value 
-                FROM security_group
+                select
+                    id, cloud, inbound_rules, group_name, owner, account_id,
+                    lower(coalesce(id, '') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) as
+                    filter_value 
+                from security_group
                 '''
         else:
             sql = '''
-                SELECT
-                    id,
-                    cloud,
-                    inbound_rules,
-                    group_name,
-                    owner,
-                    account_id,
-                    lower(coalesce(id,'') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) filter_value 
-                FROM security_group
-                WHERE 
-                 (owner = %(email)s)
+                select
+                    id, cloud, inbound_rules, group_name, owner, account_id,
+                    lower(coalesce(id, '') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) as
+                    filter_value 
+                from security_group
+                where owner = %(email)s
             '''
         return self.q(sql, {'email': email})
 
@@ -352,18 +343,8 @@ class Database(fort.PostgresDatabase):
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
-                    id,
-                    cloud,
-                    region,
-                    name,
-                    owner,
-                    true can_modify,
-                    state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
-                    public,
-                    state,
-                    created,
-                    account_id,
-                    cost,
+                    id, cloud, region, name, owner, public, state, created, account_id, cost,
+                    true can_modify, state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
                 from images
@@ -373,18 +354,8 @@ class Database(fort.PostgresDatabase):
         else:
             sql = '''
                 select
-                    id,
-                    cloud,
-                    region,
-                    name,
-                    owner,
-                    owner = %(email)s can_modify,
-                    state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
-                    public,
-                    state,
-                    created,
-                    account_id,
-                    cost,
+                    id, cloud, region, name, owner, public, state, created, account_id, cost,
+                    owner = %(email)s can_modify, state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
                 from images
@@ -402,12 +373,12 @@ class Database(fort.PostgresDatabase):
         return self.q_one(sql, {'id': image_id})
 
     def set_image_tags(self, image_id: str, name: str, owner: str, public: bool):
-        sql = 'UPDATE images SET name = %(name)s, owner = %(owner)s, public = %(public)s WHERE id = %(id)s'
+        sql = 'update images set name = %(name)s, owner = %(owner)s, public = %(public)s where id = %(id)s'
         params = {'id': image_id, 'name': name, 'owner': owner, 'public': public}
         self.u(sql, params)
 
     def set_image_state(self, image_id: str, state: str):
-        sql = 'UPDATE images SET state = %(state)s WHERE id = %(id)s'
+        sql = 'update images set state = %(state)s where id = %(id)s'
         params = {'id': image_id, 'state': state}
         self.u(sql, params)
 
@@ -415,39 +386,39 @@ class Database(fort.PostgresDatabase):
 
     def start_sync(self):
         sql = '''
-            UPDATE sync_tracking
-            SET syncing_now = TRUE, last_sync_start = %(last_sync_start)s, last_sync_end = NULL
-            WHERE only_row IS TRUE
+            update sync_tracking
+            set syncing_now = true, last_sync_start = %(last_sync_start)s, last_sync_end = null
+            where only_row is true
         '''
         self.u(sql, {'last_sync_start': datetime.datetime.utcnow()})
 
     def end_sync(self):
         sql = '''
-            UPDATE sync_tracking
-            SET syncing_now = FALSE, last_sync_end = %(last_sync_end)s
-            WHERE only_row IS TRUE
+            update sync_tracking
+            set syncing_now = false, last_sync_end = %(last_sync_end)s
+            where only_row is true
         '''
         self.u(sql, {'last_sync_end': datetime.datetime.utcnow()})
 
     def get_sync_data(self):
-        sql = 'SELECT syncing_now, last_sync_start, last_sync_end FROM sync_tracking'
+        sql = 'select syncing_now, last_sync_start, last_sync_end from sync_tracking'
         for row in self.q(sql):
             return row
 
     def pre_sync(self, cloud: str):
         params = {'cloud': cloud}
         sql = '''
-            UPDATE virtual_machines SET synced = FALSE WHERE (synced IS TRUE OR synced IS NULL) AND cloud = %(cloud)s
+            update virtual_machines set synced = false where (synced is true or synced is null) and cloud = %(cloud)s
         '''
         self.u(sql, params)
-        sql = 'UPDATE images SET synced = FALSE WHERE (synced IS TRUE OR synced IS NULL) AND cloud = %(cloud)s'
+        sql = 'update images set synced = false where (synced is true or synced is null) and cloud = %(cloud)s'
         self.u(sql, params)
 
     def post_sync(self, cloud: str):
         params = {'cloud': cloud}
-        sql = 'UPDATE virtual_machines SET visible = FALSE WHERE synced IS FALSE AND cloud = %(cloud)s'
+        sql = 'update virtual_machines set visible = false where synced is false and cloud = %(cloud)s'
         self.u(sql, params)
-        sql = 'UPDATE images SET visible = FALSE WHERE synced IS FALSE AND cloud = %(cloud)s'
+        sql = 'update images set visible = false where synced is false and cloud = %(cloud)s'
         self.u(sql, params)
 
     def add_machine(self, params: Dict):
@@ -457,30 +428,30 @@ class Database(fort.PostgresDatabase):
         #   'state_transition_time': '', 'application_env': '', 'business_unit': '', 'dns_names': '', 'whitelist': '',
         #   'account_id': ''
         # }
-        sql = 'SELECT id FROM virtual_machines WHERE id = %(id)s'
+        sql = 'select id from virtual_machines where id = %(id)s'
         if self.q(sql, params):
             sql = '''
-                UPDATE virtual_machines
-                SET cloud = %(cloud)s, region = %(region)s, env_group = %(environment)s, name = %(name)s,
+                update virtual_machines
+                set cloud = %(cloud)s, region = %(region)s, env_group = %(environment)s, name = %(name)s,
                     owner = %(owner)s, state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s,
                     type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
                     state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
                     business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,
                     whitelist = %(whitelist)s, vpc = %(vpc)s, cost = %(cost)s, account_id = %(account_id)s,
-                    visible = TRUE, synced = TRUE
-                WHERE id = %(id)s
+                    visible = true, synced = true
+                where id = %(id)s
             '''
         else:
             sql = '''
-                INSERT INTO virtual_machines (
+                insert into virtual_machines (
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,
                     vpc, cost, account_id, visible, synced
-                ) VALUES (
+                ) values (
                     %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
                     %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
                     %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s, %(vpc)s,
-                    %(cost)s, %(account_id)s, TRUE, TRUE
+                    %(cost)s, %(account_id)s, true, true
                 )
             '''
         self.u(sql, params)
@@ -516,19 +487,19 @@ class Database(fort.PostgresDatabase):
         #   'id': '', 'cloud': '', 'owner':'', 'inbound_rules':'', 'group_name':'', 'account_id': ''
         # }
 
-        sql = 'SELECT id FROM security_group WHERE id = %(id)s'
+        sql = 'select id from security_group where id = %(id)s'
         if self.q(sql, params):
             sql = '''
-                UPDATE security_group
-                SET cloud = %(cloud)s, owner = %(owner)s, inbound_rules = %(inbound_rules)s,
+                update security_group
+                set cloud = %(cloud)s, owner = %(owner)s, inbound_rules = %(inbound_rules)s,
                     group_name = %(group_name)s, account_id = %(account_id)s
-                WHERE id = %(id)s
+                where id = %(id)s
            '''
         else:
             sql = '''
-                INSERT INTO security_group (
+                insert into security_group (
                     id, cloud, owner, inbound_rules, group_name, account_id
-                ) VALUES (
+                ) values (
                     %(id)s, %(cloud)s, %(owner)s, %(inbound_rules)s, %(group_name)s, %(account_id)s
                 )
             '''
@@ -891,14 +862,14 @@ class Database(fort.PostgresDatabase):
         if self.version < 1:
             self.log.info('Migrating database to schema version 1')
             self.u('''
-                CREATE TABLE schema_versions (
-                    schema_version integer PRIMARY KEY,
+                create table schema_versions (
+                    schema_version integer primary key,
                     migration_timestamp timestamp
                 )
             ''')
             self.u('''
-                CREATE TABLE virtual_machines (
-                    id text PRIMARY KEY,
+                create table virtual_machines (
+                    id text primary key,
                     cloud text,
                     region text,
                     env_group text,
@@ -912,10 +883,9 @@ class Database(fort.PostgresDatabase):
                     active boolean
                 )
             ''')
-
             self.u('''
-                CREATE TABLE permissions (
-                    email text PRIMARY KEY,
+                create table permissions (
+                    email text primary key,
                     permissions text
                 )
             ''')
@@ -924,36 +894,36 @@ class Database(fort.PostgresDatabase):
             self.log.info('Migrating database to schema version 2')
             # noinspection SqlResolve
             self.u('''
-                ALTER TABLE virtual_machines
-                RENAME COLUMN active TO visible
+                alter table virtual_machines
+                rename column active to visible
             ''')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN synced boolean
+                alter table virtual_machines
+                add column synced boolean
             ''')
             self.u('''
-                CREATE TABLE sync_tracking (
-                    only_row boolean PRIMARY KEY DEFAULT TRUE CONSTRAINT only_row_constraint CHECK (only_row),
+                create table sync_tracking (
+                    only_row boolean primary key default true constraint only_row_constraint check (only_row),
                     syncing_now boolean,
                     last_sync_start timestamp,
                     last_sync_end timestamp
                 )
             ''')
-            self.u('INSERT INTO sync_tracking (syncing_now) VALUES (FALSE)')
+            self.u('insert into sync_tracking (syncing_now) values (false)')
             self.add_schema_version(2)
         if self.version < 3:
             self.log.info('Migrating database to schema version 3')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN created timestamp,
-                ADD COLUMN state_transition_time timestamp
+                alter table virtual_machines
+                add column created timestamp,
+                add column state_transition_time timestamp
             ''')
             self.add_schema_version(3)
         if self.version < 4:
             self.log.info('Migrating database to schema version 4')
             self.u('''
-                CREATE TABLE images (
-                    id text PRIMARY KEY,
+                create table images (
+                    id text primary key,
                     cloud text,
                     region text,
                     name text,
@@ -968,27 +938,27 @@ class Database(fort.PostgresDatabase):
         if self.version < 5:
             self.log.info('Migrating database to schema version 5')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN application_env text,
-                ADD COLUMN business_unit text
+                alter table virtual_machines
+                add column application_env text,
+                add column business_unit text
             ''')
             self.add_schema_version(5)
         if self.version < 6:
             self.log.info('Migrating database to schema version 6')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN contributors text
+                alter table virtual_machines
+                add column contributors text
             ''')
             self.u('''
-                ALTER TABLE images
-                ADD COLUMN instanceid text
+                alter table images
+                add column instanceid text
             ''')
             self.add_schema_version(6)
         if self.version < 7:
             self.log.info('Migrating database to schema version 7')
             self.u('''
-                CREATE TABLE log_entries (
-                    id uuid PRIMARY KEY,
+                create table log_entries (
+                    id uuid primary key,
                     log_time timestamp,
                     actor text,
                     action text
@@ -998,28 +968,28 @@ class Database(fort.PostgresDatabase):
         if self.version < 8:
             self.log.info('Migrating database to schema version 8')
             self.u('''
-                UPDATE virtual_machines SET env_group = %(environment)s WHERE env_group IS NULL OR env_group = ''
+                update virtual_machines set env_group = %(environment)s where env_group is null or env_group = ''
             ''', {'environment': 'default-environment'})
             self.add_schema_version(8)
         if self.version < 9:
             self.log.info('Migrating database to schema version 9')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN dns_names text
+                alter table virtual_machines
+                add column dns_names text
             ''')
             self.add_schema_version(9)
         if self.version < 10:
             self.log.info('Migrating database to schema version 10')
             self.u('''
-                ALTER TABLE images
-                ADD COLUMN public boolean
+                alter table images
+                add column public boolean
             ''')
             self.add_schema_version(10)
         if self.version < 11:
             self.log.info('Migrating database to schema version 11')
             self.u('''
-                CREATE TABLE sf_opportunities (
-                    opportunity_key integer PRIMARY KEY,
+                create table sf_opportunities (
+                    opportunity_key integer primary key,
                     id text,
                     opportunity_number text,
                     name text,
@@ -1033,8 +1003,8 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.u('''
-                CREATE TABLE sf_opportunity_team_members (
-                    opportunity_team_member_key integer PRIMARY KEY,
+                create table sf_opportunity_team_members (
+                    opportunity_team_member_key integer primary key,
                     opportunity_key integer,
                     name text,
                     email text,
@@ -1042,8 +1012,8 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.u('''
-                CREATE TABLE op_debrief_surveys (
-                    id uuid PRIMARY KEY,
+                create table op_debrief_surveys (
+                    id uuid primary key,
                     opportunity_number text,
                     email text,
                     role text,
@@ -1056,19 +1026,19 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.u('''
-                CREATE TABLE op_debrief_tracking (
-                    only_row boolean PRIMARY KEY DEFAULT TRUE CONSTRAINT only_row_constraint CHECK (only_row),
+                create table op_debrief_tracking (
+                    only_row boolean primary key default true constraint only_row_constraint check (only_row),
                     last_check timestamp
                 )
             ''')
 
             params = {'last_check': datetime.datetime.utcnow()}
-            self.u('INSERT INTO op_debrief_tracking (last_check) VALUES (%(last_check)s)', params)
+            self.u('insert into op_debrief_tracking (last_check) values (%(last_check)s)', params)
             self.add_schema_version(11)
         if self.version < 12:
             self.log.info('Migrating database to schema version 12')
             self.u('''
-                CREATE TABLE sales_reps (
+                create table sales_reps (
                     geo text,
                     area text,
                     sub_area text,
@@ -1081,56 +1051,56 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.u('''
-                CREATE TABLE sales_consultants (
-                    name text PRIMARY KEY
+                create table sales_consultants (
+                    name text primary key
                 )
             ''')
             self.add_schema_version(12)
         if self.version < 13:
             self.log.info('Migrating database to schema version 13')
             self.u('''
-                UPDATE sales_reps SET territory_name = '(DSG)' WHERE territory_name IS NULL
+                update sales_reps set territory_name = '(DSG)' where territory_name is null
             ''')
             self.u('''
-                ALTER TABLE sales_reps ADD PRIMARY KEY (territory_name, sales_rep)
+                alter table sales_reps add primary key (territory_name, sales_rep)
             ''')
             self.add_schema_version(13)
         if self.version < 14:
             self.log.info('Migrating database to schema version 14')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN whitelist text
+                alter table virtual_machines
+                add column whitelist text
             ''')
             self.add_schema_version(14)
         if self.version < 15:
             self.log.info('Migrating database to schema version 15')
             self.u('''
-                CREATE TABLE cloud_credentials (
-                    id uuid PRIMARY KEY,
-                    cloud text NOT NULL,
-                    description text NOT NULL,
-                    username text NOT NULL,
-                    password text NOT NULL,
+                create table cloud_credentials (
+                    id uuid primary key,
+                    cloud text not null,
+                    description text not null,
+                    username text not null,
+                    password text not null,
                     azure_tenant_id text
                 )
             ''')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN account_id uuid
+                alter table virtual_machines
+                add column account_id uuid
             ''')
             self.u('''
-                ALTER TABLE images
-                ADD COLUMN account_id uuid
+                alter table images
+                add column account_id uuid
             ''')
             self.add_schema_version(15)
         if self.version < 16:
             self.log.info('Migrating database to schema version 16')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN vpc text
+                alter table virtual_machines
+                add column vpc text
             ''')
             self.u('''
-               CREATE TABLE security_group (
+               create table security_group (
                    id text,
                    cloud text,
                    owner text,
@@ -1143,7 +1113,7 @@ class Database(fort.PostgresDatabase):
         if self.version < 17:
             self.log.info('Migrating database to schema version 17')
             self.u('''
-                CREATE TABLE sf_opportunity_contacts (
+                create table sf_opportunity_contacts (
                     opportunity_contact_key integer primary key,
                     opportunity_key integer,
                     contact_key integer,
@@ -1154,63 +1124,64 @@ class Database(fort.PostgresDatabase):
                     is_primary boolean
                 )
             ''')
+            # noinspection SqlResolve
             self.u('''
-                ALTER TABLE op_debrief_surveys
-                DROP COLUMN competitive_loss_reason,
-                DROP COLUMN technology_gap_type,
-                DROP COLUMN perceived_poor_fit_reason,
-                ADD COLUMN tg_runtime_performance boolean,
-                ADD COLUMN tg_runtime_stability boolean,
-                ADD COLUMN tg_runtime_missing_features boolean,
-                ADD COLUMN tg_runtime_compatibility boolean,
-                ADD COLUMN tg_runtime_ease_of_use boolean,
-                ADD COLUMN tg_design_time_performance boolean,
-                ADD COLUMN tg_design_time_stability boolean,
-                ADD COLUMN tg_design_time_missing_features boolean,
-                ADD COLUMN tg_design_time_compatibility boolean,
-                ADD COLUMN tg_design_time_ease_of_use boolean,
-                ADD COLUMN tg_connectivity_performance boolean,
-                ADD COLUMN tg_connectivity_stability boolean,
-                ADD COLUMN tg_connectivity_missing_features boolean,
-                ADD COLUMN tg_connectivity_compatibility boolean,
-                ADD COLUMN tg_connectivity_ease_of_use boolean,
-                ADD COLUMN tg_install_performance boolean,
-                ADD COLUMN tg_install_stability boolean,
-                ADD COLUMN tg_install_missing_features boolean,
-                ADD COLUMN tg_install_compatibility boolean,
-                ADD COLUMN tg_install_ease_of_use boolean,
-                ADD COLUMN engaged_other_specialists boolean,
-                ADD COLUMN engaged_gcs boolean,
-                ADD COLUMN engaged_pm boolean,
-                ADD COLUMN engaged_dev boolean,
-                ADD COLUMN did_rfp boolean,
-                ADD COLUMN did_standard_demo boolean,
-                ADD COLUMN did_custom_demo boolean,
-                ADD COLUMN did_eval_trial boolean,
-                ADD COLUMN did_poc boolean,
-                ADD COLUMN poc_outcome text,
-                ADD COLUMN close_contacts text
+                alter table op_debrief_surveys
+                drop column competitive_loss_reason,
+                drop column technology_gap_type,
+                drop column perceived_poor_fit_reason,
+                add column tg_runtime_performance boolean,
+                add column tg_runtime_stability boolean,
+                add column tg_runtime_missing_features boolean,
+                add column tg_runtime_compatibility boolean,
+                add column tg_runtime_ease_of_use boolean,
+                add column tg_design_time_performance boolean,
+                add column tg_design_time_stability boolean,
+                add column tg_design_time_missing_features boolean,
+                add column tg_design_time_compatibility boolean,
+                add column tg_design_time_ease_of_use boolean,
+                add column tg_connectivity_performance boolean,
+                add column tg_connectivity_stability boolean,
+                add column tg_connectivity_missing_features boolean,
+                add column tg_connectivity_compatibility boolean,
+                add column tg_connectivity_ease_of_use boolean,
+                add column tg_install_performance boolean,
+                add column tg_install_stability boolean,
+                add column tg_install_missing_features boolean,
+                add column tg_install_compatibility boolean,
+                add column tg_install_ease_of_use boolean,
+                add column engaged_other_specialists boolean,
+                add column engaged_gcs boolean,
+                add column engaged_pm boolean,
+                add column engaged_dev boolean,
+                add column did_rfp boolean,
+                add column did_standard_demo boolean,
+                add column did_custom_demo boolean,
+                add column did_eval_trial boolean,
+                add column did_poc boolean,
+                add column poc_outcome text,
+                add column close_contacts text
             ''')
             self.add_schema_version(17)
         if self.version < 18:
             self.log.info('Migrating database to schema version 18')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN disable_termination text
+                alter table virtual_machines
+                add column disable_termination text
             ''')
             self.add_schema_version(18)
         if self.version < 19:
             self.log.info('Migrating database to schema version 19')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN cost text
+                alter table virtual_machines
+                add column cost text
             ''')
             self.add_schema_version(19)
         if self.version < 20:
             self.log.info('Migrating database to schema version 20')
             self.u('''
-                CREATE TABLE cost_tracking (
-                    only_row boolean PRIMARY KEY DEFAULT TRUE CONSTRAINT only_row_constraint CHECK (only_row),
+                create table cost_tracking (
+                    only_row boolean primary key default true constraint only_row_constraint check (only_row),
                     last_check timestamp,
                     report_id text
                 )
@@ -1218,19 +1189,20 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(20)
         if self.version < 21:
             self.log.info('Migrating database to schema version 21')
+            # noinspection SqlResolve
             self.u('''
-                ALTER TABLE virtual_machines
-                DROP COLUMN disable_termination
+                alter table virtual_machines
+                drop column disable_termination
             ''')
             self.u('''
-                ALTER TABLE virtual_machines
-                ADD COLUMN termination_protection boolean
+                alter table virtual_machines
+                add column termination_protection boolean
             ''')
             self.add_schema_version(21)
         if self.version < 22:
             self.log.info('Migrating database to schema version 22')
             self.u('''
-                CREATE TABLE environment_usage_events (
+                create table environment_usage_events (
                     id uuid primary key,
                     environment_name text,
                     event_name text,
@@ -1242,11 +1214,11 @@ class Database(fort.PostgresDatabase):
         if self.version < 23:
             self.log.info('Migrating database to schema version 23')
             self.u('''
-                CREATE TABLE op_debrief_roles (
+                create table op_debrief_roles (
                     id uuid primary key,
                     role_name text,
-                    generate_survey boolean DEFAULT FALSE,
-                    ignore boolean DEFAULT FALSE
+                    generate_survey boolean default false,
+                    ignore boolean default false
                 )
             ''')
             self.add_schema_version(23)
@@ -1281,11 +1253,9 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(25)
         if self.version < 26:
             self.log.info('Migrating to database schema version 26')
+            # noinspection SqlResolve
             self.u('''
-                drop table sc_region_assignments
-            ''')
-            self.u('''
-                drop table sf_regions
+                drop table sc_region_assignments, sf_regions
             ''')
             self.add_schema_version(26)
         if self.version < 27:
