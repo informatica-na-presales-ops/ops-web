@@ -86,7 +86,7 @@ def make_session_permanent():
 
 
 @app.before_request
-def load_user():
+def load_request_data():
     flask.g.config = config
     flask.g.db = ops_web.db.Database(config)
     flask.g.email = flask.session.get('email')
