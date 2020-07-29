@@ -17,19 +17,25 @@
     <div class="row pt-3">
         <div class="col-12">
             <form class="form-inline" method="post" id="form-power-control"></form>
-            <button type="submit" class="btn btn-outline-success" form="form-power-control" formaction="{{ url_for('environment_start', environment=g.environment) }}" title="Start all machines in this environment">
+            <button type="submit" class="btn btn-outline-success" form="form-power-control"
+                    formaction="{{ url_for('environment_start', environment=g.environment) }}"
+                    title="Start all machines in this environment">
                 <span class="oi oi-media-play"></span>
                 Start
             </button>
-            <button type="submit" class="btn btn-outline-warning" form="form-power-control" formaction="{{ url_for('environment_stop', environment=g.environment) }}" title="Stop all machines in this environment">
+            <button type="submit" class="btn btn-outline-warning" form="form-power-control"
+                    formaction="{{ url_for('environment_stop', environment=g.environment) }}"
+                    title="Stop all machines in this environment">
                 <span class="oi oi-media-stop"></span>
                 Stop
             </button>
-            <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-delete-env" title="Delete all machines in this environment">
+            <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-delete-env"
+                    title="Delete all machines in this environment">
                 <span class="oi oi-trash"></span>
                 Delete
             </button>
-            <button type="button" class="btn btn-outline-light" data-toggle="modal" data-target="#modal-hosts-file" title="Generate hosts file entries for this environment">
+            <button type="button" class="btn btn-outline-light" data-toggle="modal" data-target="#modal-hosts-file"
+                    title="Generate hosts file entries for this environment">
                 <span class="oi oi-document"></span>
                 Hosts
             </button>
@@ -64,7 +70,9 @@
                 {% for m in g.machines %}
                     <tr>
                         <td>
-                            <span class="oi oi-lock-{{ 'un' if not m.termination_protection }}locked {{ g.machine_state_class_map[m.state] }}" title="This machine can{{ 'not' if m.termination_protection }} be deleted"></span>
+                            <span class="oi oi-lock-{{ 'un' if not m.termination_protection }}locked {{ g.machine_state_class_map[m.state] }}"]
+                                  title="This machine can{{ 'not' if m.termination_protection }} be deleted">
+                            </span>
                             {{ m.state }}
                         </td>
                         <td class="text-center">
@@ -106,19 +114,26 @@
                                 <button type="submit" class="btn btn-sm btn-outline-light" title="Stop machine" {{ 'disabled' if m.state != 'running' or not m.can_control }} form="form-control-{{ loop.index }}" formaction="{{ url_for('machine_stop') }}">
                                     <span class="oi oi-media-stop"></span>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-edit-{{ loop.index }}" title="Edit machine" {{ 'disabled' if not m.can_modify }}>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                        data-target="#modal-edit-{{ loop.index }}" title="Edit machine" {{ 'disabled' if not m.can_modify }}>
                                     <span class="oi oi-pencil"></span>
                                 </button>
                                 {% if m.cloud == 'gcp' %}
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-gcpimage-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                        data-target="#modal-gcpimage-{{ loop.index }}"
+                                        title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
                                     <span class="oi oi-hard-drive"></span>
                                 </button>
                                 {% else %}
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-{{ loop.index }}" title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                        data-target="#modal-image-{{ loop.index }}"
+                                        title="Create image" {{ 'disabled' if m.state != 'stopped' or not m.can_modify }}>
                                     <span class="oi oi-hard-drive"></span>
                                 </button>
                                 {% endif %}
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-delete-{{ loop.index }}" title="Delete machine" {{ 'disabled' if m.state in ['terminated', 'terminating'] or m.termination_protection or not m.can_modify }}>
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                        data-target="#modal-delete-{{ loop.index }}"
+                                        title="Delete machine" {{ 'disabled' if m.state in ['terminated', 'terminating'] or m.termination_protection or not m.can_modify }}>
                                     <span class="oi oi-trash"></span>
                                 </button>
                             </div>
