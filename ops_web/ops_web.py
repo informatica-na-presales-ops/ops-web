@@ -1426,9 +1426,9 @@ def sync_machines():
                 for image in aws.get_all_images():
                     image['account_id'] = account.get('id')
                     db.add_image(image)
-                for sgid in aws.get_all_securitygrps():
-                    sgid['account_id'] = account.get('id')
-                    db.add_group(sgid)
+                for security_group in aws.get_all_security_groups():
+                    security_group['account_id'] = account.get('id')
+                    db.add_group(security_group)
             except Exception as e:
                 apm.capture_exception()
                 app.logger.exception(e)

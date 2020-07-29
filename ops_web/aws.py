@@ -417,7 +417,8 @@ class AWSClient:
                 ]
             )
             return "successful"
-        except:
+        except Exception as e:
+            log.exception(e)
             return "exception!"
 
     def create_instance_defaultspecs(self, region: str, imageid: str, name: str, owner: str, environment: str,
@@ -630,7 +631,7 @@ class AWSClient:
                 log.critical(e)
                 log.critical(f'Skipping {region}')
 
-    def get_all_securitygrps(self):
+    def get_all_security_groups(self):
         for region in self.get_available_regions():
             log.info(f'Getting all EC2 security groups in {region}')
             ec2 = self.get_service_resource('ec2', region)
@@ -650,6 +651,7 @@ class AWSClient:
                             if 'CidrIp' in s:
                                 inbound_address_list.append(s['CidrIp'])
                     params = {
+                        'region': region,
                         'owner': tags.get('OWNEREMAIL', ''),
                         'cloud': 'aws',
                         'id': sgid.group_id,
