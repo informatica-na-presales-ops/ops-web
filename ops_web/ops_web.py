@@ -10,6 +10,7 @@ import ops_web.db
 import ops_web.op_debrief_surveys
 import ops_web.send_email
 import ops_web.tasks
+import ops_web.util.human_time
 import flask
 import functools
 import io
@@ -23,8 +24,6 @@ import waitress
 import werkzeug.middleware.proxy_fix
 import xlsxwriter
 import ipaddress
-
-from typing import Dict, List
 
 config = ops_web.config.Config()
 scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 900})
@@ -232,39 +231,6 @@ def authorize():
     return flask.redirect(target)
 
 
-def timedelta_human(td: datetime.timedelta) -> str:
-    parts = []
-    dur = pendulum.Duration(seconds=td.total_seconds())
-    if dur.days > 0:
-        day_part = f'{dur.days} day'
-        if dur.days > 1:
-            day_part = f'{day_part}s'
-        parts.append(day_part)
-    if dur.hours > 0:
-        hour_part = f'{dur.hours} hr'
-        if dur.hours > 1:
-            hour_part = f'{hour_part}s'
-        parts.append(hour_part)
-    if dur.minutes > 0:
-        minute_part = f'{dur.minutes} min'
-        if dur.minutes > 1:
-            minute_part = f'{minute_part}s'
-        parts.append(minute_part)
-    return ' '.join(parts)
-
-
-def add_running_time_human(col: List[Dict]) -> List[Dict]:
-    new_col = []
-    for i in col:
-        new_i = dict(i)
-        if i.get('running_time'):
-            new_i['running_time_human'] = timedelta_human(i.get('running_time'))
-        else:
-            new_i['running_time_human'] = ''
-        new_col.append(new_i)
-    return new_col
-
-
 @app.route('/environment-usage-events', methods=['POST'])
 def environment_usage_events():
     request_secret = flask.request.values.get('secret')
@@ -284,7 +250,7 @@ def environment_usage_events():
 @login_required
 def environments():
     db: ops_web.db.Database = flask.g.db
-    flask.g.environments = add_running_time_human(db.get_environments())
+    flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_environments())
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('environments/index.html')
 
@@ -293,7 +259,7 @@ def environments():
 @login_required
 def sap_access():
     db: ops_web.db.Database = flask.g.db
-    flask.g.environments = add_running_time_human(db.get_own_environments(flask.g.email))
+    flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_own_environments(flask.g.email))
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('sap-access.html')
 
@@ -304,7 +270,7 @@ def sap_access_detail(environment):
     app.logger.debug(f'Getting information for environment {environment!r}')
     db: ops_web.db.Database = flask.g.db
     flask.g.environment = environment
-    flask.g.machines = add_running_time_human(db.get_machines_for_env(flask.g.email, environment))
+    flask.g.machines = ops_web.util.human_time.add_running_time_human(db.get_machines_for_env(flask.g.email, environment))
     flask.g.environments = db.get_env_list()
     flask.g.today = datetime.date.today()
     return flask.render_template('sap_access_detail.html')
@@ -374,7 +340,8 @@ def environment_detail(environment):
     app.logger.debug(f'Getting information for environment {environment!r}')
     db: ops_web.db.Database = flask.g.db
     flask.g.environment = environment
-    flask.g.machines = add_running_time_human(db.get_machines_for_env(flask.g.email, environment))
+    _machines = db.get_machines_for_env(flask.g.email, environment)
+    flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
     flask.g.environments = db.get_env_list()
     flask.g.today = datetime.date.today()
     flask.g.machine_state_class_map = {
@@ -1500,8 +1467,8 @@ def sync_machines():
     gcp_duration = datetime.datetime.utcnow() - gcp_start
 
     sync_duration = datetime.datetime.utcnow() - sync_start
-    app.logger.info(
-        f'Done syncing virtual machines / AWS {aws_duration} / Azure {az_duration} / GCP {gcp_duration} / total {sync_duration}')
+    app.logger.info(f'Done syncing virtual machines / '
+                    f'AWS {aws_duration} / Azure {az_duration} / GCP {gcp_duration} / total {sync_duration}')
     db.end_sync()
     apm.client.end_transaction('sync-machines')
 
