@@ -2,6 +2,7 @@ import boto3
 import botocore
 import botocore.config
 import botocore.exceptions
+import decimal
 import datetime
 import logging
 import ops_web.config
@@ -619,6 +620,11 @@ class AWSClient:
                         'created': image.creation_date,
                         'instanceid': tags.get('machine__description', '')
                     }
+                    cost = decimal.Decimal('0')
+                    for b in image.block_device_mappings:
+                        if 'Ebs' in b:
+                            cost += self.db.get_cost_for_resource(b.get('Ebs').get('SnapshotId'))
+                    params['cost'] = cost
                     yield params
             except botocore.exceptions.ClientError as e:
                 log.critical(e)

@@ -25,9 +25,9 @@
                     <th>Owner</th>
                     <th class="text-right"
                         title="Cost of a machine includes compute, attached volumes, and attached network interfaces">
-                        30 Day Cost
+                        30 day cost
                     </th>
-                    <th class="text-center">Running Time</th>
+                    <th class="text-center">Running time</th>
                     <th class="text-right">Machines</th>
                 </tr>
                 </thead>
@@ -41,8 +41,8 @@
                         <td>{{ e.cloud }}</td>
                         <td>{{ e.env_group }}</td>
                         <td>{{ e.owner }}</td>
-                        <td class="text-right {{ 'text-danger' if e.costsum >= 500 }}">
-                            $ {{ '%.2f' | format(e.costsum) }}
+                        <td class="text-right {{ 'text-danger' if e.cost_n >= 500 }}">
+                            {{ e.cost }}
                         </td>
                         <td class="text-center">{{ e.running_time_human }}</td>
                         <td class="text-right">{{ e.instance_count }}</td>

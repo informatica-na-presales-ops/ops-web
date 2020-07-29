@@ -155,7 +155,8 @@ class Database(fort.PostgresDatabase):
                 cloud,
                 env_group,
                 owner,
-                sum(cost::numeric) costsum,
+                sum(cost) as cost,
+                sum(cost)::numeric cost_n,
                 count(*) instance_count,
                 bool_or(state = 'running') running,
                 max(case when state = 'running' then now() - created else null end) running_time,
@@ -174,7 +175,8 @@ class Database(fort.PostgresDatabase):
                     cloud,
                     env_group,
                     owner,
-                    sum(cost::numeric) costsum,
+                    sum(cost) cost,
+                    sum(cost)::numeric cost_n,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
                     max(case when state = 'running' then now() - created else null end) running_time,
@@ -191,7 +193,8 @@ class Database(fort.PostgresDatabase):
                     cloud,
                     env_group,
                     owner,
-                    sum(cost::numeric) costsum,
+                    sum(cost) cost,
+                    sum(cost)::numeric cost_n,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
                     max(case when state = 'running' then now() - created else null end) running_time,
@@ -223,7 +226,7 @@ class Database(fort.PostgresDatabase):
                 select
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    concat('$',cost) cost_agg, account_id,
+                    cost, cost::numeric cost_n, account_id,
                     case when state = 'running' then now() - created else null end running_time,
                     true can_control,
                     true can_modify
@@ -237,7 +240,7 @@ class Database(fort.PostgresDatabase):
                 select
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
                     running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    concat('$',cost) cost_agg, account_id,
+                    cost, cost::numeric cost_n, account_id,
                     case when state = 'running' then now() - created else null end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -254,7 +257,7 @@ class Database(fort.PostgresDatabase):
                 select
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, concat('$', cost) cost_agg, account_id,
+                    dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
                     case when state = 'running' then now() - created else null end running_time,
                     true can_control,
                     true can_modify
@@ -266,7 +269,7 @@ class Database(fort.PostgresDatabase):
                 select
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
                     visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, concat('$', cost) cost_agg, account_id,
+                    dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
                     case when state = 'running' then now() - created else null end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
@@ -348,51 +351,53 @@ class Database(fort.PostgresDatabase):
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
-                SELECT
+                select
                     id,
                     cloud,
                     region,
                     name,
                     owner,
-                    TRUE can_modify,
-                    cloud = 'aws' OR cloud ='gcp' AND state = 'available' can_launch,
+                    true can_modify,
+                    state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
                     public,
                     state,
                     created,
                     account_id,
+                    cost,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
-                FROM images
-                WHERE visible IS TRUE
-                ORDER BY name
+                from images
+                where visible is true
+                order by name
             '''
         else:
             sql = '''
-                SELECT
+                select
                     id,
                     cloud,
                     region,
                     name,
                     owner,
                     owner = %(email)s can_modify,
-                    cloud = 'aws' AND state = 'available' can_launch,
+                    state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
                     public,
                     state,
                     created,
                     account_id,
+                    cost,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
-                FROM images
-                WHERE visible IS TRUE
-                AND (owner = %(email)s OR public IS TRUE)
+                from images
+                where visible is true
+                and (owner = %(email)s or public is true)
             '''
         return self.q(sql, {'email': email})
 
     def get_image(self, image_id: str) -> Dict:
         sql = '''
-            SELECT id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id
-            FROM images
-            WHERE id = %(id)s
+            select id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id, cost
+            from images
+            where id = %(id)s
         '''
         return self.q_one(sql, {'id': image_id})
 
@@ -485,22 +490,23 @@ class Database(fort.PostgresDatabase):
         #   'id': '', 'cloud': '', 'region': '', 'name': '', 'owner': '', 'state': '', 'created': '', 'instanceid': '',
         #   'public': (bool), 'account_id': ''
         # }
-        sql = 'SELECT id FROM images WHERE id = %(id)s'
+        sql = 'select id from images where id = %(id)s'
         if self.q(sql, params):
             sql = '''
-                UPDATE images 
-                SET cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
+                update images 
+                set cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
                     public = %(public)s, created = %(created)s, instanceid = %(instanceid)s,
-                    account_id = %(account_id)s, visible = TRUE, synced = TRUE
-                WHERE id = %(id)s
+                    account_id = %(account_id)s, cost = %(cost)s, visible = true, synced = true
+                where id = %(id)s
             '''
         else:
             sql = '''
-                INSERT INTO images (
-                    id, cloud, region, name, owner, public, state, created, instanceid, account_id, visible, synced
-                ) VALUES (
+                insert into images (
+                    id, cloud, region, name, owner, public, state, created, instanceid, account_id, cost, visible,
+                    synced
+                ) values (
                     %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(public)s, %(state)s, %(created)s,
-                    %(instanceid)s, %(account_id)s, TRUE, TRUE
+                    %(instanceid)s, %(account_id)s, %(cost)s, true, true
                 )
             '''
         self.u(sql, params)
@@ -1352,6 +1358,20 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(33)
+        if self.version < 34:
+            self.log.info('Migrating to database schema version 34')
+            self.u('''
+                alter table images
+                add column cost money
+            ''')
+            self.add_schema_version(34)
+        if self.version < 35:
+            self.log.info('Migrating to database schema version 35')
+            self.u('''
+                alter table virtual_machines
+                alter column cost type money using cost::money
+            ''')
+            self.add_schema_version(35)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

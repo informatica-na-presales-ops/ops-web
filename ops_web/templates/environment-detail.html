@@ -54,11 +54,11 @@
                     <th>Cloud</th>
                     <th>Region</th>
                     <th>Type</th>
-                    <th>Running Time</th>
-                    <th>Running Schedule</th>
+                    <th>Running time</th>
+                    <th>Running schedule</th>
                     <th class="text-right"
                         title="Cost of a machine includes compute, attached volumes, and attached network interfaces">
-                        30 Day Cost
+                        30 day cost
                     </th>
                     <th>Owner</th>
                     <th class="text-center">Firewall</th>
@@ -89,7 +89,7 @@
                         <td>{{ m.type }}</td>
                         <td>{{ m.running_time_human }}</td>
                         <td>{{ m.running_schedule }}</td>
-                        <td class="text-right">{{ m.cost_agg }}</td>
+                        <td class="text-right">{{ m.cost }}</td>
                         <td>{{ m.owner }}</td>
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-outline-light" data-toggle="popover"
@@ -154,11 +154,11 @@
                             <span class="badge badge-light">Cloud: {{ m.cloud }}</span>
                             <span class="badge badge-light">Region: {{ m.region }}</span>
                             <span class="badge badge-light">Type: {{ m.type }}</span>
-                            {% if m.running_time_human %}<span class="badge badge-light">Running Time: {{ m.running_time_human }}</span>{% endif %}
-                            <span class="badge badge-light">Running Schedule: {{ m.running_schedule }}</span>
+                            {% if m.running_time_human %}<span class="badge badge-light">Running time: {{ m.running_time_human }}</span>{% endif %}
+                            <span class="badge badge-light">Running schedule: {{ m.running_schedule }}</span>
                             <span class="badge badge-light">Machine ID: {{ m.id }}</span>
-                            <span class="badge badge-light">Cost: {{ m.cost_agg }}</span>
-                            <span class="badge badge-light">Protected: {{ m.termination_protection }}</span>
+                            <span class="badge badge-light">30 day cost: {{ m.cost }}</span>
+                            <span class="badge badge-light">Protected: {{ 'yes' if m.termination_protection else 'no' }}</span>
                             <span class="badge badge-light">Owner: {{ m.owner }}</span>
                         </p>
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="popover" title="Whitelist" data-content="{{ m.whitelist if m.whitelist else 'No whitelist' }}">
@@ -238,6 +238,7 @@
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-owner" class="text-light">Owner</label>
                             <input type="text" class="form-control" id="form-edit-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}">
+                            <small class="form-text text-muted">One email address only</small>
                         </div>
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-contributors" class="text-light">Contributors</label>

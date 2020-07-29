@@ -56,7 +56,8 @@ class AZClient:
                     'public': ops_web.config.as_bool(image.tags.get('image_public', '')),
                     'state': IMAGE_STATE_MAP.get(image.provisioning_state, image.provisioning_state),
                     'created': None,
-                    'instanceid': None
+                    'instanceid': None,
+                    'cost': '0'
                 }
                 yield params
             compute_client.close()

@@ -18,22 +18,24 @@ except google.auth.exceptions.DefaultCredentialsError as e:
     log.critical('Could not find GCP credentials in environment')
 
 
-
 def create_machine_image(souceinstance, zone, name):
-    instance = compute.instances().get(project = PROJECT_ID,zone = zone,instance = souceinstance).execute()
+    instance = compute.instances().get(project=PROJECT_ID, zone=zone, instance=souceinstance).execute()
     machinetype = instance['machineType']
     log.info(machinetype)
     operations = computebeta.machineImages().insert(project=PROJECT_ID,
                                                     sourceInstance=f'projects/{PROJECT_ID}/zones/{zone}/instances/{souceinstance}',
-                                                    body={"name": name, "sourceInstanceProperties.machineType": machinetype}).execute()
+                                                    body={"name": name,
+                                                          "sourceInstanceProperties.machineType": machinetype}).execute()
 
-def create_instance(region,name,sourceimage,environment,owner):
+
+def create_instance(region, name, sourceimage, environment, owner):
     sourceImage = f'projects/{PROJECT_ID}/global/machineImages/{sourceimage}'
-    image = computebeta.machineImages().get(project=PROJECT_ID,machineImage=sourceimage).execute()
+    image = computebeta.machineImages().get(project=PROJECT_ID, machineImage=sourceimage).execute()
     log.info(image)
     instancetype = image['sourceInstanceProperties']['machineType']
     machinetype_url = f'zones/{region}/machineTypes/{instancetype}'
-    computebeta.instances().insert(project=PROJECT_ID,sourceMachineImage=sourceImage,zone=region,body = {"name":name ,"machineType": machinetype_url}).execute()
+    computebeta.instances().insert(project=PROJECT_ID, sourceMachineImage=sourceImage, zone=region,
+                                   body={"name": name, "machineType": machinetype_url}).execute()
     params = {
         'id': 'pending',
         'cloud': 'gcp',
@@ -56,7 +58,7 @@ def create_instance(region,name,sourceimage,environment,owner):
         'disable_termination': None,
         'cost': 0,
         'contributors': None,
-        'account_id':None
+        'account_id': None
     }
     return params
 
@@ -67,7 +69,6 @@ def get_all_images():
     result = []
 
     for image in image2:
-
         params = {
             'id': image['id'],
             'name': image['name'],
@@ -76,8 +77,9 @@ def get_all_images():
             'created': image['creationTimestamp'],
             'instanceid': image['sourceInstance'].split('/')[-1],
             'owner': image['sourceInstanceProperties']['labels']['owneremail'] + '@informatica.com',
-            'region' : image['sourceInstance'].split('/')[-3],
-            'cloud' :'gcp'
+            'region': image['sourceInstance'].split('/')[-3],
+            'cloud': 'gcp',
+            'cost': '0'
         }
         log.info(params)
         result.append(params)

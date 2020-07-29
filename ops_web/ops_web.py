@@ -1,5 +1,6 @@
 import apscheduler.schedulers.background
 import datetime
+import decimal
 import elasticapm.contrib.flask
 import ops_web.aws
 import ops_web.az
@@ -741,7 +742,8 @@ def image_create():
                 'state': 'pending',
                 'created': datetime.datetime.utcnow(),
                 'instanceid': machine_id,
-                'account_id': machine.get('account_id')
+                'account_id': machine.get('account_id'),
+                'cost': decimal.Decimal('0')
             }
             db.add_image(params)
             return flask.redirect(flask.url_for('images'))
@@ -758,7 +760,8 @@ def image_create():
                 'instanceid': machine.get('id'),
                 'account_id': None,
                 'owner': owner,
-                'public': public
+                'public': public,
+                'cost': decimal.Decimal('0')
             }
             db.add_image(params)
             return flask.redirect(flask.url_for('images'))
