@@ -286,7 +286,7 @@ def environments():
     db: ops_web.db.Database = flask.g.db
     flask.g.environments = add_running_time_human(db.get_environments())
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
-    return flask.render_template('environments.html')
+    return flask.render_template('environments/index.html')
 
 
 @app.route('/sap_access', methods=['GET', 'POST'])
@@ -385,7 +385,7 @@ def environment_detail(environment):
         'terminated': 'text-muted',
         'terminating': 'text-muted'
     }
-    return flask.render_template('environment-detail.html')
+    return flask.render_template('environments/detail.html')
 
 
 @app.route('/environments/<environment>/delete', methods=['POST'])
