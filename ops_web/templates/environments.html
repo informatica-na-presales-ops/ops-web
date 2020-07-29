@@ -8,7 +8,8 @@
             <h1 class="text-light">Environments</h1>
             <div class="form-inline">
                 <label class="sr-only" for="filter-input">Filter environments</label>
-                <input class="form-control" placeholder="Filter environments..." id="filter-input" value="{{ g.default_filter if g.default_filter }}" autofocus>
+                <input class="form-control" placeholder="Filter environments..." id="filter-input"
+                       value="{{ g.default_filter if g.default_filter }}" autofocus>
             </div>
         </div>
     </div>
@@ -29,14 +30,17 @@
                 </thead>
                 <tbody>
                 {% for e in g.environments %}
-                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}" data-href="{{ url_for('environment_detail', environment=e.env_group) }}">
+                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}"
+                        data-href="{{ url_for('environment_detail', environment=e.env_group) }}">
                         <td>
                             <span class="oi oi-media-record {{ 'text-success' if e.running else 'text-danger' }}"></span>
                         </td>
                         <td>{{ e.cloud }}</td>
                         <td>{{ e.env_group }}</td>
                         <td>{{ e.owner }}</td>
-                        <td class="text-right {{ 'text-danger' if e.costsum >= 500 }}">$ {{ '%.2f' | format(e.costsum) }}</td>
+                        <td class="text-right {{ 'text-danger' if e.costsum >= 500 }}">
+                            $ {{ '%.2f' | format(e.costsum) }}
+                        </td>
                         <td class="text-center">{{ e.running_time_human }}</td>
                         <td class="text-right">{{ e.instance_count }}</td>
                     </tr>
@@ -50,10 +54,16 @@
                     <div class="card-body">
                         <h5 class="card-title">
                             <span class="oi oi-media-record {{ 'text-success' if e.running else 'text-danger' }}"></span>
-                            <a href="{{ url_for('environment_detail', environment=e.env_group) }}" class="card-link stretched-link text-light">{{ e.env_group }}</a>
+                            <a href="{{ url_for('environment_detail', environment=e.env_group) }}"
+                               class="card-link stretched-link text-light">
+                                {{ e.env_group }}
+                            </a>
                         </h5>
                         <p class="card-text">{{ e.owner }}</p>
-                        <p class="card-text"><span class="badge badge-pill badge-light">{{ e.cloud }}</span> {{ e.instance_count }} machine{{ 's' if e.instance_count > 1 }}</p>
+                        <p class="card-text">
+                            <span class="badge badge-pill badge-light">{{ e.cloud }}</span>
+                            {{ e.instance_count }} machine{{ 's' if e.instance_count > 1 }}
+                        </p>
                     </div>
                 </div>
             {% endfor %}
