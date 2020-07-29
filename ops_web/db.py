@@ -317,7 +317,14 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    # images
+    def get_group(self, group_id: str) -> Optional[Dict]:
+        sql = '''
+            select id, cloud, owner, inbound_rules, group_name, account_id
+            from security_group
+            where id = %(id)s
+        '''
+        params = {'id': group_id}
+        return self.q_one(sql, params)
 
     def get_groups(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
@@ -338,6 +345,8 @@ class Database(fort.PostgresDatabase):
                 where owner = %(email)s
             '''
         return self.q(sql, {'email': email})
+
+    # images
 
     def get_images(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):

@@ -270,7 +270,8 @@ def sap_access_detail(environment):
     app.logger.debug(f'Getting information for environment {environment!r}')
     db: ops_web.db.Database = flask.g.db
     flask.g.environment = environment
-    flask.g.machines = ops_web.util.human_time.add_running_time_human(db.get_machines_for_env(flask.g.email, environment))
+    _machines = db.get_machines_for_env(flask.g.email, environment)
+    flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
     flask.g.environments = db.get_env_list()
     flask.g.today = datetime.date.today()
     return flask.render_template('sap_access_detail.html')
@@ -304,10 +305,10 @@ def attach_sap_sg(environment):
         final_result.append(result)
     if all(c == 'Successful' for c in final_result):
         return flask.redirect(flask.url_for('sap_access'))
-
     else:
-        return flask.render_template('500.html',
-                                     error="Cannot give SAP Access to this environment. Check if the instances already have access or if they are in the correct vpc")
+        _error = ("Cannot give SAP Access to this environment. "
+                  "Check if the instances already have access or if they are in the correct VPC.")
+        return flask.render_template('500.html', error=_error)
 
 
 @app.route('/sap_access/<environment>/detach_sap_sg', methods=['GET', 'POST'])
@@ -384,8 +385,8 @@ def environment_start(environment):
     machines = db.get_machines_for_env(flask.g.email, environment)
     app.logger.info(machines)
     for machine in machines:
+        machine_id = machine.get('id')
         if machine.get('can_control'):
-            machine_id = machine.get('id')
             cloud = machine.get('cloud')
             db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
             db.set_machine_state(machine_id, 'starting')
@@ -604,30 +605,32 @@ def sg_edit():
     sg_id = flask.request.values.get('sg-id')
     ip = flask.request.values.get('IP')
     if '/' in ip:
-        ip_valid = ip.split('/')[0]
-    else:
-        ip_valid = ip
+        ip = ip.split('/')[0]
+    done = False
     try:
-        ipaddress.ip_address(ip_valid)
-    except Exception as e:
-        return flask.render_template('500.html', error=str(e))
-    if ip.startswith('0.0.0.0'):
-        return flask.render_template('500.html', error="Cant add any open networks")
-    elif ip.startswith('10.'):
-        return flask.render_template('500.html', error="Cant add any internal networks")
-    elif ip.startswith('192.168.'):
-        return flask.render_template('500.html', error="Cant add any internal networks")
-    else:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        flask.flash(f'{ip!r} does not appear to be a valid IP address.', 'danger')
+        done = True
+    if not done and ip.startswith('0.0.0.0'):
+        flask.flash(f'You can\'t add this IP address: {ip}')
+        done = True
+    if not done and (ip.startswith('10.') or ip.startswith('192.168.')):
+        flask.flash(f'You can\'t add this internal IP address: {ip}')
+        done = True
+    if not done:
+        app.logger.info(f'Adding IP address {ip} to {sg_id}')
         db: ops_web.db.Database = flask.g.db
-        app.logger.info(sg_id)
-        for account in db.get_all_credentials_for_use('aws'):
-            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            result = aws.add_inboundrule(sg_id, ip)
+        db.add_log_entry(flask.g.email, f'Add IP address {ip} to {sg_id}')
+        sg = db.get_group(sg_id)
+        account = db.get_one_credential_for_use(sg.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        result = aws.add_inboundrule(sg_id, ip)
         if result == 'successful':
-            return flask.redirect(flask.url_for('ws_sg'))
+            flask.flash(f'Successfully added {ip} to {sg_id}', 'success')
         else:
-            return flask.render_template('500.html',
-                                         error="not able to add this IP, check if the IP already exists in this security group")
+            flask.flash(f'Unknown error adding this IP address: {ip}', 'danger')
+        return flask.redirect(flask.url_for('ws_sg'))
 
 
 @app.route('/launch', methods=['GET', 'POST'])
