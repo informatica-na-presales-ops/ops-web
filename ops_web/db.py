@@ -341,7 +341,7 @@ class Database(fort.PostgresDatabase):
         params = {'id': group_id}
         sg = self.q_one(sql, params)
         if sg is not None:
-            sg = dict(sg)
+            sg: dict = dict(sg)
             group_id = sg.get('id')
             sg_rules = [dict(r) for r in self.get_security_group_rules(group_id)]
             sg['rules'] = sg_rules
@@ -469,12 +469,14 @@ class Database(fort.PostgresDatabase):
     def pre_sync(self, cloud: str):
         params = {'cloud': cloud}
         for table in ('images', 'security_group', 'security_group_rules', 'virtual_machines'):
+            # noinspection SqlResolve
             sql = f'update {table} set synced = false where (synced is true or synced is null) and cloud = %(cloud)s'
             self.u(sql, params)
 
     def post_sync(self, cloud: str):
         params = {'cloud': cloud}
         for table in ('images', 'security_group', 'security_group_rules', 'virtual_machines'):
+            # noinspection SqlResolve
             sql = f'update {table} set visible = false where synced is false and cloud = %(cloud)s'
             self.u(sql, params)
 
