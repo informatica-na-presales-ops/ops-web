@@ -8,7 +8,8 @@
             <h1 class="text-light">Environments</h1>
             <div class="form-inline">
                 <label class="sr-only" for="filter-input">Filter environments</label>
-                <input class="form-control" placeholder="Filter environments..." id="filter-input" value="{{ g.default_filter if g.default_filter }}" autofocus>
+                <input class="form-control" placeholder="Filter environments..." id="filter-input"
+                       value="{{ g.default_filter if g.default_filter }}" autofocus>
             </div>
         </div>
     </div>
@@ -21,83 +22,89 @@
                     <th>Environment</th>
                     <th>Owner</th>
                     <th>SAP</th>
-                    <th>Peering </th>
+                    <th>Peering</th>
                     <th>Machines</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for e in g.environments %}
                     <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}">
-                        <td><a href="{{ url_for('sap_access_detail', environment=e.env_group) }}">{{ e.env_group }}</a></td>
+                        <td><a href="{{ url_for('sap_access_detail', environment=e.env_group) }}">{{ e.env_group }}</a>
+                        </td>
                         <td>{{ e.owner }}</td>
                         <td>
-                        <div class="btn-group btn-group-sm">
+                            <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
                                         data-target="#modal-add-sap-{{ loop.index }}" title="SAP Access">
                                     <span class="oi oi-plus"></span>
                                 </button>
-                        </div>
+                            </div>
                         </td>
                         <td>
-                        <div class="btn-group btn-group-sm">
+                            <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
                                         data-target="#modal-remove-sap-{{ loop.index }}" title="SAP Access">
                                     <span class="oi oi-minus"></span>
                                 </button>
-                        </div>
+                            </div>
                         </td>
                         <td class="text-right">{{ e.instance_count }}</td>
-
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
-    </div>
+        </div>
     </div>
     {% for e in g.environments %}
-    <form id="form-control-{{ loop.index }}" method="post">
-        <input type="hidden" name="environment" value="{{ g.environment }}">
-    </form>
+        <form id="form-control-{{ loop.index }}" method="post">
+            <input type="hidden" name="environment" value="{{ g.environment }}">
+        </form>
 
- <div class="modal" id="modal-add-sap-{{ loop.index }}">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title text-light">SAP ACCESS</h5>
-                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-light">Do you want access to SAP for all the machines in this environment?</p>
-                    <form id="form-add-sap-{{ loop.index }}" action="{{ url_for('attach_sap_sg',environment=e.env_group)}}" method="post">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-outline-success" form="form-add-sap-{{ loop.index }}">YES</button>
+        <div class="modal" id="modal-add-sap-{{ loop.index }}">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-light">SAP ACCESS</h5>
+                        <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-light">Do you want access to SAP for all the machines in this environment?</p>
+                        <form id="form-add-sap-{{ loop.index }}"
+                              action="{{ url_for('attach_sap_sg',environment=e.env_group) }}" method="post">
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-outline-success" form="form-add-sap-{{ loop.index }}">YES
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
- <div class="modal" id="modal-remove-sap-{{ loop.index }}">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title text-light">SAP ACCESS</h5>
-                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-light">Do you want to remove SAP access for all the machines in this environment?</p>
-                    <form id="form-remove-sap-{{ loop.index }}" action="{{ url_for('detach_sap_sg',environment=e.env_group)}}" method="post">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-outline-success" form="form-remove-sap-{{ loop.index }}">YES</button>
+        <div class="modal" id="modal-remove-sap-{{ loop.index }}">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-light">SAP ACCESS</h5>
+                        <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-light">Do you want to remove SAP access for all the machines in this
+                            environment?</p>
+                        <form id="form-remove-sap-{{ loop.index }}"
+                              action="{{ url_for('detach_sap_sg',environment=e.env_group) }}" method="post">
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-outline-success" form="form-remove-sap-{{ loop.index }}">
+                            YES
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
     {% endfor %}
 
