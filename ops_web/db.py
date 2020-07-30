@@ -176,7 +176,7 @@ class Database(fort.PostgresDatabase):
                     cloud,
                     env_group,
                     owner,
-                    sum(cost) cost,
+                    sum(cost) as cost,
                     sum(cost)::numeric cost_n,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
@@ -194,7 +194,7 @@ class Database(fort.PostgresDatabase):
                     cloud,
                     env_group,
                     owner,
-                    sum(cost) cost,
+                    sum(cost) as cost,
                     sum(cost)::numeric cost_n,
                     count(*) instance_count,
                     bool_or(state = 'running') running,
@@ -342,11 +342,13 @@ class Database(fort.PostgresDatabase):
         sg = self.q_one(sql, params)
         if sg is not None:
             sg = dict(sg)
-            sg_rules = [dict(r) for r in self.get_security_group_rules(sg.get('id'))]
+            group_id = sg.get('id')
+            sg_rules = [dict(r) for r in self.get_security_group_rules(group_id)]
             sg['rules'] = sg_rules
         return sg
 
     def get_security_groups(self, email: str) -> List[Dict]:
+        rules_for_group = self.get_all_security_group_rules()
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
@@ -370,12 +372,11 @@ class Database(fort.PostgresDatabase):
         results = []
         for sg in self.q(sql, params):
             sg = dict(sg)
-            sg_rules = [dict(r) for r in self.get_security_group_rules(sg.get('id'))]
-            sg['rules'] = sg_rules
+            sg['rules'] = rules_for_group.get(sg.get('id'), [])
             results.append(sg)
         return results
 
-    def get_security_group_rules(self, group_id: str) -> List[Dict]:
+    def get_security_group_rules(self, group_id: str):
         sql = '''
             select sg_id, ip_range, description
             from security_group_rules
@@ -386,6 +387,16 @@ class Database(fort.PostgresDatabase):
             'sg_id': group_id
         }
         return self.q(sql, params)
+
+    def get_all_security_group_rules(self):
+        results = {}
+        sql = 'select sg_id, ip_range, description from security_group_rules where visible is true'
+        for rule in self.q(sql):
+            group_id = rule.get('sg_id')
+            rules_for_group = results.get(group_id, [])
+            rules_for_group.append(rule)
+            results[group_id] = rules_for_group
+        return results
 
     # images
 
