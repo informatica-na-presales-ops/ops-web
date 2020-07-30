@@ -1,0 +1,127 @@
+{% extends 'one-up.html' %}
+
+{% block title %}Security Groups / {{ super() }}{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3">
+        <div class="col-12">
+            <h1 class="text-light">Security Groups</h1>
+            <div class="form-inline">
+                <label class="sr-only" for="filter-input"></label>
+                <input class="form-control" placeholder="Filter security groups..." id="filter-input"
+                       value="{{ g.default_filter if g.default_filter }}" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <table class="table table-dark table-striped table-sm d-none d-sm-block">
+                <thead>
+                <tr>
+                    <th>Cloud</th>
+                    <th>Region</th>
+                    <th>Name</th>
+                    <th>Owner</th>
+                    <th>Group ID</th>
+                    <th class="text-center">IP addresses</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for group in g.sg %}
+                    <tr class="filter-candidate" data-filter-value="{{ group.filter_value }}">
+                        <td>{{ group.cloud }}</td>
+                        <td>{{ group.region }}</td>
+                        <td>{{ group.group_name }}</td>
+                        <td>{{ group.owner }}</td>
+                        <td>{{ group.id }}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                    title="View allowed IP addresses" data-target="#modal-sg-list-ip-{{ loop.index }}">
+                                <span class="oi oi-eye"></span>
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="d-block d-sm-none">
+                {% for s in g.sg %}
+                    <div class="card text-light bg-dark border-light mb-2 filter-candidate"
+                         data-filter-value="{{ s.filter_value }}">
+                        <div class="card-body">
+                            <p class="card-text">
+                                {{ s.group_name }}<br>
+                                {{ s.cloud }}<br>
+                                {{ s.region }}<br>
+                                {{ s.owner }}<br>
+                                {{ s.id }}
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% for group in g.sg %}
+    {% set group_index = loop.index %}
+    <div class="modal" id="modal-sg-list-ip-{{ loop.index }}">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title text-light">IP addresses for {{ group.group_name }}</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group list-group-flush">
+                    {% for rule in group.rules %}
+                        <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6>{{ rule.ip_range }}</h6>
+                                <p>{{ rule.description }}</p>
+                            </div>
+                            <div><span class="oi oi-trash"></span></div>
+                        </li>
+                    {% endfor %}
+                        <li class="list-group-item bg-dark text-light">
+                            <button class="btn btn-outline-light" data-toggle="collapse" data-target="#add-new-ip-address-container-{{ loop.index }}">
+                                Add a new IP address
+                            </button>
+                        </li>
+                        <li class="list-group-item bg-dark text-light collapse" id="add-new-ip-address-container-{{ loop.index }}">
+                            <form action="{{ url_for('security_groups_add_rule') }}" method="post">
+                                <input type="hidden" name="cloud" value="{{ group.cloud }}">
+                                <input type="hidden" name="region" value="{{ group.region }}">
+                                <input type="hidden" name="security-group-id" value="{{ group.id }}">
+                                <div class="form-group">
+                                    <label for="new-ip-address-{{ loop.index }}">IP address</label>
+                                    <input type="text" class="form-control" id="new-ip-address-{{ loop.index }}"
+                                           name="new-ip-address" placeholder="1.2.3.4" required>
+                                    <small class="form-text text-muted">
+                                        You cannot add <code>0.0.0.0</code> or internal IP addresses (<code>10.x</code>, <code>192.168.x</code>, &c.)
+                                    </small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="description={{ loop.index }}">Description</label>
+                                    <input type="text" class="form-control" id="description={{ loop.index }}"
+                                           name="description" required>
+                                </div>
+                                <button type="submit" class="btn btn-outline-primary">Add IP address</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='environment-detail.js') }}"></script>
+    <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='filter.js') }}"></script>
+{% endblock %}

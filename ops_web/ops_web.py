@@ -2,6 +2,7 @@ import apscheduler.schedulers.background
 import datetime
 import decimal
 import elasticapm.contrib.flask
+import ipaddress
 import ops_web.aws
 import ops_web.az
 import ops_web.gcp
@@ -23,7 +24,6 @@ import uuid
 import waitress
 import werkzeug.middleware.proxy_fix
 import xlsxwriter
-import ipaddress
 
 config = ops_web.config.Config()
 scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 900})
@@ -255,86 +255,6 @@ def environments():
     return flask.render_template('environments/index.html')
 
 
-@app.route('/sap_access', methods=['GET', 'POST'])
-@login_required
-def sap_access():
-    db: ops_web.db.Database = flask.g.db
-    flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_own_environments(flask.g.email))
-    flask.g.default_filter = flask.request.values.get('filter', '').lower()
-    return flask.render_template('sap-access.html')
-
-
-@app.route('/sap_access/<environment>')
-@login_required
-def sap_access_detail(environment):
-    app.logger.debug(f'Getting information for environment {environment!r}')
-    db: ops_web.db.Database = flask.g.db
-    flask.g.environment = environment
-    _machines = db.get_machines_for_env(flask.g.email, environment)
-    flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
-    flask.g.environments = db.get_env_list()
-    flask.g.today = datetime.date.today()
-    return flask.render_template('sap_access_detail.html')
-
-
-@app.route('/ws_sg')
-@login_required
-def ws_sg():
-    db: ops_web.db.Database = flask.g.db
-    app.logger.info(flask.g.email)
-    flask.g.sg = db.get_groups(flask.g.email)
-    return flask.render_template('securitygroups.html')
-
-
-@app.route('/sap_access/<environment>/attach_sap_sg', methods=['GET', 'POST'])
-@login_required
-def attach_sap_sg(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
-    db: ops_web.db.Database = flask.g.db
-    machines = db.get_machines_for_env(flask.g.email, environment)
-    final_result = []
-    for machine in machines:
-        app.logger.info(machine.get('id'))
-        region = machine.get('region')
-        machine_id = machine.get('id')
-        vpc = machine.get('vpc')
-        account = db.get_one_credential_for_use(machine.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        app.logger.info(machine_id)
-        result = aws.add_sap_sg(region, machine_id, vpc)
-        final_result.append(result)
-    if all(c == 'Successful' for c in final_result):
-        return flask.redirect(flask.url_for('sap_access'))
-    else:
-        _error = ("Cannot give SAP Access to this environment. "
-                  "Check if the instances already have access or if they are in the correct VPC.")
-        return flask.render_template('500.html', error=_error)
-
-
-@app.route('/sap_access/<environment>/detach_sap_sg', methods=['GET', 'POST'])
-@login_required
-def detach_sap_sg(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
-    db: ops_web.db.Database = flask.g.db
-    machines = db.get_machines_for_env(flask.g.email, environment)
-    final_result = []
-    for machine in machines:
-        region = machine.get('region')
-        machine_id = machine.get('id')
-        vpc = machine.get('vpc')
-        account = db.get_one_credential_for_use(machine.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        app.logger.info(machine_id)
-        result = aws.remove_sap_sg(region, machine_id, vpc)
-        final_result.append(result)
-    if all(c == 'Successful' for c in final_result):
-        return flask.redirect(flask.url_for('sap_access'))
-    else:
-        return flask.render_template('500.html',
-                                     error="Cannot remove SAP Access from this environment. Check if the Access has "
-                                           "already been revoked")
-
-
 @app.route('/environments/<environment>')
 @login_required
 def environment_detail(environment):
@@ -421,6 +341,89 @@ def environment_stop(environment):
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
+@app.route('/images')
+@login_required
+def images():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.images = db.get_images(flask.g.email)
+    flask.g.environments = db.get_env_list()
+    username = flask.g.email.split('@')[0]
+    flask.g.default_environment = f'{username}-{datetime.datetime.utcnow():%Y%m%d-%H%M%S}'
+    flask.g.default_filter = flask.request.values.get('filter', '').lower()
+    return flask.render_template('images.html')
+
+
+@app.route('/sap_access', methods=['GET', 'POST'])
+@login_required
+def sap_access():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_own_environments(flask.g.email))
+    flask.g.default_filter = flask.request.values.get('filter', '').lower()
+    return flask.render_template('sap-access.html')
+
+
+@app.route('/sap_access/<environment>')
+@login_required
+def sap_access_detail(environment):
+    app.logger.debug(f'Getting information for environment {environment!r}')
+    db: ops_web.db.Database = flask.g.db
+    flask.g.environment = environment
+    _machines = db.get_machines_for_env(flask.g.email, environment)
+    flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
+    flask.g.environments = db.get_env_list()
+    flask.g.today = datetime.date.today()
+    return flask.render_template('sap_access_detail.html')
+
+
+@app.route('/sap_access/<environment>/attach_sap_sg', methods=['GET', 'POST'])
+@login_required
+def attach_sap_sg(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
+    db: ops_web.db.Database = flask.g.db
+    machines = db.get_machines_for_env(flask.g.email, environment)
+    final_result = []
+    for machine in machines:
+        app.logger.info(machine.get('id'))
+        region = machine.get('region')
+        machine_id = machine.get('id')
+        vpc = machine.get('vpc')
+        account = db.get_one_credential_for_use(machine.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        app.logger.info(machine_id)
+        result = aws.add_sap_sg(region, machine_id, vpc)
+        final_result.append(result)
+    if all(c == 'Successful' for c in final_result):
+        return flask.redirect(flask.url_for('sap_access'))
+    else:
+        _error = ("Cannot give SAP Access to this environment. "
+                  "Check if the instances already have access or if they are in the correct VPC.")
+        return flask.render_template('500.html', error=_error)
+
+
+@app.route('/sap_access/<environment>/detach_sap_sg', methods=['GET', 'POST'])
+@login_required
+def detach_sap_sg(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
+    db: ops_web.db.Database = flask.g.db
+    machines = db.get_machines_for_env(flask.g.email, environment)
+    final_result = []
+    for machine in machines:
+        region = machine.get('region')
+        machine_id = machine.get('id')
+        vpc = machine.get('vpc')
+        account = db.get_one_credential_for_use(machine.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        app.logger.info(machine_id)
+        result = aws.remove_sap_sg(region, machine_id, vpc)
+        final_result.append(result)
+    if all(c == 'Successful' for c in final_result):
+        return flask.redirect(flask.url_for('sap_access'))
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot remove SAP Access from this environment. Check if the Access has "
+                                           "already been revoked")
+
+
 @app.route('/sap_access/attach_sap_sg_machine', methods=['POST'])
 def attach_sap_sg_machine():
     machine_id = flask.request.values.get('machine-id')
@@ -462,16 +465,67 @@ def detach_sap_sg_machine():
                                      error="Cannot remove SAP Access from this instance. Check if the Access has already been revoked")
 
 
-@app.route('/images')
+@app.route('/security-groups')
 @login_required
-def images():
+def security_groups():
     db: ops_web.db.Database = flask.g.db
-    flask.g.images = db.get_images(flask.g.email)
-    flask.g.environments = db.get_env_list()
-    username = flask.g.email.split('@')[0]
-    flask.g.default_environment = f'{username}-{datetime.datetime.utcnow():%Y%m%d-%H%M%S}'
-    flask.g.default_filter = flask.request.values.get('filter', '').lower()
-    return flask.render_template('images.html')
+    flask.g.sg = db.get_security_groups(flask.g.email)
+    return flask.render_template('security-groups.html')
+
+
+@app.route('/security-groups/add-rule', methods=['POST'])
+@login_required
+def security_groups_add_rule():
+    cloud = flask.request.values.get('cloud')
+    region = flask.request.values.get('region')
+    sg_id = flask.request.values.get('security-group-id')
+    ip = flask.request.values.get('new-ip-address')
+    description = flask.request.values.get('description')
+
+    redir = flask.redirect(flask.url_for('security_groups'))
+    db: ops_web.db.Database = flask.g.db
+    if not db.can_modify_security_group(flask.g.email, sg_id):
+        flask.flash('You do not have permission to modify this security group.', 'danger')
+        return redir
+    if '/' in ip:
+        ip = ip.split('/')[0]
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        flask.flash(f'{ip!r} does not appear to be a valid IP address.', 'danger')
+        return redir
+    if ip.startswith('0.0.0.0'):
+        flask.flash(f'You can\'t add this IP address: {ip}', 'danger')
+        return redir
+    if ip.startswith('10.') or ip.startswith('192.168.'):
+        flask.flash(f'You can\'t add this internal IP address: {ip}', 'danger')
+        return redir
+
+    app.logger.info(f'Adding IP address {ip} to {sg_id}')
+    db.add_log_entry(flask.g.email, f'Add IP address {ip} to {sg_id}')
+    sg = db.get_security_group(sg_id)
+    account = db.get_one_credential_for_use(sg.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    result = aws.add_security_group_rule(region, sg_id, ip, description)
+    if result == 'successful':
+        flask.flash(f'Successfully added {ip} to {sg_id}', 'success')
+        params = {
+            'sg_id': sg_id,
+            'ip_range': f'{ip}/32',
+            'cloud': cloud,
+            'description': description
+        }
+        db.add_security_group_rule(params)
+    else:
+        flask.flash(f'Error adding {ip}: {result}', 'danger')
+
+    return redir
+
+
+@app.route('/security-groups/delete-rule', methods=['POST'])
+@login_required
+def security_groups_delete_rule():
+    pass
 
 
 @app.route('/wscreator')
@@ -597,40 +651,6 @@ def synchosts_az():
             instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
 
         return flask.render_template('postdep_az.html', instance=instance_info2, idlist=id_list7)
-
-
-@app.route('/ws_sg/edit', methods=['GET', 'POST'])
-@login_required
-def sg_edit():
-    sg_id = flask.request.values.get('sg-id')
-    ip = flask.request.values.get('IP')
-    if '/' in ip:
-        ip = ip.split('/')[0]
-    done = False
-    try:
-        ipaddress.ip_address(ip)
-    except ValueError:
-        flask.flash(f'{ip!r} does not appear to be a valid IP address.', 'danger')
-        done = True
-    if not done and ip.startswith('0.0.0.0'):
-        flask.flash(f'You can\'t add this IP address: {ip}')
-        done = True
-    if not done and (ip.startswith('10.') or ip.startswith('192.168.')):
-        flask.flash(f'You can\'t add this internal IP address: {ip}')
-        done = True
-    if not done:
-        app.logger.info(f'Adding IP address {ip} to {sg_id}')
-        db: ops_web.db.Database = flask.g.db
-        db.add_log_entry(flask.g.email, f'Add IP address {ip} to {sg_id}')
-        sg = db.get_group(sg_id)
-        account = db.get_one_credential_for_use(sg.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        result = aws.add_inboundrule(sg_id, ip)
-        if result == 'successful':
-            flask.flash(f'Successfully added {ip} to {sg_id}', 'success')
-        else:
-            flask.flash(f'Unknown error adding this IP address: {ip}', 'danger')
-        return flask.redirect(flask.url_for('ws_sg'))
 
 
 @app.route('/launch', methods=['GET', 'POST'])
@@ -1420,15 +1440,15 @@ def sync_machines():
         for account in db.get_all_credentials_for_use('aws'):
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
             try:
+                for security_group in aws.get_all_security_groups():
+                    security_group['account_id'] = account.get('id')
+                    db.add_security_group(security_group)
                 for instance in aws.get_all_instances():
                     instance['account_id'] = account.get('id')
                     db.add_machine(instance)
                 for image in aws.get_all_images():
                     image['account_id'] = account.get('id')
                     db.add_image(image)
-                for security_group in aws.get_all_security_groups():
-                    security_group['account_id'] = account.get('id')
-                    db.add_group(security_group)
             except Exception as e:
                 apm.capture_exception()
                 app.logger.exception(e)

@@ -92,7 +92,8 @@ class Database(fort.PostgresDatabase):
         params = {'id': cred_id}
         for sql in ['delete from cloud_credentials where id = %(id)s',
                     'update images set visible = false where account_id = %(id)s',
-                    'update virtual_machines set visible = false where account_id = %(id)s']:
+                    'update virtual_machines set visible = false where account_id = %(id)s',
+                    'update security_group set visible = false where account_id = %(id)s']:
             self.u(sql, params)
 
     def get_cloud_credentials(self):
@@ -317,34 +318,66 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    def get_group(self, group_id: str) -> Optional[Dict]:
-        sql = '''
-            select id, cloud, owner, inbound_rules, group_name, account_id
-            from security_group
-            where id = %(id)s
-        '''
-        params = {'id': group_id}
-        return self.q_one(sql, params)
+    # security groups
 
-    def get_groups(self, email: str) -> List[Dict]:
+    def can_modify_security_group(self, email: str, group_id: str) -> bool:
+        if self.has_permission(email, 'admin'):
+            return True
+        sg = self.get_security_group(group_id)
+        if email == sg.get('email'):
+            return True
+        return False
+
+    def get_security_group(self, group_id: str) -> Optional[Dict]:
+        sql = 'select id, cloud, owner, group_name, account_id, region from security_group where id = %(id)s'
+        params = {'id': group_id}
+        sg = self.q_one(sql, params)
+        if sg is not None:
+            sg = dict(sg)
+            sg_rules = [dict(r) for r in self.get_security_group_rules(sg.get('id'))]
+            sg['rules'] = sg_rules
+        return sg
+
+    def get_security_groups(self, email: str) -> List[Dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
-                    id, cloud, inbound_rules, group_name, owner, account_id,
+                    id, cloud, group_name, owner, account_id, region,
                     lower(coalesce(id, '') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) as
                     filter_value 
                 from security_group
+                where visible is true
                 '''
         else:
             sql = '''
                 select
-                    id, cloud, inbound_rules, group_name, owner, account_id,
+                    id, cloud, group_name, owner, account_id, region,
                     lower(coalesce(id, '') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) as
                     filter_value 
                 from security_group
-                where owner = %(email)s
+                where visible is true
+                and owner = %(email)s
             '''
-        return self.q(sql, {'email': email})
+        params = {'email': email}
+        results = []
+        for sg in self.q(sql, params):
+            sg = dict(sg)
+            sg_rules = [dict(r) for r in self.get_security_group_rules(sg.get('id'))]
+            sg['rules'] = sg_rules
+            results.append(sg)
+        return results
+
+    def get_security_group_rules(self, group_id: str) -> List[Dict]:
+        sql = '''
+            select sg_id, ip_range, description
+            from security_group_rules
+            where visible is true
+            and sg_id = %(sg_id)s
+        '''
+        params = {
+            'sg_id': group_id
+        }
+        return self.q(sql, params)
 
     # images
 
@@ -416,19 +449,15 @@ class Database(fort.PostgresDatabase):
 
     def pre_sync(self, cloud: str):
         params = {'cloud': cloud}
-        sql = '''
-            update virtual_machines set synced = false where (synced is true or synced is null) and cloud = %(cloud)s
-        '''
-        self.u(sql, params)
-        sql = 'update images set synced = false where (synced is true or synced is null) and cloud = %(cloud)s'
-        self.u(sql, params)
+        for table in ('images', 'security_group', 'security_group_rules', 'virtual_machines'):
+            sql = f'update {table} set synced = false where (synced is true or synced is null) and cloud = %(cloud)s'
+            self.u(sql, params)
 
     def post_sync(self, cloud: str):
         params = {'cloud': cloud}
-        sql = 'update virtual_machines set visible = false where synced is false and cloud = %(cloud)s'
-        self.u(sql, params)
-        sql = 'update images set visible = false where synced is false and cloud = %(cloud)s'
-        self.u(sql, params)
+        for table in ('images', 'security_group', 'security_group_rules', 'virtual_machines'):
+            sql = f'update {table} set visible = false where synced is false and cloud = %(cloud)s'
+            self.u(sql, params)
 
     def add_machine(self, params: Dict):
         # params = {
@@ -491,25 +520,46 @@ class Database(fort.PostgresDatabase):
             '''
         self.u(sql, params)
 
-    def add_group(self, params: Dict):
-        # params = {
-        #   'id': '', 'cloud': '', 'owner':'', 'inbound_rules':'', 'group_name':'', 'account_id': ''
-        # }
-
+    def add_security_group(self, params: Dict):
         sql = 'select id from security_group where id = %(id)s'
         if self.q(sql, params):
             sql = '''
                 update security_group
-                set cloud = %(cloud)s, owner = %(owner)s, inbound_rules = %(inbound_rules)s,
-                    group_name = %(group_name)s, account_id = %(account_id)s
+                set cloud = %(cloud)s, region = %(region)s, owner = %(owner)s, group_name = %(group_name)s,
+                    account_id = %(account_id)s, visible = true, synced = true
                 where id = %(id)s
            '''
         else:
             sql = '''
                 insert into security_group (
-                    id, cloud, owner, inbound_rules, group_name, account_id
+                    id, cloud, region, owner, group_name, account_id, visible, synced
                 ) values (
-                    %(id)s, %(cloud)s, %(owner)s, %(inbound_rules)s, %(group_name)s, %(account_id)s
+                    %(id)s, %(cloud)s, %(region)s, %(owner)s, %(group_name)s, %(account_id)s, true, true
+                )
+            '''
+        self.u(sql, params)
+        for rule in params.get('sg_rules'):
+            self.add_security_group_rule({
+                'cloud': params.get('cloud'),
+                'sg_id': params.get('id'),
+                'ip_range': rule.get('ip_range'),
+                'description': rule.get('description')
+            })
+
+    def add_security_group_rule(self, params: Dict):
+        sql = 'select sg_id from security_group_rules where sg_id = %(sg_id)s and ip_range = %(ip_range)s'
+        if self.q(sql, params):
+            sql = '''
+                update security_group_rules
+                set cloud = %(cloud)s, description = %(description)s, visible = true, synced = true
+                where sg_id = %(sg_id)s and ip_range = %(ip_range)s
+            '''
+        else:
+            sql = '''
+                insert into security_group_rules (
+                    cloud, sg_id, ip_range, description, visible, synced
+                ) values (
+                    %(cloud)s, %(sg_id)s, %(ip_range)s, %(description)s, true, true
                 )
             '''
         self.u(sql, params)
@@ -1351,6 +1401,26 @@ class Database(fort.PostgresDatabase):
                 alter column cost type money using cost::money
             ''')
             self.add_schema_version(35)
+        if self.version < 36:
+            self.log.info('Migrating to database schema version 36')
+            self.u('''
+                create table security_group_rules (
+                    cloud text,
+                    sg_id text,
+                    ip_range cidr,
+                    description text,
+                    visible boolean,
+                    synced boolean
+                )
+            ''')
+            self.u('''
+                alter table security_group
+                drop column inbound_rules,
+                add column region text,
+                add column visible boolean,
+                add column synced boolean
+            ''')
+            self.add_schema_version(36)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

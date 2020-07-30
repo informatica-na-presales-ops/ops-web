@@ -396,30 +396,28 @@ class AWSClient:
             else:
                 log.info("not allocating elastic IP as it is not a windows machine")
 
-    def add_inboundrule(self, sgid: str, ip: str):
-        log.info(ip)
-        ec2 = self.get_service_resource('ec2', 'us-west-2')
-        sg = ec2.SecurityGroup(sgid)
+    def add_security_group_rule(self, region: str, sg_id: str, ip: str, description: str):
+        log.debug(f'Adding {ip} to {region}:{sg_id}')
+        ec2 = self.get_service_resource('ec2', region)
+        sg = ec2.SecurityGroup(sg_id)
         try:
             sg.authorize_ingress(
                 IpPermissions=[
                     {
                         'FromPort': -1,
-                        'IpProtocol': '-1',
-                        'IpRanges': [
-                            {
-                                'CidrIp': ip,
-                            },
-
-                        ],
                         'ToPort': -1,
+                        'IpProtocol': '-1',
+                        'IpRanges': [{
+                            'CidrIp': f'{ip}/32',
+                            'Description': description
+                        }]
                     }
                 ]
             )
             return "successful"
         except Exception as e:
             log.exception(e)
-            return "exception!"
+            return e
 
     def create_instance_defaultspecs(self, region: str, imageid: str, name: str, owner: str, environment: str,
                                      vpc: str):
@@ -633,30 +631,25 @@ class AWSClient:
 
     def get_all_security_groups(self):
         for region in self.get_available_regions():
-            log.info(f'Getting all EC2 security groups in {region}')
-            ec2 = self.get_service_resource('ec2', region)
-            security_groups = ec2.security_groups.all()
+            log.info(f'Getting all security groups in {region}')
+            ec2 = self.session.resource('ec2', region_name=region)
             try:
-                for sgid in security_groups:
-                    inbound_address_list = []
-                    tags = tag_list_to_dict(sgid.tags)
-                    ip_permissions_list = sgid.ip_permissions
-                    if (len(ip_permissions_list)) == 0:
-                        inbound_address_list = []
-                    else:
-                        for i in ip_permissions_list:
-                            if 'IpRanges' in i:
-                                ips = i['IpRanges']
-                        for s in ips:
-                            if 'CidrIp' in s:
-                                inbound_address_list.append(s['CidrIp'])
+                for sg in ec2.security_groups.all():
+                    sg_rules = []
+                    tags = tag_list_to_dict(sg.tags)
+                    for ip_perm in sg.ip_permissions:
+                        for ip_range in ip_perm.get('IpRanges', []):
+                            sg_rules.append({
+                                'ip_range': ip_range.get('CidrIp'),
+                                'description': ip_range.get('Description')}
+                            )
                     params = {
                         'region': region,
                         'owner': tags.get('OWNEREMAIL', ''),
                         'cloud': 'aws',
-                        'id': sgid.group_id,
-                        'inbound_rules': inbound_address_list,
-                        'group_name': sgid.group_name
+                        'id': sg.group_id,
+                        'sg_rules': sg_rules,
+                        'group_name': sg.group_name
                     }
                     yield params
             except botocore.exceptions.ClientError as e:
