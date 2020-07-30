@@ -82,7 +82,18 @@
                                 <h6>{{ rule.ip_range }}</h6>
                                 <p>{{ rule.description }}</p>
                             </div>
-                            <div><span class="oi oi-trash"></span></div>
+                            <form action="{{ url_for('security_groups_delete_rule') }}" method="post">
+                                <input type="hidden" name="security-group-id" value="{{ group.id }}">
+                                <input type="hidden" name="ip-range" value="{{ rule.ip_range }}">
+                                <input type="hidden" name="region" value="{{ group.region }}">
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <span class="oi oi-trash"></span>
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item bg-dark text-light">
+                            <h6>No rules in this security group</h6>
                         </li>
                     {% endfor %}
                         <li class="list-group-item bg-dark text-light">

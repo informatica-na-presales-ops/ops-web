@@ -419,6 +419,19 @@ class AWSClient:
             log.exception(e)
             return e
 
+    def delete_security_group_rule(self, region: str, sg_id: str, ip_range: str):
+        log.debug(f'Removing {ip_range} from {region}:{sg_id}')
+        ec2 = self.get_service_resource('ec2', region)
+        sg = ec2.SecurityGroup(sg_id)
+        sg.revoke_ingress(
+            IpPermissions=[{
+                'FromPort': -1,
+                'ToPort': -1,
+                'IpProtocol': '-1',
+                'IpRanges': [{'CidrIp': ip_range}]
+            }]
+        )
+
     def create_instance_defaultspecs(self, region: str, imageid: str, name: str, owner: str, environment: str,
                                      vpc: str):
         ec2 = self.get_service_resource('ec2', region)

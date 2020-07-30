@@ -328,6 +328,14 @@ class Database(fort.PostgresDatabase):
             return True
         return False
 
+    def delete_security_group_rule(self, group_id: str, ip_range: str):
+        sql = 'delete from security_group_rules where sg_id = %(group_id)s and ip_range = %(ip_range)s'
+        params = {
+            'group_id': group_id,
+            'ip_range': ip_range
+        }
+        self.u(sql, params)
+
     def get_security_group(self, group_id: str) -> Optional[Dict]:
         sql = 'select id, cloud, owner, group_name, account_id, region from security_group where id = %(id)s'
         params = {'id': group_id}

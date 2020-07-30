@@ -525,7 +525,22 @@ def security_groups_add_rule():
 @app.route('/security-groups/delete-rule', methods=['POST'])
 @login_required
 def security_groups_delete_rule():
-    pass
+    redir = flask.redirect(flask.url_for('security_groups'))
+    group_id = flask.request.values.get('security-group-id')
+    ip_range = flask.request.values.get('ip-range')
+    region = flask.request.values.get('region')
+    db: ops_web.db.Database = flask.g.db
+    if not db.can_modify_security_group(flask.g.email, group_id):
+        flask.flash('You do not have permission to modify this security group.', 'danger')
+        return redir
+
+    app.logger.debug(f'Removing IP address range {ip_range} from {group_id}')
+    security_group = db.get_security_group(group_id)
+    account = db.get_one_credential_for_use(security_group.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    aws.delete_security_group_rule(region, group_id, ip_range)
+    db.delete_security_group_rule(group_id, ip_range)
+    return redir
 
 
 @app.route('/wscreator')
