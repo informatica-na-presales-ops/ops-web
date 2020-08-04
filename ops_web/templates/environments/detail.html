@@ -48,7 +48,6 @@
                 <thead>
                 <tr>
                     <th>State</th>
-                    <th class="text-center">ID</th>
                     <th>Name</th>
                     <th>Public IP</th>
                     <th>Cloud</th>
@@ -56,10 +55,10 @@
                     <th>Type</th>
                     <th>Running time</th>
                     <th>Running schedule</th>
-                    <th class="text-right"
-                        title="Cost of a machine includes compute, attached volumes, and attached network interfaces">
+                    <th class="text-right">
                         30 day cost
-                        <span class="badge badge-secondary">
+                        <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-container="body"
+                              data-placement="bottom" data-content="Cost of a machine includes compute, attached volumes, and attached network interfaces">
                             <span class="oi oi-info"></span>
                         </span>
                     </th>
@@ -73,19 +72,18 @@
                 {% for m in g.machines %}
                     <tr>
                         <td>
-                            <span class="oi oi-lock-{{ 'un' if not m.termination_protection }}locked {{ g.machine_state_class_map[m.state] }}"]
+                            <span class="oi oi-lock-{{ 'un' if not m.termination_protection }}locked {{ g.machine_state_class_map[m.state] }}"
                                   title="This machine can{{ 'not' if m.termination_protection }} be deleted">
                             </span>
                             {{ m.state }}
                         </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-outline-light" data-toggle="popover"
-                                    data-container="body" data-placement="bottom" data-html="true"
-                                    data-content="<span class='select-all'>{{ m.id }}</span>">
+                        <td>
+                            <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-container="body"
+                                  data-placement="bottom" data-html="true" data-content="<span class='select-all'>{{ m.id }}</span>">
                                 <span class="oi oi-info"></span>
-                            </button>
+                            </span>
+                            {{ m.name }}
                         </td>
-                        <td>{{ m.name }}</td>
                         <td>{{ m.public_ip or '' }}</td>
                         <td>{{ m.cloud }}</td>
                         <td>{{ m.region }}</td>
@@ -321,7 +319,7 @@
                         </div>
                         <div class="form-group">
                             <label for="form-gcpimage-{{ loop.index }}-owner" class="text-light">Owner</label>
-                            <input type="text" class="form-control" id="form-gcpimage-{{ loop.index }}-owner" name="owner" readonly = true value="{{ m.owner }}" >
+                            <input type="text" class="form-control" id="form-gcpimage-{{ loop.index }}-owner" name="owner" readonly value="{{ m.owner }}" >
                         </div>
                     </form>
                 </div>
