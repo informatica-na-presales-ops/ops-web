@@ -90,6 +90,7 @@ def load_request_data():
     flask.g.db = ops_web.db.Database(config)
     flask.g.email = flask.session.get('email')
     flask.g.permissions = flask.g.db.get_permissions(flask.g.email)
+    flask.g.zendesk_widget_key = flask.g.db.get_setting('zendesk-widget-key')
 
 
 @app.route('/')
@@ -141,16 +142,6 @@ def admin_cloud_credentials_edit():
     return flask.redirect(flask.url_for('admin_cloud_credentials'))
 
 
-@app.route('/admin/cost-data/sync', methods=['POST'])
-@permission_required('admin')
-def admin_cost_data_sync():
-    db: ops_web.db.Database = flask.g.db
-    db.add_log_entry(flask.g.email, 'Manual cost data sync')
-    scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
-    flask.flash('Cost data synchronization has started.', 'primary')
-    return flask.redirect(flask.url_for('admin_settings'))
-
-
 @app.route('/admin/settings')
 @permission_required('admin')
 def admin_settings():
@@ -162,7 +153,7 @@ def admin_settings():
     return flask.render_template('admin/settings.html')
 
 
-@app.route('/admin/settings/cost-data', methods=['POST'])
+@app.route('/admin/settings/cloudability', methods=['POST'])
 def admin_settings_cost_data():
     db: ops_web.db.Database = flask.g.db
     app.logger.debug(f'Cost data settings updated: {list(flask.request.values.lists())}')
@@ -173,13 +164,33 @@ def admin_settings_cost_data():
     return flask.redirect(flask.url_for('admin_settings'))
 
 
+@app.route('/admin/settings/cloudability/sync', methods=['POST'])
+@permission_required('admin')
+def admin_cost_data_sync():
+    db: ops_web.db.Database = flask.g.db
+    db.add_log_entry(flask.g.email, 'Manual cost data sync')
+    scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
+    flask.flash('Cost data synchronization has started.', 'primary')
+    return flask.redirect(flask.url_for('admin_settings'))
+
+
 @app.route('/admin/settings/display', methods=['POST'])
 def admin_settings_display():
     db: ops_web.db.Database = flask.g.db
     image_name_display_length = flask.request.values.get('image-name-display-length')
     app.logger.debug(f'Settings updated: image-name-display-length={image_name_display_length}')
     db.set_setting('image-name-display-length', image_name_display_length)
-    db.add_log_entry(flask.g.email, 'Updated settings: image-name-display-length={image_name_display_length}')
+    db.add_log_entry(flask.g.email, f'Updated settings: image-name-display-length={image_name_display_length}')
+    return flask.redirect(flask.url_for('admin_settings'))
+
+
+@app.route('/admin/settings/zendesk', methods=['POST'])
+def admin_settings_zendesk():
+    db: ops_web.db.Database = flask.g.db
+    zendesk_widget_key = flask.request.values.get('zendesk-widget-key')
+    app.logger.debug(f'{flask.g.email} updated settings: zendesk_widget_key={zendesk_widget_key}')
+    db.set_setting('zendesk-widget-key', zendesk_widget_key)
+    db.add_log_entry(flask.g.email, f'Updated settings: zendesk_widget_key={zendesk_widget_key}')
     return flask.redirect(flask.url_for('admin_settings'))
 
 
@@ -194,7 +205,6 @@ def admin_users():
         'sc-assignments': 'view and manage sales consultant assignments',
         'survey-admin': 'view all opportunity debrief surveys'
     }
-    flask.g.cloud_credentials = db.get_cloud_credentials()
     return flask.render_template('admin/users.html')
 
 

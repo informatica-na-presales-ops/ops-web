@@ -101,8 +101,8 @@
 {% endblock %}
 
 {% block end_of_body %}
-    {% if 'zendesk-widget' in g.config.feature_flags %}
-    <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key={{ g.config.zendesk_widget_key }}"></script>
+    {% if g.zendesk_widget_key %}
+    <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key={{ g.zendesk_widget_key }}"></script>
     <script src="{{ url_for('static', filename='zendesk-widget-setup.js') }}"></script>
     {% endif %}
 {% endblock %}

@@ -19,6 +19,7 @@
 
     <div class="row pt-3">
         <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6 text-light">
+
             <div class="card bg-dark border-light mb-3">
                 <h5 class="card-header">
                     <a class="text-decoration-none text-light" href="#cost-data-form" data-toggle="collapse">Cloudability integration</a>
@@ -44,7 +45,8 @@
                     </form>
                 </div>
             </div>
-            <div class="card bg-dark border-light">
+
+            <div class="card bg-dark border-light mb-3">
                 <h5 class="card-header">
                     <a class="text-decoration-none text-light" href="#display-form" data-toggle="collapse">Display settings</a>
                 </h5>
@@ -58,6 +60,22 @@
                                 Must be a number between 10 and 255.
                                 The longest image name currently in the database has {{ g.current_image_name_max_length }} characters.
                             </small>
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">Save</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-light mb-3">
+                <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#zendesk-integration-form" data-toggle="collapse">Zendesk integration</a>
+                </h5>
+                <div class="card-body collapse" id="zendesk-integration-form">
+                    <form action="{{ url_for('admin_settings_zendesk') }}" method="post">
+                        <div class="form-group">
+                            <label for="zendesk-widget-key">Zendesk widget key</label>
+                            <input type="text" class="form-control" id="zendesk-widget-key" name="zendesk-widget-key"
+                                   value="{{ g.zendesk_widget_key if g.zendesk_widget_key }}">
                         </div>
                         <button type="submit" class="btn btn-outline-success">Save</button>
                     </form>
