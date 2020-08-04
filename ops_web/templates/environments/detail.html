@@ -275,7 +275,7 @@
                     <button type="button" class="close text-light" data-dismiss="modal" >&times;</button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-image-{{ loop.index }}" action="{{ url_for('image_create')}}" method="post">
+                    <form id="form-image-{{ loop.index }}" action="{{ url_for('images_create')}}" method="post">
                         <input type="hidden" name="environment" value="{{ g.environment }}">
                         <input type="hidden" name="cloud" value="{{ m.cloud }}">
                         <input type="hidden" name="region" value="{{ m.region }}">
@@ -310,7 +310,7 @@
                     <button type="button" class="close text-light" data-dismiss="modal" >&times;</button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-gcpimage-{{ loop.index }}" action="{{ url_for('image_create')}}" method="post">
+                    <form id="form-gcpimage-{{ loop.index }}" action="{{ url_for('images_create')}}" method="post">
                         <input type="hidden" name="environment" value="{{ g.environment }}">
                         <input type="hidden" name="cloud" value="{{ m.cloud }}">
                         <input type="hidden" name="region" value="{{ m.region }}">

@@ -42,7 +42,7 @@
                 </div>
                 <div class="modal-body">
                     <p class="text-light">This will delete an image and clean up any underlying snapshots automatically. AWS only at the moment.</p>
-                    <form id="form-delete-image" action="{{ url_for('image_delete') }}" method="post">
+                    <form id="form-delete-image" action="{{ url_for('images_delete') }}" method="post">
                         <div class="form-group">
                             <label for="image-id" class="text-light">Image ID</label>
                             <input type="text" class="form-control" id="image-id" name="image-id" required>

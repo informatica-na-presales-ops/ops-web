@@ -157,6 +157,8 @@ def admin_settings():
     db: ops_web.db.Database = flask.g.db
     flask.g.cloudability_auth_token = db.get_setting('cloudability-auth-token')
     flask.g.cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
+    flask.g.image_name_display_length = db.get_setting('image-name-display-length')
+    flask.g.current_image_name_max_length = db.get_image_name_max_length()
     return flask.render_template('admin/settings.html')
 
 
@@ -365,6 +367,118 @@ def images():
     flask.g.default_environment = f'{username}-{datetime.datetime.utcnow():%Y%m%d-%H%M%S}'
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('images.html')
+
+
+@app.route('/images/create', methods=['POST'])
+@login_required
+def images_create():
+    machine_id = flask.request.values.get('machine-id')
+    app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
+    db: ops_web.db.Database = flask.g.db
+    machine = db.get_machine(machine_id, flask.g.email)
+    if machine.get('can_modify'):
+        db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
+        cloud = flask.request.values.get('cloud')
+        region = flask.request.values.get('region')
+        name = flask.request.values.get('image-name')
+        owner = flask.request.values.get('owner')
+        public = 'public' in flask.request.values
+        if cloud == 'az':
+            app.logger.warning(f'Unable to create images for cloud {cloud}')
+            environment = flask.request.values.get('environment')
+            return flask.redirect(flask.url_for('environment_detail', environment=environment))
+        elif cloud == 'aws':
+            account = db.get_one_credential_for_use(machine.get('account_id'))
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            image_id = aws.create_image(region, machine_id, name, owner, public)
+            params = {
+                'id': image_id,
+                'cloud': cloud,
+                'region': region,
+                'name': name,
+                'owner': owner,
+                'public': public,
+                'state': 'pending',
+                'created': datetime.datetime.utcnow(),
+                'instanceid': machine_id,
+                'account_id': machine.get('account_id'),
+                'cost': decimal.Decimal('0')
+            }
+            db.add_image(params)
+            return flask.redirect(flask.url_for('images'))
+        elif cloud == 'gcp':
+            ops_web.gcp.create_machine_image(machine.get('name'), machine.get('region'), name)
+            app.logger.info(name)
+            params = {
+                'id': 'pending',
+                'cloud': cloud,
+                'region': machine.get('region'),
+                'name': name,
+                'state': 'pending',
+                'created': datetime.datetime.utcnow(),
+                'instanceid': machine.get('id'),
+                'account_id': None,
+                'owner': owner,
+                'public': public,
+                'cost': decimal.Decimal('0')
+            }
+            db.add_image(params)
+            return flask.redirect(flask.url_for('images'))
+
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to create an image from {machine_id}')
+        return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
+
+
+@app.route('/images/delete', methods=['POST'])
+@permission_required('admin')
+def images_delete():
+    db: ops_web.db.Database = flask.g.db
+    image_id = flask.request.values.get('image-id')
+    app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
+    db.add_log_entry(flask.g.email, f'Delete image {image_id}')
+    db.set_image_state(image_id, 'deleting')
+    image = db.get_image(image_id)
+    account = db.get_one_credential_for_use(image.get('account_id'))
+    cloud = image.get('cloud')
+    if cloud == 'aws':
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        region = image.get('region')
+        aws.delete_image(region, image_id)
+    return flask.redirect(flask.url_for('toolbox'))
+
+
+@app.route('/images/edit', methods=['POST'])
+@login_required
+def images_edit():
+    image_id = flask.request.values.get('image-id')
+    app.logger.info(f'Got a request from {flask.g.email} to edit image {image_id}')
+    db: ops_web.db.Database = flask.g.db
+    image = db.get_image(image_id)
+    if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
+        db.add_log_entry(flask.g.email, f'Update tags on image {image_id}')
+        image_name = flask.request.values.get('image-name')
+        owner = flask.request.values.get('owner')
+        public = 'public' in flask.request.values
+        db.set_image_tags(image_id, image_name, owner, public)
+        tags = {
+            'NAME': image_name,
+            'OWNEREMAIL': owner,
+            'image_public': str(public)
+        }
+        cloud = image.get('cloud')
+        account = db.get_one_credential_for_use(image.get('account_id'))
+        if cloud == 'aws':
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            region = image.get('region')
+            aws.update_resource_tags(region, image_id, tags)
+        elif cloud == 'az':
+            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                     account.get('azure_tenant_id'))
+            az.update_image_tags(image_id, tags)
+    else:
+        app.logger.warning(f'{flask.g.email} does not have permission to edit {image_id}')
+    return flask.redirect(flask.url_for('images'))
 
 
 @app.route('/sap_access', methods=['GET', 'POST'])
@@ -729,67 +843,6 @@ def launch():
         return flask.render_template('postdep.html', instance=instanceslist, idlist=instanceidlist)
 
 
-@app.route('/images/create', methods=['POST'])
-@login_required
-def image_create():
-    machine_id = flask.request.values.get('machine-id')
-    app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
-    db: ops_web.db.Database = flask.g.db
-    machine = db.get_machine(machine_id, flask.g.email)
-    if machine.get('can_modify'):
-        db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
-        cloud = flask.request.values.get('cloud')
-        region = flask.request.values.get('region')
-        name = flask.request.values.get('image-name')
-        owner = flask.request.values.get('owner')
-        public = 'public' in flask.request.values
-        if cloud == 'az':
-            app.logger.warning(f'Unable to create images for cloud {cloud}')
-            environment = flask.request.values.get('environment')
-            return flask.redirect(flask.url_for('environment_detail', environment=environment))
-        elif cloud == 'aws':
-            account = db.get_one_credential_for_use(machine.get('account_id'))
-            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            image_id = aws.create_image(region, machine_id, name, owner, public)
-            params = {
-                'id': image_id,
-                'cloud': cloud,
-                'region': region,
-                'name': name,
-                'owner': owner,
-                'public': public,
-                'state': 'pending',
-                'created': datetime.datetime.utcnow(),
-                'instanceid': machine_id,
-                'account_id': machine.get('account_id'),
-                'cost': decimal.Decimal('0')
-            }
-            db.add_image(params)
-            return flask.redirect(flask.url_for('images'))
-        elif cloud == 'gcp':
-            ops_web.gcp.create_machine_image(machine.get('name'), machine.get('region'), name)
-            app.logger.info(name)
-            params = {
-                'id': 'pending',
-                'cloud': cloud,
-                'region': machine.get('region'),
-                'name': name,
-                'state': 'pending',
-                'created': datetime.datetime.utcnow(),
-                'instanceid': machine.get('id'),
-                'account_id': None,
-                'owner': owner,
-                'public': public,
-                'cost': decimal.Decimal('0')
-            }
-            db.add_image(params)
-            return flask.redirect(flask.url_for('images'))
-
-    else:
-        app.logger.warning(f'{flask.g.email} does not have permission to create an image from {machine_id}')
-        return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
-
-
 @app.route('/az_launch', methods=['POST'])
 @login_required
 def az_launch():
@@ -838,57 +891,6 @@ def az_launch():
             app.logger.info(idlist)
             app.logger.info(instance_info)
         return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
-
-
-@app.route('/images/delete', methods=['POST'])
-@permission_required('admin')
-def image_delete():
-    db: ops_web.db.Database = flask.g.db
-    image_id = flask.request.values.get('image-id')
-    app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
-    db.add_log_entry(flask.g.email, f'Delete image {image_id}')
-    db.set_image_state(image_id, 'deleting')
-    image = db.get_image(image_id)
-    account = db.get_one_credential_for_use(image.get('account_id'))
-    cloud = image.get('cloud')
-    if cloud == 'aws':
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        region = image.get('region')
-        aws.delete_image(region, image_id)
-    return flask.redirect(flask.url_for('toolbox'))
-
-
-@app.route('/images/edit', methods=['POST'])
-@login_required
-def image_edit():
-    image_id = flask.request.values.get('image-id')
-    app.logger.info(f'Got a request from {flask.g.email} to edit image {image_id}')
-    db: ops_web.db.Database = flask.g.db
-    image = db.get_image(image_id)
-    if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
-        db.add_log_entry(flask.g.email, f'Update tags on image {image_id}')
-        image_name = flask.request.values.get('image-name')
-        owner = flask.request.values.get('owner')
-        public = 'public' in flask.request.values
-        db.set_image_tags(image_id, image_name, owner, public)
-        tags = {
-            'NAME': image_name,
-            'OWNEREMAIL': owner,
-            'image_public': str(public)
-        }
-        cloud = image.get('cloud')
-        account = db.get_one_credential_for_use(image.get('account_id'))
-        if cloud == 'aws':
-            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            region = image.get('region')
-            aws.update_resource_tags(region, image_id, tags)
-        elif cloud == 'az':
-            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
-                                     account.get('azure_tenant_id'))
-            az.update_image_tags(image_id, tags)
-    else:
-        app.logger.warning(f'{flask.g.email} does not have permission to edit {image_id}')
-    return flask.redirect(flask.url_for('images'))
 
 
 @app.route('/machines/create/launchmachine_default_specs', methods=['POST', 'GET'])

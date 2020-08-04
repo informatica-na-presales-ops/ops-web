@@ -41,12 +41,12 @@
                     <tr class="filter-candidate" data-filter-value="{{ i.filter_value }}">
                         <td>{{ i.cloud }}</td>
                         <td>{{ i.region }}</td>
-                        <td class="text-truncate max-width-600px">
+                        <td>
                             <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-container="body"
                                   data-placement="bottom" title="{{ i.id }}" data-content="{{ i.name }}">
                                 <span class="oi oi-info"></span>
                             </span>
-                            {{ i.name }}
+                            {{ i.truncated_name }}
                         </td>
                         <td>{{ i.owner }}</td>
                         <td>{{ i.created.date() if i.created }}</td>
@@ -160,7 +160,7 @@
                     <button type="button" class="close text-light" data-dismiss="modal" >&times;</button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-image-edit" action="{{ url_for('image_edit')}}" method="post">
+                    <form id="form-image-edit" action="{{ url_for('images_edit')}}" method="post">
                         <input type="hidden" name="image-id" id="form-image-edit-image-id">
                         <div class="form-group">
                             <label for="form-image-edit-name" class="text-light">Image name</label>

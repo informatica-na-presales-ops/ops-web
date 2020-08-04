@@ -432,7 +432,12 @@ class Database(fort.PostgresDatabase):
                 where visible is true
                 and (owner = %(email)s or public is true)
             '''
-        return self.q(sql, {'email': email, 'name_limit': name_limit})
+        params = {'email': email, 'name_limit': name_limit}
+        return self.q(sql, params)
+
+    def get_image_name_max_length(self) -> int:
+        sql = 'select coalesce(max(length(name)), 0) from images where visible is true'
+        return self.q_val(sql)
 
     def get_image(self, image_id: str) -> Dict:
         sql = '''
