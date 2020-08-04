@@ -1,6 +1,7 @@
 .date-column { width: 100px; }
 
-.mw-800px { max-width: 800px; }
+.max-width-600px { max-width: 600px; }
+.min-width-115px { min-width: 115px; }
 
 /* for displaying hosts file and machine id in environment detail pages */
 .select-all {

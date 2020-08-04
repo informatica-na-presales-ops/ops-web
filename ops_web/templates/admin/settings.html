@@ -1,0 +1,66 @@
+{% extends 'admin/index.html' %}
+
+{% block admin_content %}
+    <div class="row pt-3">
+        <div class="col-12">
+            <ul class="nav nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_users') }}">Users</a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('admin_cloud_credentials') }}">Cloud credentials</a>
+                </li>
+                <li>
+                    <a class="nav-link active" href="#">Settings</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6 text-light">
+            <div class="card bg-dark border-light mb-3">
+                <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#cost-data-form" data-toggle="collapse">Cost data</a>
+                </h5>
+                <div class="card-body collapse" id="cost-data-form">
+                    <form action="{{ url_for('admin_settings_cost_data') }}" method="post">
+                        <div class="form-group">
+                            <label for="cloudability-auth-token">Cloudability auth token</label>
+                            <input type="text" class="form-control" id="cloudability-auth-token" name="cloudability-auth-token"
+                                   value="{{ g.cloudability_auth_token if g.cloudability_auth_token }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="cloudability-vendor-account-ids">Cloudability vendor account IDs</label>
+                            <textarea class="form-control" id="cloudability-vendor-account-ids" name="cloudability-vendor-account-ids">
+                                {{- g.cloudability_vendor_account_ids if g.cloudability_vendor_account_ids -}}
+                            </textarea>
+                            <small class="form-text text-muted">Separate multiple account IDs with a space</small>
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">Save</button>
+                        <button type="submit" class="btn btn-outline-info" formaction="{{ url_for('admin_cost_data_sync') }}">
+                            Sync now
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="card bg-dark border-light">
+                <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#display-form" data-toggle="collapse">Display</a>
+                </h5>
+                <div class="card-body collapse" id="display-form">
+                    <form action="{{ url_for('admin_settings_display') }}" method="post">
+                        <div class="form-group">
+                            <label for="image-name-display-length">Maximum number of characters to display in image names</label>
+                            <input type="number" class="form-control" id="image-name-display-length" name="image-name-display-length"
+                                   min="10" max="255" step="1">
+                            <small class="form-text text-muted">Must be a number between 10 and 255</small>
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

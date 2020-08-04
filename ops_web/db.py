@@ -401,11 +401,18 @@ class Database(fort.PostgresDatabase):
     # images
 
     def get_images(self, email: str) -> List[Dict]:
+        name_limit = self.get_setting('image-name-display-length')
+        if name_limit is None:
+            name_limit = 255
+        else:
+            name_limit = int(name_limit)
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
                     id, cloud, region, name, owner, public, state, created, account_id, cost,
                     true can_modify, state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
+                    left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
+                    as truncated_name,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
                 from images
@@ -417,13 +424,15 @@ class Database(fort.PostgresDatabase):
                 select
                     id, cloud, region, name, owner, public, state, created, account_id, cost,
                     owner = %(email)s can_modify, state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
+                    left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
+                    as truncated_name,
                     coalesce(instanceid, '') instanceid,
                     lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
                 from images
                 where visible is true
                 and (owner = %(email)s or public is true)
             '''
-        return self.q(sql, {'email': email})
+        return self.q(sql, {'email': email, 'name_limit': name_limit})
 
     def get_image(self, image_id: str) -> Dict:
         sql = '''

@@ -141,22 +141,6 @@ def admin_cloud_credentials_edit():
     return flask.redirect(flask.url_for('admin_cloud_credentials'))
 
 
-@app.route('/admin/cost-data', methods=['GET', 'POST'])
-@permission_required('admin')
-def admin_cost_data():
-    db: ops_web.db.Database = flask.g.db
-    if flask.request.method == 'GET':
-        flask.g.cloudability_auth_token = db.get_setting('cloudability-auth-token')
-        flask.g.cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
-        return flask.render_template('admin/cost-data.html')
-    app.logger.debug(f'Cost data settings updated: {list(flask.request.values.lists())}')
-    db.add_log_entry(flask.g.email, 'Updated cost data settings (auth token or vendor account ids)')
-    db.set_setting('cloudability-auth-token', flask.request.values.get('cloudability-auth-token').strip())
-    vendor_account_ids = ' '.join(flask.request.values.get('cloudability-vendor-account-ids').strip().split())
-    db.set_setting('cloudability-vendor-account-ids', vendor_account_ids)
-    return flask.redirect(flask.url_for('admin_cost_data'))
-
-
 @app.route('/admin/cost-data/sync', methods=['POST'])
 @permission_required('admin')
 def admin_cost_data_sync():
@@ -164,7 +148,37 @@ def admin_cost_data_sync():
     db.add_log_entry(flask.g.email, 'Manual cost data sync')
     scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
     flask.flash('Cost data synchronization has started.', 'primary')
-    return flask.redirect(flask.url_for('admin_cost_data'))
+    return flask.redirect(flask.url_for('admin_settings'))
+
+
+@app.route('/admin/settings')
+@permission_required('admin')
+def admin_settings():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.cloudability_auth_token = db.get_setting('cloudability-auth-token')
+    flask.g.cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
+    return flask.render_template('admin/settings.html')
+
+
+@app.route('/admin/settings/cost-data', methods=['POST'])
+def admin_settings_cost_data():
+    db: ops_web.db.Database = flask.g.db
+    app.logger.debug(f'Cost data settings updated: {list(flask.request.values.lists())}')
+    db.add_log_entry(flask.g.email, 'Updated cost data settings (auth token or vendor account ids)')
+    db.set_setting('cloudability-auth-token', flask.request.values.get('cloudability-auth-token').strip())
+    vendor_account_ids = ' '.join(flask.request.values.get('cloudability-vendor-account-ids').strip().split())
+    db.set_setting('cloudability-vendor-account-ids', vendor_account_ids)
+    return flask.redirect(flask.url_for('admin_settings'))
+
+
+@app.route('/admin/settings/display', methods=['POST'])
+def admin_settings_display():
+    db: ops_web.db.Database = flask.g.db
+    image_name_display_length = flask.request.values.get('image-name-display-length')
+    app.logger.debug(f'Settings updated: image-name-display-length={image_name_display_length}')
+    db.set_setting('image-name-display-length', image_name_display_length)
+    db.add_log_entry(flask.g.email, 'Updated settings: image-name-display-length={image_name_display_length}')
+    return flask.redirect(flask.url_for('admin_settings'))
 
 
 @app.route('/admin/users')

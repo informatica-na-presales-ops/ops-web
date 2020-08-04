@@ -20,10 +20,16 @@
                 <tr>
                     <th>Cloud</th>
                     <th>Region</th>
-                    <th>Image name</th>
+                    <th class="max-width-600px">Image name</th>
                     <th>Owner</th>
-                    <th class="date-column">Created</th>
-                    <th class="text-right">30 day cost</th>
+                    <th class="min-width-115px">Created</th>
+                    <th class="text-right min-width-115px"
+                        title="Cost of an image includes all snapshots registered for that image">
+                        30 day cost
+                        <span class="badge badge-secondary">
+                            <span class="oi oi-info"></span>
+                        </span>
+                    </th>
                     <th>Public</th>
                     <th>State</th>
                     <th>Source machine ID</th>
@@ -35,7 +41,13 @@
                     <tr class="filter-candidate" data-filter-value="{{ i.filter_value }}">
                         <td>{{ i.cloud }}</td>
                         <td>{{ i.region }}</td>
-                        <td class="text-truncate mw-800px" title="{{ i.id }} / {{ i.name }}">{{ i.name }}</td>
+                        <td class="text-truncate max-width-600px">
+                            <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-container="body"
+                                  data-placement="bottom" title="{{ i.id }}" data-content="{{ i.name }}">
+                                <span class="oi oi-info"></span>
+                            </span>
+                            {{ i.name }}
+                        </td>
                         <td>{{ i.owner }}</td>
                         <td>{{ i.created.date() if i.created }}</td>
                         <td class="text-right">{{ i.cost }}</td>
@@ -182,4 +194,5 @@
     <script src="{{ url_for('static', filename='images.js') }}"></script>
     <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
     <script src="{{ url_for('static', filename='filter.js') }}"></script>
+    <script src="{{ url_for('static', filename='enable-popover.js') }}"></script>
 {% endblock %}
