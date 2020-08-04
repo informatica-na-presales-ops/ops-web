@@ -61,6 +61,13 @@
                                 The longest image name currently in the database has {{ g.current_image_name_max_length }} characters.
                             </small>
                         </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-security-groups-link"
+                                       name="show-security-groups-link" {{ 'checked' if g.show_security_groups_link }}>
+                                <label class="custom-control-label" for="show-security-groups-link">Show security groups tool on the home page</label>
+                            </div>
+                        </div>
                         <button type="submit" class="btn btn-outline-success">Save</button>
                     </form>
                 </div>

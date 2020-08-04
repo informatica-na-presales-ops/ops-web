@@ -97,6 +97,8 @@ def load_request_data():
 def index():
     if flask.g.email is None:
         return flask.render_template('sign-in.html')
+    db: ops_web.db.Database = flask.g.db
+    flask.g.show_security_groups_link = db.get_setting('show-security-groups-link') == 'true'
     return flask.render_template('index.html')
 
 
@@ -150,6 +152,7 @@ def admin_settings():
     flask.g.cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
     flask.g.image_name_display_length = db.get_setting('image-name-display-length')
     flask.g.current_image_name_max_length = db.get_image_name_max_length()
+    flask.g.show_security_groups_link = db.get_setting('show-security-groups-link') == 'true'
     return flask.render_template('admin/settings.html')
 
 
@@ -178,9 +181,16 @@ def admin_cost_data_sync():
 def admin_settings_display():
     db: ops_web.db.Database = flask.g.db
     image_name_display_length = flask.request.values.get('image-name-display-length')
-    app.logger.debug(f'Settings updated: image-name-display-length={image_name_display_length}')
+    app.logger.debug(f'{flask.g.email} updated settings: image-name-display-length={image_name_display_length}')
     db.set_setting('image-name-display-length', image_name_display_length)
-    db.add_log_entry(flask.g.email, f'Updated settings: image-name-display-length={image_name_display_length}')
+    show_security_groups_link = flask.request.values.get('show-security-groups-link')
+    if show_security_groups_link is None:
+        db.set_setting('show-security-groups-link', 'false')
+    elif show_security_groups_link == 'on':
+        db.set_setting('show-security-groups-link', 'true')
+    else:
+        app.logger.warning(f'Unexpected value for show-security-groups-link: {show_security_groups_link}')
+    db.add_log_entry(flask.g.email, 'Updated display settings')
     return flask.redirect(flask.url_for('admin_settings'))
 
 

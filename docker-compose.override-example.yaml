@@ -11,7 +11,7 @@ services:
       BOOTSTRAP_ADMIN: email@example.com
       CLOUDS_TO_SYNC: aws az
       DEBUG_LAYOUT: 'true'
-      # FEATURE_FLAGS: security-groups op-debrief zendesk-widget
+      # FEATURE_FLAGS: op-debrief
       LOG_LEVEL: DEBUG
       OAUTHLIB_INSECURE_TRANSPORT: 1
       POWER_CONTROL_DOMAIN: example.com
