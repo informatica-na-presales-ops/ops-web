@@ -18,14 +18,18 @@
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Environments</h5>
-                        <a href="{{ url_for('environments') }}" class="card-link stretched-link text-light">View your existing environments.</a>
+                        <a href="{{ url_for('environments') }}" class="card-link stretched-link text-light">
+                            View your existing environments.
+                        </a>
                     </div>
                 </div>
 
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Images</h5>
-                        <a href="{{ url_for('images') }}" class="card-link stretched-link text-light">View your existing images.</a>
+                        <a href="{{ url_for('images') }}" class="card-link stretched-link text-light">
+                            View your existing images.
+                        </a>
                     </div>
                 </div>
 
@@ -33,7 +37,9 @@
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Opportunity debrief surveys</h5>
-                        <a href="{{ url_for('op_debrief') }}" class="card-link stretched-link text-light">View your opportunity debrief surveys.</a>
+                        <a href="{{ url_for('op_debrief') }}" class="card-link stretched-link text-light">
+                            View your opportunity debrief surveys.
+                        </a>
                     </div>
                 </div>
                 {% endif %}
@@ -41,17 +47,22 @@
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Sync information</h5>
-                        <a href="{{ url_for('sync_info') }}" class="card-link stretched-link text-light">Check the status of data synchronization with cloud providers.</a>
+                        <a href="{{ url_for('sync_info') }}" class="card-link stretched-link text-light">
+                            Check the status of data synchronization with cloud providers.
+                        </a>
                     </div>
                 </div>
 
+                {% if g.show_sap_access_link %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
-                        <h5 class="card-title">SAP Access</h5>
-                        <a href="{{ url_for('sap_access') }}" class="card-link stretched-link text-light">Grant or Revoke SAP Access for your environments/instances.</a>
+                        <h5 class="card-title">SAP access</h5>
+                        <a href="{{ url_for('sap_access') }}" class="card-link stretched-link text-light">
+                            Grant or revoke SAP access for your environments.
+                        </a>
                     </div>
                 </div>
-
+                {% endif %}
 
                 {% if 'sc-assignments' in g.permissions %}
                 <div class="card text-light bg-dark border-light">
@@ -67,8 +78,10 @@
                 {% if g.show_security_groups_link %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
-                        <h5 class="card-title">Security Groups</h5>
-                        <a href="{{ url_for('security_groups') }}" class="card-link stretched-link text-light">View and manage your security groups.</a>
+                        <h5 class="card-title">Security groups</h5>
+                        <a href="{{ url_for('security_groups') }}" class="card-link stretched-link text-light">
+                            View and manage your security groups.
+                        </a>
                     </div>
                 </div>
                 {% endif %}
@@ -77,21 +90,27 @@
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Toolbox</h5>
-                        <a href="{{ url_for('toolbox') }}" class="card-link stretched-link text-light">Various tools for admins.</a>
+                        <a href="{{ url_for('toolbox') }}" class="card-link stretched-link text-light">
+                            Various tools for admins.
+                        </a>
                     </div>
                 </div>
 
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Administration</h5>
-                        <a href="{{ url_for('admin') }}" class="card-link stretched-link text-light">Change user permissions and cloud credentials.</a>
+                        <a href="{{ url_for('admin') }}" class="card-link stretched-link text-light">
+                            Change user permissions, cloud credentials, and other settings.
+                        </a>
                     </div>
                 </div>
 
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Audit log</h5>
-                        <a href="{{ url_for('audit_log') }}" class="card-link stretched-link text-light">View the audit log.</a>
+                        <a href="{{ url_for('audit_log') }}" class="card-link stretched-link text-light">
+                            View the audit log.
+                        </a>
                     </div>
                 </div>
                 {% endif %}

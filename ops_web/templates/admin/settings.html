@@ -55,13 +55,18 @@
                         <div class="form-group">
                             <label for="image-name-display-length">Maximum number of characters to display in image names</label>
                             <input type="number" class="form-control" id="image-name-display-length" name="image-name-display-length"
-                                   min="10" max="255" step="1" value="{{ g.image_name_display_length if g.image_name_display_length }}">
+                                   min="10" max="255" step="1" required value="{{ g.image_name_display_length if g.image_name_display_length else '255' }}">
                             <small class="form-text text-muted">
                                 Must be a number between 10 and 255.
                                 The longest image name currently in the database has {{ g.current_image_name_max_length }} characters.
                             </small>
                         </div>
                         <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-sap-access-link"
+                                       name="show-sap-access-link" {{ 'checked' if g.show_sap_access_link }}>
+                                <label class="custom-control-label" for="show-sap-access-link">Show SAP access tool on the home page</label>
+                            </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-security-groups-link"
                                        name="show-security-groups-link" {{ 'checked' if g.show_security_groups_link }}>
