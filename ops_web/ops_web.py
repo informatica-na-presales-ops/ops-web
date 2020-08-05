@@ -1041,6 +1041,7 @@ def machine_edit():
         db.add_log_entry(flask.g.email, f'Update tags on machine {machine_id}')
         db.set_machine_tags({
             'application_env': flask.request.values.get('application-env'),
+            'application_role': flask.request.values.get('application-role'),
             'business_unit': flask.request.values.get('business-unit'),
             'contributors': flask.request.values.get('contributors'),
             'environment': flask.request.values.get('environment'),
@@ -1056,8 +1057,9 @@ def machine_edit():
             contributor_tag = flask.request.values.get('contributors').replace("@informatica.com", '-')
             contributor = contributor_tag.replace(' ', '')
 
-            tags2 = {
+            tags = {
                 'applicationenv': flask.request.values.get('application-env'),
+                'applicationrole': flask.request.values.get('application-role'),
                 'business_unit': flask.request.values.get('business-unit'),
                 'contributors': contributor,
                 'machine__environment_group': flask.request.values.get('environment'),
@@ -1070,6 +1072,7 @@ def machine_edit():
         else:
             tags = {
                 'APPLICATIONENV': flask.request.values.get('application-env'),
+                'APPLICATIONROLE': flask.request.values.get('application-role'),
                 'BUSINESSUNIT': flask.request.values.get('business-unit'),
                 'CONTRIBUTORS': flask.request.values.get('contributors'),
                 'machine__environment_group': flask.request.values.get('environment'),
@@ -1090,7 +1093,7 @@ def machine_edit():
             az.update_machine_tags(machine_id, tags)
         elif cloud == 'gcp':
             zone = machine.get('region')
-            ops_web.gcp.update_machine_tags(machine_id, zone, tags2)
+            ops_web.gcp.update_machine_tags(machine_id, zone, tags)
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit machine {machine_id}')
     environment = flask.request.values.get('environment')

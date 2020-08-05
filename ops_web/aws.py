@@ -700,6 +700,7 @@ class AWSClient:
             'created': instance.launch_time,
             'state_transition_time': None,
             'application_env': tags.get('APPLICATIONENV', ''),
+            'application_role': tags.get('APPLICATIONROLE', ''),
             'business_unit': tags.get('BUSINESSUNIT', ''),
             'dns_names': tags.get('image__dns_names_private', ''),
             'whitelist': self.get_whitelist_for_instance(region, instance),
@@ -772,5 +773,5 @@ class AWSClient:
         ec2 = self.get_service_resource('ec2', region)
         ec2.create_tags(
             Resources=[resource_id],
-            Tags=[{'Key': k, 'Value': v} for k, v in tags.items()]
+            Tags=tag_dict_to_list(tags)
         )

@@ -125,6 +125,7 @@ def checkInstancesInZone(ZONE):
                 'state': 'stopped' if (instance['status'] == 'TERMINATED') else instance['status'].lower(),
                 'state_transition_time': None,
                 'application_env': instance['labels']['applicationenv'],
+                'application_role': instance['labels']['applicationrole'],
                 'business_unit': instance['labels']['business_unit'],
                 'created': None,
                 'dns_names': None,

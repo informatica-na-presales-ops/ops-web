@@ -284,7 +284,7 @@ class Database(fort.PostgresDatabase):
         return self.q(sql, {'email': email})
 
     def get_instance_zone(self, machine_id: str):
-        sql = 'select region from virtual_machines where id=%(id)s'
+        sql = 'select region from virtual_machines where id = %(id)s'
         return self.q_one(sql, {'id': machine_id})
 
     def get_all_visible_machines(self) -> List[Dict]:
@@ -300,28 +300,26 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created end running_time,
-                    true can_control,
-                    true can_modify
+                    running_schedule, application_env, application_role, business_unit, dns_names, whitelist, vpc,
+                    termination_protection, cost, cost::numeric cost_n, account_id,
+                    case when state = 'running' then now() - created end running_time, true can_control, true can_modify
                 from virtual_machines
                 where visible is true
-                  and env_group = %(env_group)s
+                and env_group = %(env_group)s
                 order by name
             '''
         else:
             sql = '''
                 select
                     id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, business_unit, dns_names, whitelist, vpc, termination_protection,
-                    cost, cost::numeric cost_n, account_id,
+                    running_schedule, application_env, application_role, business_unit, dns_names, whitelist, vpc,
+                    termination_protection, cost, cost::numeric cost_n, account_id,
                     case when state = 'running' then now() - created end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
                 from virtual_machines
                 where visible is true
-                  and env_group = %(env_group)s
+                and env_group = %(env_group)s
                 order by name
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
@@ -331,10 +329,9 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created end running_time,
-                    true can_control,
+                    visible, synced, created, state_transition_time, application_env, application_role, business_unit,
+                    contributors, dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n,
+                    account_id, case when state = 'running' then now() - created end running_time, true can_control,
                     true can_modify
                 from virtual_machines
                 where id = %(id)s
@@ -343,9 +340,9 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    visible, synced, created, state_transition_time, application_env, business_unit, contributors,
-                    dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created end running_time,
+                    visible, synced, created, state_transition_time, application_env, application_role, business_unit,
+                    contributors, dns_names, whitelist, vpc, termination_protection, cost, cost::numeric cost_n,
+                    account_id, case when state = 'running' then now() - created end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
                 from virtual_machines
@@ -367,15 +364,12 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
 
     def set_machine_tags(self, params: Dict):
-        # params = {
-        #   'id': '', 'running_schedule': '', 'name': '', 'owner': '', 'contributors': '', 'application_env': '',
-        #   'business_unit': '', 'environment': '', 'dns_names': ''
-        # }
         sql = '''
             update virtual_machines
             set running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
                 contributors = %(contributors)s, application_env = %(application_env)s,
-                business_unit = %(business_unit)s, env_group = %(environment)s, dns_names = %(dns_names)s
+                application_role = %(application_role)s, business_unit = %(business_unit)s, env_group = %(environment)s,
+                dns_names = %(dns_names)s
             where id = %(id)s
         '''
         self.u(sql, params)
@@ -569,38 +563,25 @@ class Database(fort.PostgresDatabase):
             self.u(sql, params)
 
     def add_machine(self, params: Dict):
-        # params = {
-        #   'id': '', 'cloud': '', 'region': '', 'environment': '', 'name': '', 'owner': '', 'contributors': '',
-        #   'private_ip': '', 'public_ip': '', 'state': '', 'type': '', 'running_schedule': '', 'created': '',
-        #   'state_transition_time': '', 'application_env': '', 'business_unit': '', 'dns_names': '', 'whitelist': '',
-        #   'account_id': ''
-        # }
-        sql = 'select id from virtual_machines where id = %(id)s'
-        if self.q(sql, params):
-            sql = '''
-                update virtual_machines
-                set cloud = %(cloud)s, region = %(region)s, env_group = %(environment)s, name = %(name)s,
-                    owner = %(owner)s, state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s,
-                    type = %(type)s, running_schedule = %(running_schedule)s, created = %(created)s,
-                    state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
-                    business_unit = %(business_unit)s, contributors = %(contributors)s, dns_names = %(dns_names)s,
-                    whitelist = %(whitelist)s, vpc = %(vpc)s, cost = %(cost)s, account_id = %(account_id)s,
-                    visible = true, synced = true
-                where id = %(id)s
-            '''
-        else:
-            sql = '''
-                insert into virtual_machines (
-                    id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
-                    created, state_transition_time, application_env, business_unit, contributors, dns_names, whitelist,
-                    vpc, cost, account_id, visible, synced
-                ) values (
-                    %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
-                    %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
-                    %(application_env)s, %(business_unit)s, %(contributors)s, %(dns_names)s, %(whitelist)s, %(vpc)s,
-                    %(cost)s, %(account_id)s, true, true
-                )
-            '''
+        sql = '''
+            insert into virtual_machines (
+                id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
+                created, state_transition_time, application_env, application_role, business_unit, contributors,
+                dns_names, whitelist, vpc, cost, account_id, visible, synced
+            ) values (
+                %(id)s, %(cloud)s, %(region)s, %(environment)s, %(name)s, %(owner)s, %(state)s, %(private_ip)s,
+                %(public_ip)s, %(type)s, %(running_schedule)s, %(created)s, %(state_transition_time)s,
+                %(application_env)s, %(application_role)s, %(business_unit)s, %(contributors)s, %(dns_names)s,
+                %(whitelist)s, %(vpc)s, %(cost)s, %(account_id)s, true, true
+            ) on conflict (id) do update set
+                cloud = %(cloud)s, region = %(region)s, env_group = %(environment)s, name = %(name)s, owner = %(owner)s,
+                state = %(state)s, private_ip = %(private_ip)s, public_ip = %(public_ip)s, type = %(type)s,
+                running_schedule = %(running_schedule)s, created = %(created)s,
+                state_transition_time = %(state_transition_time)s, application_env = %(application_env)s,
+                application_role = %(application_role)s, business_unit = %(business_unit)s,
+                contributors = %(contributors)s, dns_names = %(dns_names)s, whitelist = %(whitelist)s, vpc = %(vpc)s,
+                cost = %(cost)s, account_id = %(account_id)s, visible = true, synced = true
+        '''
         self.u(sql, params)
 
     def add_image(self, params: Dict):
@@ -1535,6 +1516,13 @@ class Database(fort.PostgresDatabase):
                 add column synced boolean
             ''')
             self.add_schema_version(36)
+        if self.version < 37:
+            self.log.info('Migrating to database schema 37')
+            self.u('''
+                alter table virtual_machines
+                add column application_role text
+            ''')
+            self.add_schema_version(37)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
