@@ -914,6 +914,11 @@ class Database(fort.PostgresDatabase):
 
     # settings
 
+    def get_all_settings(self):
+        sql = 'select setting_id, setting_value from settings'
+        settings = self.q(sql)
+        return {s.get('setting_id'): s.get('setting_value') for s in settings}
+
     def get_setting(self, setting_id: str) -> Optional[str]:
         sql = '''select setting_value from settings where setting_id = %(setting_id)s'''
         params = {'setting_id': setting_id}

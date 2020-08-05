@@ -99,9 +99,8 @@ def load_request_data():
 def index():
     if flask.g.email is None:
         return flask.render_template('sign-in.html')
-    db: ops_web.db.Database = flask.g.db
-    flask.g.show_sap_access_link = db.get_setting('show-sap-access-link') == 'true'
-    flask.g.show_security_groups_link = db.get_setting('show-security-groups-link') == 'true'
+    db = ops_web.db.Database(config)
+    flask.g.settings = db.get_all_settings()
     return flask.render_template('index.html')
 
 
@@ -150,13 +149,14 @@ def admin_cloud_credentials_edit():
 @app.route('/admin/settings')
 @permission_required('admin')
 def admin_settings():
-    db: ops_web.db.Database = flask.g.db
+    db = ops_web.db.Database(config)
     flask.g.cloudability_auth_token = db.get_setting('cloudability-auth-token')
     flask.g.cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
     flask.g.image_name_display_length = db.get_setting('image-name-display-length')
     flask.g.current_image_name_max_length = db.get_image_name_max_length()
     flask.g.show_sap_access_link = db.get_setting('show-sap-access-link') == 'true'
     flask.g.show_security_groups_link = db.get_setting('show-security-groups-link') == 'true'
+    flask.g.show_op_debrief_survey_link = db.get_setting('show-op-debrief-survey-link') == 'true'
     return flask.render_template('admin/settings.html')
 
 
@@ -190,6 +190,14 @@ def admin_settings_display():
     image_name_display_length = flask.request.values.get('image-name-display-length')
     app.logger.debug(f'{flask.g.email} updated settings: image-name-display-length={image_name_display_length}')
     db.set_setting('image-name-display-length', image_name_display_length)
+
+    show_op_debrief_survey_link = flask.request.values.get('show-op-debrief-survey-link')
+    if show_op_debrief_survey_link is None:
+        db.set_setting('show-op-debrief-survey-link', 'false')
+    elif show_op_debrief_survey_link == 'on':
+        db.set_setting('show-op-debrief-survey-link', 'true')
+    else:
+        app.logger.warning(f'Unexpected value for show-op-debrief-survey-link: {show_op_debrief_survey_link!r}')
 
     show_security_groups_link = flask.request.values.get('show-security-groups-link')
     if show_security_groups_link is None:

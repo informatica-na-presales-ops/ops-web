@@ -63,6 +63,11 @@
                         </div>
                         <div class="form-group">
                             <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-op-debrief-survey-link"
+                                       name="show-op-debrief-survey-link" {{ 'checked' if g.show_op_debrief_survey_link }}>
+                                <label class="custom-control-label" for="show-op-debrief-survey-link">Show op debrief survey tool on the home page</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-sap-access-link"
                                        name="show-sap-access-link" {{ 'checked' if g.show_sap_access_link }}>
                                 <label class="custom-control-label" for="show-sap-access-link">Show SAP access tool on the home page</label>

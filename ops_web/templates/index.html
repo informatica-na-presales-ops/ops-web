@@ -33,7 +33,7 @@
                     </div>
                 </div>
 
-                {% if 'op-debrief' in g.config.feature_flags %}
+                {% if g.settings['show-op-debrief-survey-link'] %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Opportunity debrief surveys</h5>
@@ -53,7 +53,7 @@
                     </div>
                 </div>
 
-                {% if g.show_sap_access_link %}
+                {% if g.settings['show-sap-access-link'] %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">SAP access</h5>
@@ -75,7 +75,7 @@
                 </div>
                 {% endif %}
 
-                {% if g.show_security_groups_link %}
+                {% if g.settings['show-security-groups-link'] %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Security groups</h5>
