@@ -208,52 +208,78 @@
         <input type="hidden" name="environment" value="{{ g.environment }}">
     </form>
 
-    <div class="modal" id="modal-edit-{{ loop.index }}">
+    <div class="modal text-light" id="modal-edit-{{ loop.index }}">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Edit machine</h5>
+                    <h5 class="modal-title">Edit machine</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="form-edit-{{ loop.index }}" action="{{ url_for('machine_edit')}}" method="post">
                         <input type="hidden" name="machine-id" value="{{ m.id }}">
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-name" class="text-light">Machine name</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-name" name="machine-name" value="{{ m.name }}" required>
+                            <label for="form-edit-{{ loop.index }}-name">Machine name</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-name"
+                                   name="machine-name" value="{{ m.name }}" required>
                         </div>
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-environment" class="text-light">Environment name</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-environment" name="environment" value="{{ g.environment }}" list="environment-list" required>
-                            <small class="form-text text-muted">To group this machine with a different environment, choose an existing environment or enter a new environment name.</small>
+                            <label for="form-edit-{{ loop.index }}-environment">Environment name</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-environment"
+                                   name="environment" value="{{ g.environment }}" list="environment-list" required>
+                            <small class="form-text text-muted">
+                                To group this machine with a different environment, choose an existing environment or
+                                enter a new environment name.
+                            </small>
                         </div>
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-dns-names" class="text-light">Hosts file names</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-dns-names" name="dns-names" value="{{ m.dns_names }}">
-                            <small class="form-text text-muted">These names are used when generating hosts file entries on this page. Editing this <em>does not</em> update hosts files on the machine itself.</small>
+                            <label for="form-edit-{{ loop.index }}-dns-names">Hosts file names</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-dns-names"
+                                   name="dns-names" value="{{ m.dns_names }}">
+                            <small class="form-text text-muted">
+                                These names are used when generating hosts file entries on this page. Editing this
+                                <em>does not</em> update hosts files on the machine itself.
+                            </small>
                         </div>
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-schedule" class="text-light">Running schedule</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-schedule" name="running-schedule" value="{{ m.running_schedule if m.running_schedule else '00:00:20:00:1-5' }}" required>
+                            <label for="form-edit-{{ loop.index }}-schedule">Running schedule</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-schedule"
+                                   name="running-schedule" value="{{ m.running_schedule if m.running_schedule else '00:00:20:00:1-5' }}" required>
                         </div>
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-owner" class="text-light">Owner</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}">
+                            <label for="form-edit-{{ loop.index }}-owner">Owner</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-owner"
+                                   name="owner" value="{{ m.owner }}" required>
                             <small class="form-text text-muted">One email address only</small>
                         </div>
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-contributors" class="text-light">Contributors</label>
-                            <textarea class="form-control" id="form-edit-{{ loop.index }}-contributors" name="contributors" maxlength="255">{{ m.contributors }}</textarea>
-                            <small class="form-text text-muted">Contributors can start, stop, edit, and delete a machine. Separate multiple email addresses with a space.</small>
+                            <label for="form-edit-{{ loop.index }}-contributors">Contributors</label>
+                            <textarea class="form-control" id="form-edit-{{ loop.index }}-contributors"
+                                      name="contributors" maxlength="255">
+                                {{- m.contributors -}}
+                            </textarea>
+                            <small class="form-text text-muted">
+                                Contributors can start, stop, edit, and delete a machine. Separate multiple email
+                                addresses with a space.
+                            </small>
                         </div>
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-application-env" class="text-light">Application environment</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-env" name="application-env" value="{{ m.application_env if m.application_env else 'PROD' }}" list="application-env-list">
+                            <label for="form-edit-{{ loop.index }}-application-env">Application environment</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-env"
+                                   name="application-env" value="{{ m.application_env if m.application_env else 'PROD' }}"
+                                   list="application-env-list" required>
                             <small class="form-text text-muted">One of PROD, PREVIEW, QA, DEV, or TEST.</small>
                         </div>
                         <div class="form-group">
-                            <label for="form-edit-{{ loop.index }}-business-unit" class="text-light">Business unit</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-business-unit" name="business-unit" value="{{ m.business_unit if m.business_unit else 'presales' }}">
+                            <label for="form-edit-{{ loop.index }}-application-role">Application role</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-role"
+                                   name="application-role" value="{{ m.application_role if m.application_role }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-edit-{{ loop.index }}-business-unit">Business unit</label>
+                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-business-unit"
+                                   name="business-unit" value="{{ m.business_unit if m.business_unit else 'presales' }}"
+                                   required>
                         </div>
                     </form>
                 </div>
@@ -265,11 +291,11 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-image-{{ loop.index }}">
+    <div class="modal text-light" id="modal-image-{{ loop.index }}">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Create image</h5>
+                    <h5 class="modal-title">Create image</h5>
                     <button type="button" class="close text-light" data-dismiss="modal" >&times;</button>
                 </div>
                 <div class="modal-body">
@@ -279,16 +305,16 @@
                         <input type="hidden" name="region" value="{{ m.region }}">
                         <input type="hidden" name="machine-id" value="{{ m.id }}">
                         <div class="form-group">
-                            <label for="form-image-{{ loop.index }}-name" class="text-light">Image name</label>
+                            <label for="form-image-{{ loop.index }}-name">Image name</label>
                             <input type="text" class="form-control" id="form-image-{{ loop.index }}-name" name="image-name" value="{{ m.name }}" required>
                         </div>
                         <div class="form-group">
-                            <label for="form-image-{{ loop.index }}-owner" class="text-light">Owner</label>
+                            <label for="form-image-{{ loop.index }}-owner">Owner</label>
                             <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}" required>
                         </div>
                         <div class="form-group form-check">
                             <input type="checkbox" class="form-check-input" id="form-image-{{ loop.index }}-public" name="public">
-                            <label for="form-image-{{ loop.index }}-public" class="form-check-label text-light">Allow any user to launch a machine from this image</label>
+                            <label for="form-image-{{ loop.index }}-public" class="form-check-label">Allow any user to launch a machine from this image</label>
                         </div>
                     </form>
                 </div>
@@ -300,11 +326,11 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-gcpimage-{{ loop.index }}">
+    <div class="modal text-light" id="modal-gcpimage-{{ loop.index }}">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Create image</h5>
+                    <h5 class="modal-title">Create image</h5>
                     <button type="button" class="close text-light" data-dismiss="modal" >&times;</button>
                 </div>
                 <div class="modal-body">
@@ -314,11 +340,11 @@
                         <input type="hidden" name="region" value="{{ m.region }}">
                         <input type="hidden" name="machine-id" value="{{ m.id }}">
                         <div class="form-group">
-                            <label for="form-gcpimage-{{ loop.index }}-name" class="text-light">Image name</label>
+                            <label for="form-gcpimage-{{ loop.index }}-name">Image name</label>
                             <input type="text" class="form-control" id="form-gcpimage-{{ loop.index }}-name" name="image-name" value="{{ m.name }}" required>
                         </div>
                         <div class="form-group">
-                            <label for="form-gcpimage-{{ loop.index }}-owner" class="text-light">Owner</label>
+                            <label for="form-gcpimage-{{ loop.index }}-owner">Owner</label>
                             <input type="text" class="form-control" id="form-gcpimage-{{ loop.index }}-owner" name="owner" readonly value="{{ m.owner }}" >
                         </div>
                     </form>
@@ -331,17 +357,17 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-delete-{{ loop.index }}">
+    <div class="modal text-light" id="modal-delete-{{ loop.index }}">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Delete machine</h5>
+                    <h5 class="modal-title">Delete machine</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-light lead">{{ m.name }}</p>
-                    <p class="text-light">Are you sure you want to delete this machine?</p>
-                    <p class="text-light"><strong class="text-danger">This action is permanent. All data will be lost.</strong></p>
+                    <p class="lead">{{ m.name }}</p>
+                    <p>Are you sure you want to delete this machine?</p>
+                    <p><strong class="text-danger">This action is permanent. All data will be lost.</strong></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
@@ -352,12 +378,12 @@
     </div>
     {% endfor %}
 
-    <div class="modal" id="modal-delete-env">
+    <div class="modal text-light" id="modal-delete-env">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-body">
-                    <p class="text-light">Are you sure you want to delete all the machines in this environment?</p>
-                    <p class="text-light"><strong class="text-danger">This action is permanent. All data will be lost.</strong></p>
+                    <p>Are you sure you want to delete all the machines in this environment?</p>
+                    <p><strong class="text-danger">This action is permanent. All data will be lost.</strong></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
@@ -367,15 +393,15 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-hosts-file">
+    <div class="modal text-light" id="modal-hosts-file">
         <div class="modal-dialog modal-xl">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Hosts file entries</h5>
+                    <h5 class="modal-title">Hosts file entries</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-light select-all">
+                    <p class="select-all">
                         <code>
                             # Public IP definitions for environment {{ g.environment }}<br>
                             # Generated {{ g.today }}
@@ -383,7 +409,7 @@
                         </code>
                     </p>
                     <hr class="border-light">
-                    <p class="text-light select-all">
+                    <p class="select-all">
                         <code>
                             # Private IP definitions for environment {{ g.environment }}<br>
                             # Generated {{ g.today }}
