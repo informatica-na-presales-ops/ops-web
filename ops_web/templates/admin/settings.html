@@ -29,12 +29,12 @@
                         <div class="form-group">
                             <label for="cloudability-auth-token">Cloudability auth token</label>
                             <input type="text" class="form-control" id="cloudability-auth-token" name="cloudability-auth-token"
-                                   value="{{ g.cloudability_auth_token if g.cloudability_auth_token }}">
+                                   value="{{ g.settings.cloudability_auth_token }}">
                         </div>
                         <div class="form-group">
                             <label for="cloudability-vendor-account-ids">Cloudability vendor account IDs</label>
                             <textarea class="form-control" id="cloudability-vendor-account-ids" name="cloudability-vendor-account-ids">
-                                {{- g.cloudability_vendor_account_ids if g.cloudability_vendor_account_ids -}}
+                                {{- ' '.join(g.settings.cloudability_vendor_account_ids) -}}
                             </textarea>
                             <small class="form-text text-muted">Separate multiple account IDs with a space</small>
                         </div>
@@ -55,7 +55,7 @@
                         <div class="form-group">
                             <label for="image-name-display-length">Maximum number of characters to display in image names</label>
                             <input type="number" class="form-control" id="image-name-display-length" name="image-name-display-length"
-                                   min="10" max="255" step="1" required value="{{ g.image_name_display_length if g.image_name_display_length else '255' }}">
+                                   min="10" max="255" step="1" required value="{{ g.settings.image_name_display_length }}">
                             <small class="form-text text-muted">
                                 Must be a number between 10 and 255.
                                 The longest image name currently in the database has {{ g.current_image_name_max_length }} characters.
@@ -64,17 +64,17 @@
                         <div class="form-group">
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-op-debrief-survey-link"
-                                       name="show-op-debrief-survey-link" {{ 'checked' if g.show_op_debrief_survey_link }}>
+                                       name="show-op-debrief-survey-link" {{ 'checked' if g.settings.show_op_debrief_survey_link }}>
                                 <label class="custom-control-label" for="show-op-debrief-survey-link">Show op debrief survey tool on the home page</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-sap-access-link"
-                                       name="show-sap-access-link" {{ 'checked' if g.show_sap_access_link }}>
+                                       name="show-sap-access-link" {{ 'checked' if g.settings.show_sap_access_link }}>
                                 <label class="custom-control-label" for="show-sap-access-link">Show SAP access tool on the home page</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-security-groups-link"
-                                       name="show-security-groups-link" {{ 'checked' if g.show_security_groups_link }}>
+                                       name="show-security-groups-link" {{ 'checked' if g.settings.show_security_groups_link }}>
                                 <label class="custom-control-label" for="show-security-groups-link">Show security groups tool on the home page</label>
                             </div>
                         </div>
@@ -92,7 +92,7 @@
                         <div class="form-group">
                             <label for="zendesk-widget-key">Zendesk widget key</label>
                             <input type="text" class="form-control" id="zendesk-widget-key" name="zendesk-widget-key"
-                                   value="{{ g.zendesk_widget_key if g.zendesk_widget_key }}">
+                                   value="{{ g.settings.zendesk_widget_key }}">
                         </div>
                         <button type="submit" class="btn btn-outline-success">Save</button>
                     </form>

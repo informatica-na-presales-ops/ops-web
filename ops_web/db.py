@@ -7,6 +7,80 @@ import uuid
 from typing import Dict, List, Optional, Set
 
 
+class Settings(dict):
+    def __init__(self, db: 'Database'):
+        super().__init__()
+        self.db = db
+        self.update(self.db.get_all_settings())
+
+    @property
+    def cloudability_auth_token(self) -> str:
+        return self.get('cloudability-auth-token', '')
+
+    @cloudability_auth_token.setter
+    def cloudability_auth_token(self, value: str):
+        self.update({'cloudability-auth-token': value})
+        self.db.set_setting('cloudability-auth-token', value)
+
+    @property
+    def cloudability_vendor_account_ids(self) -> Set:
+        return set(self.get('cloudability-vendor-account-ids', '').split())
+
+    @cloudability_vendor_account_ids.setter
+    def cloudability_vendor_account_ids(self, value: Set):
+        str_value = ' '.join(value)
+        self.update({'cloudability-vendor-account-ids': str_value})
+        self.db.set_setting('cloudability-vendor-account-ids', str_value)
+
+    @property
+    def image_name_display_length(self) -> int:
+        return int(self.get('image-name-display-length', 255))
+
+    @image_name_display_length.setter
+    def image_name_display_length(self, value: int):
+        self.update({'image-name-display-length': str(value)})
+        self.db.set_setting('image-name-display-length', str(value))
+
+    @property
+    def show_op_debrief_survey_link(self) -> bool:
+        return self.get('show-op-debrief-survey-link', 'false') == 'true'
+
+    @show_op_debrief_survey_link.setter
+    def show_op_debrief_survey_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-op-debrief-survey-link': str_value})
+        self.db.set_setting('show-op-debrief-survey-link', str_value)
+
+    @property
+    def show_sap_access_link(self) -> bool:
+        return self.get('show-sap-access-link', 'false') == 'true'
+
+    @show_sap_access_link.setter
+    def show_sap_access_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-sap-access-link': str_value})
+        self.db.set_setting('show-sap-access-link', str_value)
+
+    @property
+    def show_security_groups_link(self) -> bool:
+        return self.get('show-security-groups-link', 'false') == 'true'
+
+    @show_security_groups_link.setter
+    def show_security_groups_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-security-groups-link': str_value})
+        self.db.set_setting('show-security-groups-link', str_value)
+
+    @property
+    def zendesk_widget_key(self):
+        return self.get('zendesk-widget-key', '')
+
+    @zendesk_widget_key.setter
+    def zendesk_widget_key(self, value):
+        self.update({'zendesk-widget-key': value})
+        self.db.set_setting('zendesk-widget-key', value)
+
+
 class Database(fort.PostgresDatabase):
     _version: int = None
 

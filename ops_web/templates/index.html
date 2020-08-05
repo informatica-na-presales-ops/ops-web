@@ -33,7 +33,7 @@
                     </div>
                 </div>
 
-                {% if g.settings['show-op-debrief-survey-link'] %}
+                {% if g.settings.show_op_debrief_survey_link %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Opportunity debrief surveys</h5>
@@ -53,7 +53,7 @@
                     </div>
                 </div>
 
-                {% if g.settings['show-sap-access-link'] %}
+                {% if g.settings.show_sap_access_link %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">SAP access</h5>
@@ -75,7 +75,7 @@
                 </div>
                 {% endif %}
 
-                {% if g.settings['show-security-groups-link'] %}
+                {% if g.settings.show_security_groups_link %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
                         <h5 class="card-title">Security groups</h5>
@@ -120,8 +120,8 @@
 {% endblock %}
 
 {% block end_of_body %}
-    {% if g.zendesk_widget_key %}
-    <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key={{ g.zendesk_widget_key }}"></script>
+    {% if g.settings.zendesk_widget_key %}
+    <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key={{ g.settings.zendesk_widget_key }}"></script>
     <script src="{{ url_for('static', filename='zendesk-widget-setup.js') }}"></script>
     {% endif %}
 {% endblock %}

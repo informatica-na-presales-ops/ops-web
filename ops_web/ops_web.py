@@ -90,9 +90,9 @@ def make_session_permanent():
 def load_request_data():
     flask.g.config = config
     flask.g.db = ops_web.db.Database(config)
+    flask.g.settings = ops_web.db.Settings(flask.g.db)
     flask.g.email = flask.session.get('email')
     flask.g.permissions = flask.g.db.get_permissions(flask.g.email)
-    flask.g.zendesk_widget_key = flask.g.db.get_setting('zendesk-widget-key')
 
 
 @app.route('/')
@@ -100,7 +100,6 @@ def index():
     if flask.g.email is None:
         return flask.render_template('sign-in.html')
     db = ops_web.db.Database(config)
-    flask.g.settings = db.get_all_settings()
     return flask.render_template('index.html')
 
 
@@ -150,13 +149,7 @@ def admin_cloud_credentials_edit():
 @permission_required('admin')
 def admin_settings():
     db = ops_web.db.Database(config)
-    flask.g.cloudability_auth_token = db.get_setting('cloudability-auth-token')
-    flask.g.cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
-    flask.g.image_name_display_length = db.get_setting('image-name-display-length')
     flask.g.current_image_name_max_length = db.get_image_name_max_length()
-    flask.g.show_sap_access_link = db.get_setting('show-sap-access-link') == 'true'
-    flask.g.show_security_groups_link = db.get_setting('show-security-groups-link') == 'true'
-    flask.g.show_op_debrief_survey_link = db.get_setting('show-op-debrief-survey-link') == 'true'
     return flask.render_template('admin/settings.html')
 
 
@@ -164,11 +157,11 @@ def admin_settings():
 @permission_required('admin')
 def admin_settings_cost_data():
     db: ops_web.db.Database = flask.g.db
-    app.logger.debug(f'Cost data settings updated: {list(flask.request.values.lists())}')
-    db.add_log_entry(flask.g.email, 'Updated cost data settings (auth token or vendor account ids)')
-    db.set_setting('cloudability-auth-token', flask.request.values.get('cloudability-auth-token').strip())
-    vendor_account_ids = ' '.join(flask.request.values.get('cloudability-vendor-account-ids').strip().split())
-    db.set_setting('cloudability-vendor-account-ids', vendor_account_ids)
+    settings: ops_web.db.Settings = flask.g.settings
+    settings.cloudability_auth_token = flask.request.values.get('cloudability-auth-token', '').strip()
+    vendor_account_ids = set(flask.request.values.get('cloudability-vendor-account-ids', '').split())
+    settings.cloudability_vendor_account_ids = vendor_account_ids
+    db.add_log_entry(flask.g.email, 'Updated Cloudability integration settings')
     return flask.redirect(flask.url_for('admin_settings'))
 
 
@@ -185,36 +178,12 @@ def admin_cost_data_sync():
 @app.route('/admin/settings/display', methods=['POST'])
 @permission_required('admin')
 def admin_settings_display():
-    db = ops_web.db.Database(config)
-
-    image_name_display_length = flask.request.values.get('image-name-display-length')
-    app.logger.debug(f'{flask.g.email} updated settings: image-name-display-length={image_name_display_length}')
-    db.set_setting('image-name-display-length', image_name_display_length)
-
-    show_op_debrief_survey_link = flask.request.values.get('show-op-debrief-survey-link')
-    if show_op_debrief_survey_link is None:
-        db.set_setting('show-op-debrief-survey-link', 'false')
-    elif show_op_debrief_survey_link == 'on':
-        db.set_setting('show-op-debrief-survey-link', 'true')
-    else:
-        app.logger.warning(f'Unexpected value for show-op-debrief-survey-link: {show_op_debrief_survey_link!r}')
-
-    show_security_groups_link = flask.request.values.get('show-security-groups-link')
-    if show_security_groups_link is None:
-        db.set_setting('show-security-groups-link', 'false')
-    elif show_security_groups_link == 'on':
-        db.set_setting('show-security-groups-link', 'true')
-    else:
-        app.logger.warning(f'Unexpected value for show-security-groups-link: {show_security_groups_link!r}')
-
-    show_sap_access_link = flask.request.values.get('show-sap-access-link')
-    if show_sap_access_link is None:
-        db.set_setting('show-sap-access-link', 'false')
-    elif show_sap_access_link == 'on':
-        db.set_setting('show-sap-access-link', 'true')
-    else:
-        app.logger.warning(f'Unexpected value for show-sap-access-link: {show_sap_access_link!r}')
-
+    db: ops_web.db.Database = flask.g.db
+    settings: ops_web.db.Settings = flask.g.settings
+    settings.image_name_display_length = int(flask.request.values.get('image-name-display-length'))
+    settings.show_op_debrief_survey_link = flask.request.values.get('show-op-debrief-survey-link') == 'on'
+    settings.show_security_groups_link = flask.request.values.get('show-security-groups-link') == 'on'
+    settings.show_sap_access_link = flask.request.values.get('show-sap-access-link') == 'on'
     db.add_log_entry(flask.g.email, 'Updated display settings')
     return flask.redirect(flask.url_for('admin_settings'))
 
@@ -223,10 +192,9 @@ def admin_settings_display():
 @permission_required('admin')
 def admin_settings_zendesk():
     db: ops_web.db.Database = flask.g.db
-    zendesk_widget_key = flask.request.values.get('zendesk-widget-key')
-    app.logger.debug(f'{flask.g.email} updated settings: zendesk_widget_key={zendesk_widget_key}')
-    db.set_setting('zendesk-widget-key', zendesk_widget_key)
-    db.add_log_entry(flask.g.email, f'Updated settings: zendesk_widget_key={zendesk_widget_key}')
+    settings: ops_web.db.Settings = flask.g.settings
+    settings.zendesk_widget_key = flask.request.values.get('zendesk-widget-key', '')
+    db.add_log_entry(flask.g.email, 'Updated Zendesk integration settings')
     return flask.redirect(flask.url_for('admin_settings'))
 
 

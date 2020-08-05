@@ -18,30 +18,27 @@ def get_cost_data(apm: elasticapm.Client):
     log.info('Getting cost data from Cloudability')
 
     db = ops_web.db.Database(config)
-    auth_token = db.get_setting('cloudability-auth-token')
-    if not auth_token:
+    settings = ops_web.db.Settings(db)
+    if not settings.cloudability_auth_token:
         log.info('cloudability-auth-token is not set')
         apm.end_transaction('get-cost-data')
         return
 
-    cloudability_vendor_account_ids = db.get_setting('cloudability-vendor-account-ids')
-    if not cloudability_vendor_account_ids:
+    if not settings.cloudability_vendor_account_ids:
         log.info('cloudability-vendor-account-ids is not set')
         apm.end_transaction('get-cost-data')
         return
 
-    account_ids = set(cloudability_vendor_account_ids.split())
-
     base_url = 'https://app.cloudability.com/api/1/reporting/cost'
-    token_only = {'auth_token': auth_token}
+    token_only = {'auth_token': settings.cloudability_auth_token}
     query = {
-        'auth_token': auth_token,
+        'auth_token': settings.cloudability_auth_token,
         'dimensions': 'resource_identifier',
         'metrics': 'unblended_cost',
         'start_date': '30 days ago at 00:00:00',
         'end_date': '23:59:59'
     }
-    filters = [f'vendor_account_identifier=={i}' for i in account_ids]
+    filters = [f'vendor_account_identifier=={i}' for i in settings.cloudability_vendor_account_ids]
     filters.append('resource_identifier!=@(not set)')
     query['filters'] = ','.join(filters)
 
