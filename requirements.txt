@@ -19,3 +19,4 @@ pendulum==2.1.2
 psycopg2==2.8.5
 requests==2.24.0
 waitress==1.4.4
+whitenoise==5.2.0
