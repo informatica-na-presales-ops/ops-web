@@ -157,6 +157,7 @@ def admin_settings():
 
 
 @app.route('/admin/settings/cloudability', methods=['POST'])
+@permission_required('admin')
 def admin_settings_cost_data():
     db: ops_web.db.Database = flask.g.db
     app.logger.debug(f'Cost data settings updated: {list(flask.request.values.lists())}')
@@ -178,6 +179,7 @@ def admin_cost_data_sync():
 
 
 @app.route('/admin/settings/display', methods=['POST'])
+@permission_required('admin')
 def admin_settings_display():
     db: ops_web.db.Database = flask.g.db
     image_name_display_length = flask.request.values.get('image-name-display-length')
@@ -195,6 +197,7 @@ def admin_settings_display():
 
 
 @app.route('/admin/settings/zendesk', methods=['POST'])
+@permission_required('admin')
 def admin_settings_zendesk():
     db: ops_web.db.Database = flask.g.db
     zendesk_widget_key = flask.request.values.get('zendesk-widget-key')
@@ -573,6 +576,7 @@ def detach_sap_sg(environment):
 
 
 @app.route('/sap_access/attach_sap_sg_machine', methods=['POST'])
+@login_required
 def attach_sap_sg_machine():
     machine_id = flask.request.values.get('machine-id')
     environment = flask.request.values.get('environment')
@@ -592,6 +596,7 @@ def attach_sap_sg_machine():
 
 
 @app.route('/sap_access/detach_sap_sg_machine', methods=['POST'])
+@login_required
 def detach_sap_sg_machine():
     machine_id = flask.request.values.get('machine-id')
     environment = flask.request.values.get('environment')
