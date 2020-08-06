@@ -19,6 +19,9 @@
                 <thead>
                 <tr>
                     <th>Cloud</th>
+                    {% if g.settings.show_account_for_images %}
+                        <th>Account</th>
+                    {% endif %}
                     <th>Region</th>
                     <th class="max-width-600px">Image name</th>
                     <th>Owner</th>
@@ -40,6 +43,9 @@
                 {% for i in g.images %}
                     <tr class="filter-candidate" data-filter-value="{{ i.filter_value }}">
                         <td>{{ i.cloud }}</td>
+                        {% if g.settings.show_account_for_images %}
+                            <td>{{ i.description }}</td>
+                        {% endif %}
                         <td>{{ i.region }}</td>
                         <td>
                             <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-html="true"
@@ -85,6 +91,7 @@
                         </h5>
                         <p class="card-text">
                             <span class="badge badge-light">Cloud: {{ i.cloud }}</span>
+                            <span class="badge badge-light">Account: {{ i.description }}</span>
                             <span class="badge badge-light">Region: {{ i.region }}</span>
                             <span class="badge badge-light">Owner: {{ i.owner }}</span>
                             <span class="badge badge-light">Created: {{ i.created.date() if i.created }}</span>

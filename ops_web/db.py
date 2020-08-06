@@ -64,6 +64,16 @@ class Settings(dict):
         self.db.set_setting('image-name-display-length', str(value))
 
     @property
+    def show_account_for_images(self) -> bool:
+        return self.get('show-account-for-images', 'false') == 'true'
+
+    @show_account_for_images.setter
+    def show_account_for_images(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-account-for-images': str_value})
+        self.db.set_setting('show-account-for-images', str_value)
+
+    @property
     def show_op_debrief_survey_link(self) -> bool:
         return self.get('show-op-debrief-survey-link', 'false') == 'true'
 
