@@ -86,6 +86,15 @@
                 </div>
                 {% endif %}
 
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">External links</h5>
+                        <a href="{{ url_for('external_links') }}" class="card-link stretched-link text-light">
+                            Links to external locations.
+                        </a>
+                    </div>
+                </div>
+
                 {% if 'admin' in g.permissions %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">

@@ -1,0 +1,75 @@
+{% extends 'one-up.html' %}
+
+{% block title %}External links / {{ super() }}{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <h1>External links</h1>
+        </div>
+    </div>
+
+    {% if 'admin' in g.permissions %}
+    <div class="row pt-3">
+        <div class="col-12">
+            <button type="button" class="btn btn-outline-light" data-toggle="modal" data-target="#modal-manage-links">
+                <span class="oi oi-link-intact"></span>
+                Manage links
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <hr class="border-light">
+            <ul>
+            {% for link in g.external_links %}
+                <li>
+                    <p class="lead"><a class="text-light" href="{{ link.url }}" target="_blank">{{ link.description }}</a></p>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-manage-links">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage links</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group pb-3">
+                    {% for link in g.external_links %}
+                        <li class="list-group-item bg-dark border-light d-flex justify-content-between align-items-center">
+                            <p>{{ link.description }}<br><small class="text-muted">{{ link.url }}</small></p>
+                            <form action="{{ url_for('external_links_delete') }}" method="post">
+                                <input type="hidden" name="link-id" value="{{ link.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <span class="oi oi-trash"></span>
+                                </button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    <form action="{{ url_for('external_links_add') }}" method="post">
+                        <div class="form-group">
+                            <label for="add-link-url">URL</label>
+                            <input type="text" class="form-control" id="add-link-url" name="url" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-link-description">Description</label>
+                            <input type="text" class="form-control" id="add-link-description" name="description" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">
+                            <span class="oi oi-plus"></span>
+                            Add link
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

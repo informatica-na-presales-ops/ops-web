@@ -1000,6 +1000,27 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
+    # external links
+
+    def add_external_link(self, url: str, description: str):
+        sql = 'insert into external_links (id, url, description) values (%(id)s, %(url)s, %(description)s)'
+        params = {
+            'id': uuid.uuid4(),
+            'url': url,
+            'description': description
+        }
+        self.u(sql, params)
+
+    def delete_external_link(self, link_id: uuid.UUID):
+        sql = 'delete from external_links where id = %(id)s'
+        params = {'id': link_id}
+        self.u(sql, params)
+
+    def get_external_links(self):
+        sql = 'select id, url, description from external_links order by description'
+        return self.q(sql)
+
+
     # settings
 
     def get_all_settings(self):
@@ -1037,11 +1058,11 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'environment_usage_events', 'images',
-                      'log_entries', 'op_debrief_roles', 'op_debrief_surveys', 'op_debrief_tracking', 'permissions',
-                      'sales_consultants', 'sales_reps', 'sc_rep_assignments', 'schema_versions', 'security_group',
-                      'settings', 'sf_opportunities', 'sf_opportunity_contacts', 'sf_opportunity_team_members',
-                      'sync_tracking', 'virtual_machines'):
+        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'environment_usage_events', 'external_links',
+                      'images', 'log_entries', 'op_debrief_roles', 'op_debrief_surveys', 'op_debrief_tracking',
+                      'permissions', 'sales_consultants', 'sales_reps', 'sc_rep_assignments', 'schema_versions',
+                      'security_group', 'settings', 'sf_opportunities', 'sf_opportunity_contacts',
+                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
             self.u(f'drop table if exists {table} cascade ')
 
     def migrate(self):
@@ -1556,6 +1577,16 @@ class Database(fort.PostgresDatabase):
                 add column application_role text
             ''')
             self.add_schema_version(37)
+        if self.version < 38:
+            self.log.info('Migrating to database schema 38')
+            self.u('''
+                create table external_links (
+                    id uuid primary key,
+                    url text,
+                    description text
+                )
+            ''')
+            self.add_schema_version(38)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

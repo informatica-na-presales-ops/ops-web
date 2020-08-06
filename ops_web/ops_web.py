@@ -376,6 +376,37 @@ def environment_stop(environment):
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
+@app.route('/external-links')
+@login_required
+def external_links():
+    db: ops_web.db.Database = flask.g.db
+    flask.g.external_links = db.get_external_links()
+    return flask.render_template('external-links.html')
+
+
+@app.route('/external-links/add', methods=['POST'])
+@permission_required('admin')
+def external_links_add():
+    db: ops_web.db.Database = flask.g.db
+    url = flask.request.values.get('url')
+    description = flask.request.values.get('description')
+    db.add_external_link(url, description)
+    db.add_log_entry(flask.g.email, f'Added an external link with description {description}')
+    flask.flash(f'Successfully added a new external link, {description!r}', 'success')
+    return flask.redirect(flask.url_for('external_links'))
+
+
+@app.route('/external-links/delete', methods=['POST'])
+@permission_required('admin')
+def external_links_delete():
+    db: ops_web.db.Database = flask.g.db
+    link_id = flask.request.values.get('link-id')
+    db.delete_external_link(link_id)
+    db.add_log_entry(flask.g.email, f'Deleted an external link with id {link_id}')
+    flask.flash('Successfully deleted an external link', 'success')
+    return flask.redirect(flask.url_for('external_links'))
+
+
 @app.route('/images')
 @login_required
 def images():
