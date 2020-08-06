@@ -265,10 +265,15 @@
                         </div>
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-application-env">Application environment</label>
-                            <input type="text" class="form-control" id="form-edit-{{ loop.index }}-application-env"
-                                   name="application-env" value="{{ m.application_env if m.application_env else 'PROD' }}"
-                                   list="application-env-list" required>
-                            <small class="form-text text-muted">One of PROD, PREVIEW, QA, DEV, or TEST.</small>
+                            <select class="form-control" id="form-edit-{{ loop.index }}-application-env"
+                                    name="application-env" required>
+                                <option hidden disabled value {{ 'selected' if m.application_env not in g.settings.app_env_values }}>
+                                    -- select an option --
+                                </option>
+                            {% for option in g.settings.app_env_values %}
+                                <option {{ 'selected' if option == m.application_env }}>{{ option }}</option>
+                            {% endfor %}
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="form-edit-{{ loop.index }}-application-role">Application role</label>
@@ -423,14 +428,6 @@
 
     <datalist id="environment-list">
         {% for e in g.environments %}<option value="{{ e.env_group }}">{% endfor %}
-    </datalist>
-
-    <datalist id="application-env-list">
-        <option value="PROD">
-        <option value="PREVIEW">
-        <option value="QA">
-        <option value="DEV">
-        <option value="TEST">
     </datalist>
 
 {% endblock %}

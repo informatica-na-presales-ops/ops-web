@@ -15,8 +15,19 @@ class Settings(dict):
 
     @property
     def app_env_values(self) -> List:
-        default = 'PROD\nENABLEMENT\nEVENT\nHANDSON\nDEMO\nPOC\nWORKSHOP\nDEV'
-        return sorted(set(self.get('app-env-values', default).splitlines()))
+        default = (
+            'DEMO',
+            'DEV',
+            'ENABLEMENT',
+            'EVENT',
+            'POC',
+            'PROD',
+            'QA',
+            'TEST',
+            'WORKSHOP'
+        )
+        str_default = '\n'.join(default)
+        return sorted(set(self.get('app-env-values', str_default).splitlines()))
 
     @app_env_values.setter
     def app_env_values(self, value: List):
