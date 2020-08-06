@@ -17,6 +17,7 @@ import functools
 import io
 import jwt
 import logging
+import pathlib
 import pendulum
 import sys
 import urllib.parse
@@ -30,8 +31,10 @@ config = ops_web.config.Config()
 scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 900})
 
 app = flask.Flask(__name__)
-app.wsgi_app = whitenoise.WhiteNoise(app.wsgi_app, root='ops_web/static/', prefix='static/')
 app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_port=1)
+
+whitenoise_root = pathlib.Path(__file__).resolve().with_name('static')
+app.wsgi_app = whitenoise.WhiteNoise(app.wsgi_app, root=whitenoise_root, prefix='static/')
 
 apm = elasticapm.contrib.flask.ElasticAPM(app, service_name='ops-web', service_version=config.version)
 
