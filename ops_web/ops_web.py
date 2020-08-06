@@ -1569,15 +1569,16 @@ def main():
 
     db.migrate()
     db.bootstrap_admin()
-    sync_data = db.get_sync_data()
-    if sync_data['syncing_now']:
-        app.logger.warning('A previous sync task was aborted, cleaning up ...')
-        db.end_sync()
 
     scheduler.start()
 
     app.logger.info(f'RUNNER: {config.runner}')
     if config.runner:
+        sync_data = db.get_sync_data()
+        if sync_data['syncing_now']:
+            app.logger.warning('A previous sync task was aborted, cleaning up ...')
+            db.end_sync()
+
         app.logger.info(f'AUTO_SYNC: {config.auto_sync}')
         if config.auto_sync:
             scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
