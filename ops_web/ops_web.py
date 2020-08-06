@@ -396,7 +396,7 @@ def images_create():
         cloud = flask.request.values.get('cloud')
         region = flask.request.values.get('region')
         name = flask.request.values.get('image-name')
-        owner = flask.request.values.get('owner')
+        owner = flask.request.values.get('owner').lower()
         public = 'public' in flask.request.values
         if cloud == 'az':
             app.logger.warning(f'Unable to create images for cloud {cloud}')
@@ -473,7 +473,7 @@ def images_edit():
     if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
         db.add_log_entry(flask.g.email, f'Update tags on image {image_id}')
         image_name = flask.request.values.get('image-name')
-        owner = flask.request.values.get('owner')
+        owner = flask.request.values.get('owner').lower()
         public = 'public' in flask.request.values
         db.set_image_tags(image_id, image_name, owner, public)
         tags = {
@@ -821,7 +821,7 @@ def launch():
     quantity = flask.request.values.get('quantity')
     event_type = flask.request.values.get('event_type')
     customer = flask.request.values.get('customer')
-    owner_email = flask.request.values.get('owner_email')
+    owner_email = flask.request.values.get('owner_email').lower()
     env_role = flask.request.values.get('env')
     subnet = flask.request.values.get('subnet')
     whitelist = flask.request.values.get('whitelist')
@@ -867,7 +867,7 @@ def az_launch():
     app.logger.info(cdwversion)
     quantity = flask.request.values.get('count')
     name = flask.request.values.get('name')
-    owner = flask.request.values.get('owner')
+    owner = flask.request.values.get('owner').lower()
     db = ops_web.db.Database(config)
     q = int(quantity)
     idlist = []
@@ -915,7 +915,7 @@ def az_launch():
 def launchmachine_default_specs():
     image_id = flask.request.values.get('image_id')
     app.logger.info(image_id)
-    owner = flask.request.values.get('owner')
+    owner = flask.request.values.get('owner').lower()
     name = flask.request.values.get('name')
     region = flask.request.values.get('region')
     environment = flask.request.values.get('environment')
@@ -943,7 +943,7 @@ def machine_create():
         region = image.get('region')
         instance_id = image.get('instanceid')
         name = flask.request.values.get('name')
-        owner = flask.request.values.get('owner')
+        owner = flask.request.values.get('owner').lower()
         cloud = image.get('cloud')
         environment = flask.request.values.get('environment')
         if cloud == 'gcp':
@@ -1048,7 +1048,7 @@ def machine_edit():
             'environment': flask.request.values.get('environment'),
             'id': machine_id,
             'name': flask.request.values.get('machine-name'),
-            'owner': flask.request.values.get('owner'),
+            'owner': flask.request.values.get('owner').lower(),
             'running_schedule': flask.request.values.get('running-schedule'),
             'dns_names': flask.request.values.get('dns-names')
         })
@@ -1079,7 +1079,7 @@ def machine_edit():
                 'machine__environment_group': flask.request.values.get('environment'),
                 'image__dns_names_private': flask.request.values.get('dns-names'),
                 'NAME': flask.request.values.get('machine-name'),
-                'OWNEREMAIL': flask.request.values.get('owner'),
+                'OWNEREMAIL': flask.request.values.get('owner').lower(),
                 'RUNNINGSCHEDULE': flask.request.values.get('running-schedule')
             }
 

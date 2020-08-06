@@ -626,7 +626,7 @@ class AWSClient:
                         'cloud': 'aws',
                         'region': region,
                         'name': tags.get('NAME', image.name),
-                        'owner': tags.get('OWNEREMAIL', ''),
+                        'owner': tags.get('OWNEREMAIL', '').lower(),
                         'public': ops_web.config.as_bool(tags.get('image_public', '')),
                         'state': image.state,
                         'created': image.creation_date,
@@ -658,7 +658,7 @@ class AWSClient:
                             )
                     params = {
                         'region': region,
-                        'owner': tags.get('OWNEREMAIL', ''),
+                        'owner': tags.get('OWNEREMAIL', '').lower(),
                         'cloud': 'aws',
                         'id': sg.group_id,
                         'sg_rules': sg_rules,
@@ -691,7 +691,7 @@ class AWSClient:
             'region': region,
             'environment': tags.get('machine__environment_group', ''),
             'name': tags.get('NAME', ''),
-            'owner': tags.get('OWNEREMAIL', ''),
+            'owner': tags.get('OWNEREMAIL', '').lower(),
             'private_ip': instance.private_ip_address,
             'public_ip': instance.public_ip_address,
             'type': instance.instance_type,
