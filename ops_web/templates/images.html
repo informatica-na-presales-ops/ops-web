@@ -42,8 +42,9 @@
                         <td>{{ i.cloud }}</td>
                         <td>{{ i.region }}</td>
                         <td>
-                            <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-container="body"
-                                  data-placement="bottom" title="{{ i.id }}" data-content="{{ i.name }}">
+                            <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-html="true"
+                                  data-container="body" data-placement="bottom"
+                                  data-content="ID: {{ i.id }}<br>Name: {{ i.name }}<br>Account: {{ i.description }}">
                                 <span class="oi oi-info"></span>
                             </span>
                             {{ i.truncated_name }}

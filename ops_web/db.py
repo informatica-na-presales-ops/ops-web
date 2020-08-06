@@ -321,11 +321,12 @@ class Database(fort.PostgresDatabase):
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
-                    id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, application_role, business_unit, dns_names, whitelist, vpc,
-                    termination_protection, cost, cost::numeric cost_n, account_id,
+                    cc.description, vm.id, vm.cloud, region, env_group, name, owner, contributors, state, private_ip,
+                    public_ip, type, running_schedule, application_env, application_role, business_unit, dns_names,
+                    whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
                     case when state = 'running' then now() - created end running_time, true can_control, true can_modify
-                from virtual_machines
+                from virtual_machines vm
+                join cloud_credentials cc on vm.account_id = cc.id
                 where visible is true
                 and env_group = %(env_group)s
                 order by name
@@ -333,13 +334,14 @@ class Database(fort.PostgresDatabase):
         else:
             sql = '''
                 select
-                    id, cloud, region, env_group, name, owner, contributors, state, private_ip, public_ip, type,
-                    running_schedule, application_env, application_role, business_unit, dns_names, whitelist, vpc,
-                    termination_protection, cost, cost::numeric cost_n, account_id,
+                    cc.description, vm.id, vm.cloud, region, env_group, name, owner, contributors, state, private_ip,
+                    public_ip, type, running_schedule, application_env, application_role, business_unit, dns_names,
+                    whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
                     case when state = 'running' then now() - created end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
-                from virtual_machines
+                from virtual_machines vm
+                join cloud_credentials cc on vm.account_id = cc.id
                 where visible is true
                 and env_group = %(env_group)s
                 order by name
@@ -491,34 +493,33 @@ class Database(fort.PostgresDatabase):
     # images
 
     def get_images(self, email: str) -> List[Dict]:
-        name_limit = self.get_setting('image-name-display-length')
-        if name_limit is None:
-            name_limit = 255
-        else:
-            name_limit = int(name_limit)
+        name_limit = Settings(self).image_name_display_length
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
-                    id, cloud, region, name, owner, public, state, created, account_id, cost,
-                    true can_modify, state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
+                    cc.description, i.id, i.cloud, region, name, owner, public, state, created, account_id, cost,
+                    true can_modify, state = 'available' and (i.cloud = 'aws' or i.cloud ='gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
                     coalesce(instanceid, '') instanceid,
-                    lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
-                from images
+                    lower(i.cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
+                from images i
+                join cloud_credentials cc on i.account_id = cc.id
                 where visible is true
                 order by name
             '''
         else:
             sql = '''
                 select
-                    id, cloud, region, name, owner, public, state, created, account_id, cost,
-                    owner = %(email)s can_modify, state = 'available' and (cloud = 'aws' or cloud ='gcp') can_launch,
+                    cc.description, i.id, i.cloud, region, name, owner, public, state, created, account_id, cost,
+                    owner = %(email)s can_modify,
+                    state = 'available' and (i.cloud = 'aws' or i.cloud ='gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
                     coalesce(instanceid, '') instanceid,
-                    lower(cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
-                from images
+                    lower(i.cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
+                from images i
+                join cloud_credentials cc on cc.id = i.account_id
                 where visible is true
                 and (owner = %(email)s or public is true)
             '''
