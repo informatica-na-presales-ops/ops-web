@@ -14,6 +14,17 @@ class Settings(dict):
         self.update(self.db.get_all_settings())
 
     @property
+    def app_env_values(self) -> List:
+        default = 'PROD\nENABLEMENT\nEVENT\nHANDSON\nDEMO\nPOC\nWORKSHOP\nDEV'
+        return sorted(set(self.get('app-env-values', default).splitlines()))
+
+    @app_env_values.setter
+    def app_env_values(self, value: List):
+        str_value = '\n'.join(sorted(set(value)))
+        self.update({'app-env-values': str_value})
+        self.db.set_setting('app-env-values', str_value)
+
+    @property
     def cloudability_auth_token(self) -> str:
         return self.get('cloudability-auth-token', '')
 

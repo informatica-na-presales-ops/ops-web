@@ -180,6 +180,7 @@ def admin_cost_data_sync():
 def admin_settings_display():
     db: ops_web.db.Database = flask.g.db
     settings: ops_web.db.Settings = flask.g.settings
+    settings.app_env_values = flask.request.values.get('app-env-values', '').splitlines()
     settings.image_name_display_length = int(flask.request.values.get('image-name-display-length'))
     settings.show_op_debrief_survey_link = flask.request.values.get('show-op-debrief-survey-link') == 'on'
     settings.show_security_groups_link = flask.request.values.get('show-security-groups-link') == 'on'
