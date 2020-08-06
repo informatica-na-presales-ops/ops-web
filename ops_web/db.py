@@ -693,7 +693,7 @@ class Database(fort.PostgresDatabase):
         sql = '''
             select
                 geo, area, sub_area, region, sub_region, territory_name, sales_rep rep_name,
-                c.name sc_name, c.employee_id sc_employee_id,
+                coalesce(c.name, '') sc_name, c.employee_id sc_employee_id,
                 lower(geo || ' ' || area || ' ' || sub_area || ' ' || region || ' ' || sub_region || ' ' ||
                       territory_name || ' ' || sales_rep || ' ' || coalesce(c.name, '')) filter_value
             from sales_reps r
