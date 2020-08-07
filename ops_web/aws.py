@@ -703,7 +703,7 @@ class AWSClient:
             'application_role': tags.get('APPLICATIONROLE', ''),
             'business_unit': tags.get('BUSINESSUNIT', ''),
             'dns_names': tags.get('image__dns_names_private', ''),
-            'whitelist': self.get_whitelist_for_instance(region, instance),
+            'whitelist': self.get_whitelist_for_instance(instance),
             'vpc': instance.vpc_id
         }
         if params['environment'] == '':
@@ -742,16 +742,13 @@ class AWSClient:
         instance = ec2.Instance(instanceid)
         return self.get_instance_dict(region, instance)
 
-    def get_whitelist_for_instance(self, region: str, instance):
+    def get_whitelist_for_instance(self, instance):
         whitelist = set()
-        ec2 = self.get_service_resource('ec2', region)
         for sg in instance.security_groups:
             sg_id = sg.get('GroupId')
             if sg_id in self.config.aws_ignored_security_groups:
                 continue
-            sg = ec2.SecurityGroup(sg_id)
-            for p in sg.ip_permissions:
-                whitelist.update([r.get('CidrIp') for r in p.get('IpRanges')])
+            whitelist.update([r.get('ip_range') for r in self.db.get_security_group_rules(sg_id)])
         return ' '.join(sorted(whitelist))
 
     def start_machine(self, region: str, machine_id: str):
