@@ -618,48 +618,29 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
 
     def add_image(self, params: Dict):
-        # params = {
-        #   'id': '', 'cloud': '', 'region': '', 'name': '', 'owner': '', 'state': '', 'created': '', 'instanceid': '',
-        #   'public': (bool), 'account_id': ''
-        # }
-        sql = 'select id from images where id = %(id)s'
-        if self.q(sql, params):
-            sql = '''
-                update images 
-                set cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
-                    public = %(public)s, created = %(created)s, instanceid = %(instanceid)s,
-                    account_id = %(account_id)s, cost = %(cost)s, visible = true, synced = true
-                where id = %(id)s
-            '''
-        else:
-            sql = '''
-                insert into images (
-                    id, cloud, region, name, owner, public, state, created, instanceid, account_id, cost, visible,
-                    synced
-                ) values (
-                    %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(public)s, %(state)s, %(created)s,
-                    %(instanceid)s, %(account_id)s, %(cost)s, true, true
-                )
-            '''
+        sql = '''
+            insert into images (
+                id, cloud, region, name, owner, public, state, created, instanceid, account_id, cost, visible, synced
+            ) values (
+                %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(public)s, %(state)s, %(created)s, %(instanceid)s,
+                %(account_id)s, %(cost)s, true, true
+            ) on conflict (id) do update set
+                cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
+                public = %(public)s, created = %(created)s, instanceid = %(instanceid)s, account_id = %(account_id)s,
+                cost = %(cost)s, visible = true, synced = true
+        '''
         self.u(sql, params)
 
     def add_security_group(self, params: Dict):
-        sql = 'select id from security_group where id = %(id)s'
-        if self.q(sql, params):
-            sql = '''
-                update security_group
-                set cloud = %(cloud)s, region = %(region)s, owner = %(owner)s, group_name = %(group_name)s,
-                    account_id = %(account_id)s, visible = true, synced = true
-                where id = %(id)s
-           '''
-        else:
-            sql = '''
-                insert into security_group (
-                    id, cloud, region, owner, group_name, account_id, visible, synced
-                ) values (
-                    %(id)s, %(cloud)s, %(region)s, %(owner)s, %(group_name)s, %(account_id)s, true, true
-                )
-            '''
+        sql = '''
+            insert into security_group (
+                id, cloud, region, owner, group_name, account_id, visible, synced
+            ) values (
+                %(id)s, %(cloud)s, %(region)s, %(owner)s, %(group_name)s, %(account_id)s, true, true
+            ) on conflict (id) do update set
+                cloud = %(cloud)s, region = %(region)s, owner = %(owner)s, group_name = %(group_name)s,
+                account_id = %(account_id)s, visible = true, synced = true
+        '''
         self.u(sql, params)
         for rule in params.get('sg_rules'):
             self.add_security_group_rule({
