@@ -28,6 +28,7 @@ import whitenoise
 import xlsxwriter
 
 config = ops_web.config.Config()
+db = ops_web.db.Database(config)
 scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 900})
 
 app = flask.Flask(__name__)
@@ -92,7 +93,7 @@ def make_session_permanent():
 @app.before_request
 def load_request_data():
     flask.g.config = config
-    flask.g.db = ops_web.db.Database(config)
+    flask.g.db = db
     flask.g.settings = ops_web.db.Settings(flask.g.db)
     flask.g.email = flask.session.get('email')
     flask.g.permissions = flask.g.db.get_permissions(flask.g.email)
@@ -102,7 +103,6 @@ def load_request_data():
 def index():
     if flask.g.email is None:
         return flask.render_template('sign-in.html')
-    db = ops_web.db.Database(config)
     return flask.render_template('index.html')
 
 
@@ -115,7 +115,6 @@ def admin():
 @app.route('/admin/cloud-credentials')
 @permission_required('admin')
 def admin_cloud_credentials():
-    db: ops_web.db.Database = flask.g.db
     flask.g.cloud_credentials = db.get_cloud_credentials()
     return flask.render_template('admin/cloud-credentials.html')
 
@@ -123,7 +122,6 @@ def admin_cloud_credentials():
 @app.route('/admin/cloud-credentials/delete', methods=['POST'])
 @permission_required('admin')
 def admin_cloud_credentials_delete():
-    db: ops_web.db.Database = flask.g.db
     cred_id = flask.request.values.get('id')
     db.delete_cloud_credentials(cred_id)
     db.add_log_entry(flask.g.email, f'Delete cloud credentials {cred_id}')
@@ -133,7 +131,6 @@ def admin_cloud_credentials_delete():
 @app.route('/admin/cloud-credentials/edit', methods=['POST'])
 @permission_required('admin')
 def admin_cloud_credentials_edit():
-    db: ops_web.db.Database = flask.g.db
     params = flask.request.values.to_dict()
     app.logger.debug(params)
     cred_id = params.get('id')
@@ -151,7 +148,6 @@ def admin_cloud_credentials_edit():
 @app.route('/admin/settings')
 @permission_required('admin')
 def admin_settings():
-    db = ops_web.db.Database(config)
     flask.g.current_image_name_max_length = db.get_image_name_max_length()
     return flask.render_template('admin/settings.html')
 
@@ -159,7 +155,6 @@ def admin_settings():
 @app.route('/admin/settings/cloudability', methods=['POST'])
 @permission_required('admin')
 def admin_settings_cost_data():
-    db: ops_web.db.Database = flask.g.db
     settings: ops_web.db.Settings = flask.g.settings
     settings.cloudability_auth_token = flask.request.values.get('cloudability-auth-token', '').strip()
     vendor_account_ids = set(flask.request.values.get('cloudability-vendor-account-ids', '').split())
@@ -171,7 +166,6 @@ def admin_settings_cost_data():
 @app.route('/admin/settings/cloudability/sync', methods=['POST'])
 @permission_required('admin')
 def admin_cost_data_sync():
-    db: ops_web.db.Database = flask.g.db
     db.add_log_entry(flask.g.email, 'Manual cost data sync')
     scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
     flask.flash('Cost data synchronization has started.', 'primary')
@@ -181,7 +175,6 @@ def admin_cost_data_sync():
 @app.route('/admin/settings/display', methods=['POST'])
 @permission_required('admin')
 def admin_settings_display():
-    db: ops_web.db.Database = flask.g.db
     settings: ops_web.db.Settings = flask.g.settings
     settings.app_env_values = flask.request.values.get('app-env-values', '').splitlines()
     settings.image_name_display_length = int(flask.request.values.get('image-name-display-length'))
@@ -196,7 +189,6 @@ def admin_settings_display():
 @app.route('/admin/settings/zendesk', methods=['POST'])
 @permission_required('admin')
 def admin_settings_zendesk():
-    db: ops_web.db.Database = flask.g.db
     settings: ops_web.db.Settings = flask.g.settings
     settings.zendesk_widget_key = flask.request.values.get('zendesk-widget-key', '')
     db.add_log_entry(flask.g.email, 'Updated Zendesk integration settings')
@@ -206,7 +198,6 @@ def admin_settings_zendesk():
 @app.route('/admin/users')
 @permission_required('admin')
 def admin_users():
-    db: ops_web.db.Database = flask.g.db
     flask.g.users = db.get_users()
     flask.g.available_permissions = {
         'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
@@ -220,7 +211,6 @@ def admin_users():
 @app.route('/admin/users/edit', methods=['POST'])
 @permission_required('admin')
 def admin_users_edit():
-    db: ops_web.db.Database = flask.g.db
     email = flask.request.values.get('email')
     permissions = flask.request.values.getlist('permissions')
     db.add_log_entry(flask.g.email, f'Set permissions for {email} to {permissions}')
@@ -231,7 +221,6 @@ def admin_users_edit():
 @app.route('/admin/users/impersonate', methods=['POST'])
 @permission_required('admin')
 def admin_users_impersonate():
-    db: ops_web.db.Database = flask.g.db
     target = flask.request.form.get('target')
     db.add_log_entry(flask.g.email, f'Impersonate user {target}')
     flask.session['email'] = target
@@ -241,7 +230,6 @@ def admin_users_impersonate():
 @app.route('/audit-log')
 @permission_required('admin')
 def audit_log():
-    db: ops_web.db.Database = flask.g.db
     flask.g.log_entries = db.get_log_entries()
     return flask.render_template('log.html')
 
@@ -275,7 +263,6 @@ def environment_usage_events():
             'event_name': flask.request.values.get('event_name'),
             'user_name': flask.request.values.get('user_name')
         }
-        db: ops_web.db.Database = flask.g.db
         db.add_environment_usage_event(params)
         return 'OK'
     flask.abort(403)
@@ -284,7 +271,6 @@ def environment_usage_events():
 @app.route('/environments')
 @login_required
 def environments():
-    db: ops_web.db.Database = flask.g.db
     flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_environments())
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('environments/index.html')
@@ -294,7 +280,6 @@ def environments():
 @login_required
 def environment_detail(environment):
     app.logger.debug(f'Getting information for environment {environment!r}')
-    db: ops_web.db.Database = flask.g.db
     flask.g.environment = environment
     _machines = db.get_machines_for_env(flask.g.email, environment)
     flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
@@ -315,7 +300,6 @@ def environment_detail(environment):
 @login_required
 def environment_delete(environment):
     app.logger.info(f'Got a request from {flask.g.email} to delete machines in environment {environment!r}')
-    db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
@@ -336,7 +320,6 @@ def environment_delete(environment):
 @login_required
 def environment_start(environment):
     app.logger.info(f'Got a request from {flask.g.email} to start machines in environment {environment!r}')
-    db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
     app.logger.info(machines)
     for machine in machines:
@@ -358,7 +341,6 @@ def environment_start(environment):
 @login_required
 def environment_stop(environment):
     app.logger.info(f'Got a request from {flask.g.email} to stop machines in environment {environment!r}')
-    db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
@@ -379,7 +361,6 @@ def environment_stop(environment):
 @app.route('/external-links')
 @login_required
 def external_links():
-    db: ops_web.db.Database = flask.g.db
     flask.g.external_links = db.get_external_links()
     return flask.render_template('external-links.html')
 
@@ -387,7 +368,6 @@ def external_links():
 @app.route('/external-links/add', methods=['POST'])
 @permission_required('admin')
 def external_links_add():
-    db: ops_web.db.Database = flask.g.db
     url = flask.request.values.get('url')
     description = flask.request.values.get('description')
     db.add_external_link(url, description)
@@ -399,7 +379,6 @@ def external_links_add():
 @app.route('/external-links/delete', methods=['POST'])
 @permission_required('admin')
 def external_links_delete():
-    db: ops_web.db.Database = flask.g.db
     link_id = flask.request.values.get('link-id')
     db.delete_external_link(link_id)
     db.add_log_entry(flask.g.email, f'Deleted an external link with id {link_id}')
@@ -410,7 +389,6 @@ def external_links_delete():
 @app.route('/images')
 @login_required
 def images():
-    db: ops_web.db.Database = flask.g.db
     flask.g.images = db.get_images(flask.g.email)
     flask.g.environments = db.get_env_list()
     username = flask.g.email.split('@')[0]
@@ -424,7 +402,6 @@ def images():
 def images_create():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
-    db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
@@ -483,7 +460,6 @@ def images_create():
 @app.route('/images/delete', methods=['POST'])
 @permission_required('admin')
 def images_delete():
-    db: ops_web.db.Database = flask.g.db
     image_id = flask.request.values.get('image-id')
     app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
     db.add_log_entry(flask.g.email, f'Delete image {image_id}')
@@ -503,7 +479,6 @@ def images_delete():
 def images_edit():
     image_id = flask.request.values.get('image-id')
     app.logger.info(f'Got a request from {flask.g.email} to edit image {image_id}')
-    db: ops_web.db.Database = flask.g.db
     image = db.get_image(image_id)
     if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
         db.add_log_entry(flask.g.email, f'Update tags on image {image_id}')
@@ -534,7 +509,6 @@ def images_edit():
 @app.route('/sap_access', methods=['GET', 'POST'])
 @login_required
 def sap_access():
-    db: ops_web.db.Database = flask.g.db
     flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_own_environments(flask.g.email))
     flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('sap-access.html')
@@ -544,7 +518,6 @@ def sap_access():
 @login_required
 def sap_access_detail(environment):
     app.logger.debug(f'Getting information for environment {environment!r}')
-    db: ops_web.db.Database = flask.g.db
     flask.g.environment = environment
     _machines = db.get_machines_for_env(flask.g.email, environment)
     flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
@@ -557,7 +530,6 @@ def sap_access_detail(environment):
 @login_required
 def attach_sap_sg(environment):
     app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
-    db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
     final_result = []
     for machine in machines:
@@ -582,7 +554,6 @@ def attach_sap_sg(environment):
 @login_required
 def detach_sap_sg(environment):
     app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
-    db: ops_web.db.Database = flask.g.db
     machines = db.get_machines_for_env(flask.g.email, environment)
     final_result = []
     for machine in machines:
@@ -608,7 +579,6 @@ def attach_sap_sg_machine():
     machine_id = flask.request.values.get('machine-id')
     environment = flask.request.values.get('environment')
     app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {machine_id}')
-    db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     region = machine.get('region')
     vpc = machine.get('vpc')
@@ -629,7 +599,6 @@ def detach_sap_sg_machine():
     environment = flask.request.values.get('environment')
     app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {machine_id}')
     machine_id = flask.request.values.get('machine-id')
-    db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     region = machine.get('region')
     machine_id = machine.get('id')
@@ -648,7 +617,6 @@ def detach_sap_sg_machine():
 @app.route('/security-groups')
 @login_required
 def security_groups():
-    db: ops_web.db.Database = flask.g.db
     flask.g.sg = db.get_security_groups(flask.g.email)
     return flask.render_template('security-groups.html')
 
@@ -663,7 +631,6 @@ def security_groups_add_rule():
     description = flask.request.values.get('description')
 
     redir = flask.redirect(flask.url_for('security_groups'))
-    db: ops_web.db.Database = flask.g.db
     if not db.can_modify_security_group(flask.g.email, sg_id):
         flask.flash('You do not have permission to modify this security group.', 'danger')
         return redir
@@ -709,7 +676,6 @@ def security_groups_delete_rule():
     group_id = flask.request.values.get('security-group-id')
     ip_range = flask.request.values.get('ip-range')
     region = flask.request.values.get('region')
-    db: ops_web.db.Database = flask.g.db
     if not db.can_modify_security_group(flask.g.email, group_id):
         flask.flash('You do not have permission to modify this security group.', 'danger')
         return redir
@@ -745,7 +711,6 @@ def ws_postdep():
 @login_required
 def ws_postdep_filter():
     env_group = flask.request.values.get("env_group_name")
-    db = ops_web.db.Database(config)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         instance_list = aws.get_instance_of_envgrp(env_group)
@@ -761,7 +726,6 @@ def ws_postdep_filter():
 def wsimage():
     ws = flask.request.values.get("ws")
     app.logger.info(ws)
-    db = ops_web.db.Database(config)
     if (ws != 'CDW-AZ' and ws != 'CDW104-AZ'):
         for account in db.get_all_credentials_for_use('aws'):
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
@@ -781,7 +745,6 @@ def wsimage():
 @app.route('/elasticip', methods=['GET', 'POST'])
 @login_required
 def elasticip():
-    db = ops_web.db.Database(config)
     idlist_str = flask.request.values.get('instance')
     region = 'us-west-2'
     for account in db.get_all_credentials_for_use('aws'):
@@ -798,7 +761,6 @@ def elasticip():
 @app.route('/synchosts', methods=['GET', 'POST'])
 @login_required
 def synchosts():
-    db = ops_web.db.Database(config)
     idliststr = flask.request.values.get('instance')
     region = 'us-west-2'
     for account in db.get_all_credentials_for_use('aws'):
@@ -819,7 +781,6 @@ def synchosts():
 @login_required
 def synchosts_az():
     app.logger.info("entered in for updating hosts")
-    db = ops_web.db.Database(config)
     idliststr = flask.request.values.get('instance')
     instance_info = flask.request.values.get('instance_info')
     id_list = idliststr
@@ -874,7 +835,6 @@ def launch():
         "whitelist": whitelist
     }
 
-    db = ops_web.db.Database(config)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         idlist = aws.create_instances(ws_details, infodict)
@@ -903,7 +863,6 @@ def az_launch():
     quantity = flask.request.values.get('count')
     name = flask.request.values.get('name')
     owner = flask.request.values.get('owner').lower()
-    db = ops_web.db.Database(config)
     q = int(quantity)
     idlist = []
     instance_info = []
@@ -955,7 +914,6 @@ def launchmachine_default_specs():
     region = flask.request.values.get('region')
     environment = flask.request.values.get('environment')
 
-    db: ops_web.db.Database = flask.g.db
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'default')
@@ -971,7 +929,6 @@ def launchmachine_default_specs():
 def machine_create():
     image_id = flask.request.values.get('image-id')
     app.logger.info(f'Got a request from {flask.g.email} to create machine from image {image_id}')
-    db: ops_web.db.Database = flask.g.db
     image = db.get_image(image_id)
     if 'admin' in flask.g.permissions or image.get('public') or image.get('owner') == flask.g.email:
         db.add_log_entry(flask.g.email, f'Create machine from image {image_id}')
@@ -1051,7 +1008,6 @@ def machine_create():
 def machine_delete():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to delete machine {machine_id}')
-    db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_modify'):
         cloud = machine.get('cloud')
@@ -1071,7 +1027,6 @@ def machine_delete():
 def machine_edit():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to edit machine {machine_id}')
-    db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Update tags on machine {machine_id}')
@@ -1143,7 +1098,6 @@ def machine_edit():
 def machine_start():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to start machine {machine_id}')
-    db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_control'):
         db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
@@ -1159,7 +1113,6 @@ def machine_start():
 def machine_stop():
     machine_id = flask.request.values.get('machine-id')
     app.logger.info(f'Got a request from {flask.g.email} to stop machine {machine_id}')
-    db: ops_web.db.Database = flask.g.db
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_control'):
         db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
@@ -1173,7 +1126,6 @@ def machine_stop():
 @app.route('/op-debrief')
 @login_required
 def op_debrief():
-    db: ops_web.db.Database = flask.g.db
     flask.g.surveys = db.get_active_surveys(flask.g.email)
     return flask.render_template('op-debrief/index.html')
 
@@ -1181,7 +1133,6 @@ def op_debrief():
 @app.route('/op-debrief/archive')
 @login_required
 def op_debrief_archive():
-    db: ops_web.db.Database = flask.g.db
     flask.g.surveys = db.get_completed_surveys(flask.g.email)
     return flask.render_template('op-debrief/archive.html')
 
@@ -1189,7 +1140,6 @@ def op_debrief_archive():
 @app.route('/op-debrief/configure')
 @permission_required('survey-admin')
 def op_debrief_configure():
-    db: ops_web.db.Database = flask.g.db
     flask.g.roles = db.get_roles()
     return flask.render_template('op-debrief/configure.html')
 
@@ -1197,7 +1147,6 @@ def op_debrief_configure():
 @app.route('/op-debrief/configure/roles', methods=['POST'])
 @permission_required('survey-admin')
 def op_debrief_configure_roles():
-    db: ops_web.db.Database = flask.g.db
     selected_roles = flask.request.values.getlist('selected-roles')
     app.logger.debug(f'Selected roles: {selected_roles}')
     db.update_roles(selected_roles)
@@ -1207,7 +1156,6 @@ def op_debrief_configure_roles():
 @app.route('/op-debrief/<uuid:survey_id>', methods=['GET', 'POST'])
 @login_required
 def op_debrief_survey(survey_id: uuid.UUID):
-    db: ops_web.db.Database = flask.g.db
     survey = db.get_survey(survey_id)
     if 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
         if flask.request.method == 'GET':
@@ -1240,7 +1188,6 @@ def op_debrief_survey(survey_id: uuid.UUID):
 @app.route('/op-debrief/<uuid:survey_id>/cancel')
 @login_required
 def op_debrief_survey_cancel(survey_id: uuid.UUID):
-    db: ops_web.db.Database = flask.g.db
     survey = db.get_survey(survey_id)
     if 'survey-admin' in flask.g.permissions or flask.g.email == survey.get('email'):
         db.cancel_survey(survey_id)
@@ -1256,7 +1203,6 @@ def rep_sc_pairs_redirect():
 @app.route('/sc-assignments/sales-reps')
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps():
-    db: ops_web.db.Database = flask.g.db
     flask.g.sales_reps = db.get_rep_sc_pairs()
     flask.g.sales_consultants = db.get_sales_consultants()
     return flask.render_template('sc-assignments/sales-reps.html')
@@ -1267,7 +1213,6 @@ def sc_assignments_sales_reps():
 def excel_sheet():
     idlist = flask.request.values.get('instance')
     app.logger.info(idlist)
-    db: ops_web.db.Database = flask.g.db
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         idlist2 = aws.convert_instanceidstr_list(idlist)
@@ -1314,7 +1259,6 @@ def rep_sc_pairs_xlsx_redirect():
 @app.route('/sc-assignments/sales-reps.xlsx')
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps_xlsx():
-    db: ops_web.db.Database = flask.g.db
     records = db.get_rep_sc_pairs()
     filter_input = flask.request.values.get('filter-input')
     if filter_input is not None:
@@ -1346,7 +1290,6 @@ def sc_assignments_sales_reps_xlsx():
 @app.route('/sc-assignments/sales-reps/edit', methods=['POST'])
 @permission_required('sc-assignments')
 def sc_assignments_sales_reps_edit():
-    db: ops_web.db.Database = flask.g.db
     territory_name = flask.request.values.get('territory_name')
     sc_employee_id = flask.request.values.get('sc_employee_id')
     app.logger.debug(f'sc assignment territory: {territory_name}, employee_id: {sc_employee_id}')
@@ -1388,7 +1331,6 @@ def sign_out():
 @app.route('/sync-info')
 @login_required
 def sync_info():
-    db: ops_web.db.Database = flask.g.db
     sync_data = db.get_sync_data()
     flask.g.sync_data = sync_data
     if sync_data['last_sync_start'] is None:
@@ -1406,7 +1348,6 @@ def sync_info():
 @app.route('/sync-now', methods=['POST'])
 @permission_required('admin')
 def sync_now():
-    db: ops_web.db.Database = flask.g.db
     db.add_log_entry(flask.g.email, 'Manual sync')
     scheduler.add_job(sync_machines)
     return flask.redirect(flask.url_for('sync_info'))
@@ -1421,7 +1362,6 @@ def toolbox():
 def delete_machine(machine_id):
     apm.client.begin_transaction('task')
     app.logger.info(f'Attempting to delete machine {machine_id}')
-    db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
     account = db.get_one_credential_for_use(machine.get('account_id'))
@@ -1441,7 +1381,6 @@ def delete_machine(machine_id):
 def start_machine(machine_id):
     apm.client.begin_transaction('task')
     app.logger.info(f'Attempting to start machine {machine_id}')
-    db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
     account = db.get_one_credential_for_use(machine.get('account_id'))
@@ -1469,7 +1408,6 @@ def start_machine(machine_id):
 def stop_machine(machine_id):
     apm.client.begin_transaction('task')
     app.logger.info(f'Attempting to stop machine {machine_id}')
-    db = ops_web.db.Database(config)
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
     account = db.get_one_credential_for_use(machine.get('account_id'))
@@ -1496,7 +1434,6 @@ def stop_machine(machine_id):
 def check_sync():
     apm.client.begin_transaction('task')
     app.logger.debug('Checking for a stuck sync ...')
-    db = ops_web.db.Database(config)
     sync_data = db.get_sync_data()
     if sync_data['syncing_now']:
         now = datetime.datetime.utcnow()
@@ -1511,7 +1448,6 @@ def sync_machines():
     apm.client.begin_transaction('task')
     app.logger.info('Syncing information from cloud providers now ...')
 
-    db = ops_web.db.Database(config)
     sync_data = db.get_sync_data()
     if sync_data['syncing_now']:
         app.logger.warning('Aborting because there is another sync happening right now')
@@ -1594,7 +1530,6 @@ def main():
 
     app.logger.info(f'The following feature flags are set: {config.feature_flags}')
 
-    db = ops_web.db.Database(config)
     if config.reset_database:
         db.reset()
 

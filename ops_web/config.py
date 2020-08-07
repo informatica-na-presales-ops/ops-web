@@ -26,6 +26,7 @@ class Config:
     cdw_jumpbox_pwd:str
     clouds_to_sync: str
     db: str
+    db_max_connections: int
     debug_layout: bool
     feature_flags: List
     log_format: str
@@ -55,9 +56,10 @@ class Config:
 
         APP_VERSION, AUTO_SYNC, AUTO_SYNC_INTERVAL, AUTO_SYNC_MAX_DURATION, AWS_IGNORED_SECURITY_GROUPS,
         AWS_SES_CONFIGURATION_SET, AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID, AZ_WORKSHOP_SUBSCRIPTION_ID,
-        BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT, LOG_LEVEL, OTHER_LOG_LEVELS,
-        PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, RUNNER, SCHEME, SECRET_KEY, SEND_EMAIL, SERVER_NAME,
-        SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ, WEB_SERVER_THREADS
+        BOOTSTRAP_ADMIN, CLOUDS_TO_SYNC, DB, DB_MAX_CONNECTIONS, DEBUG_LAYOUT, FEATURE_FLAGS, LOG_FORMAT, LOG_LEVEL,
+        OTHER_LOG_LEVELS, PERMANENT_SESSIONS, POWER_CONTROL_DOMAIN, RESET_DATABASE, RUNNER, SCHEME, SECRET_KEY,
+        SEND_EMAIL, SERVER_NAME, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME, SUPPORT_EMAIL, TZ,
+        WEB_SERVER_THREADS
 
         Some variables have defaults if they are not found in the environment:
 
@@ -65,6 +67,7 @@ class Config:
         AUTO_SYNC_INTERVAL=10
         AUTO_SYNC_MAX_DURATION=10
         CLOUDS_TO_SYNC="aws az"
+        DB_MAX_CONNECTIONS=20
         DEBUG_LAYOUT=False
         LOG_FORMAT="%(levelname)s [%(name)s] %(message)s"
         LOG_LEVEL=INFO
@@ -90,11 +93,12 @@ class Config:
         self.bootstrap_admin = os.getenv('BOOTSTRAP_ADMIN')
         self.cdw104_pwd=os.getenv('CDW104_PWD')
         self.cdw_jumpbox_pwd=os.getenv('CDW_JUMPBOX_PWD')
-        self.gcp_project_id = os.getenv('GCP_PROJECT_ID')
         self.clouds_to_sync = os.getenv('CLOUDS_TO_SYNC', 'aws az gcp')
         self.db = os.getenv('DB')
+        self.db_max_connections = int(os.getenv('DB_MAX_CONNECTIONS', '20'))
         self.debug_layout = as_bool(os.getenv('DEBUG_LAYOUT', 'False'))
         self.feature_flags = os.getenv('FEATURE_FLAGS', '').split()
+        self.gcp_project_id = os.getenv('GCP_PROJECT_ID')
         self.log_format = os.getenv('LOG_FORMAT', '%(levelname)s [%(name)s] %(message)s')
         self.log_level = os.getenv('LOG_LEVEL', 'INFO')
         self.permanent_sessions = as_bool(os.getenv('PERMANENT_SESSIONS', 'False'))

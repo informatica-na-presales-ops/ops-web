@@ -117,7 +117,7 @@ class Database(fort.PostgresDatabase):
     _version: int = None
 
     def __init__(self, config: ops_web.config.Config):
-        super().__init__(config.db)
+        super().__init__(config.db, maxconn=config.db_max_connections)
         self.config = config
 
     # users and permissions
