@@ -1001,7 +1001,6 @@ class Database(fort.PostgresDatabase):
         sql = 'select id, url, description from external_links order by description'
         return self.q(sql)
 
-
     # settings
 
     def get_all_settings(self):
@@ -1552,14 +1551,14 @@ class Database(fort.PostgresDatabase):
             ''')
             self.add_schema_version(36)
         if self.version < 37:
-            self.log.info('Migrating to database schema 37')
+            self.log.info('Migrating to database schema version 37')
             self.u('''
                 alter table virtual_machines
                 add column application_role text
             ''')
             self.add_schema_version(37)
         if self.version < 38:
-            self.log.info('Migrating to database schema 38')
+            self.log.info('Migrating to database schema version 38')
             self.u('''
                 create table external_links (
                     id uuid primary key,
@@ -1568,6 +1567,13 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(38)
+        if self.version < 39:
+            self.log.info('Migrating to database schema version 39')
+            self.u('''
+                alter table security_group
+                add constraint security_group_pkey primary key (id)
+            ''')
+            self.add_schema_version(39)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
