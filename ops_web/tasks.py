@@ -1,6 +1,7 @@
 import concurrent.futures
 import datetime
 import elasticapm
+import flask
 import logging
 import ops_web.aws
 import ops_web.config
@@ -13,11 +14,13 @@ log = logging.getLogger(__name__)
 
 
 class TaskContext:
+    app: flask.Flask
     apm: elasticapm.Client
     config: ops_web.config.Config
     db: ops_web.db.Database
 
-    def __init__(self, apm, config, db):
+    def __init__(self, app, apm, config, db):
+        self.app = app
         self.apm = apm
         self.config = config
         self.db = db

@@ -167,7 +167,7 @@ def admin_settings_cost_data():
 @permission_required('admin')
 def admin_cost_data_sync():
     db.add_log_entry(flask.g.email, 'Manual cost data sync')
-    tc = ops_web.tasks.TaskContext(apm.client, config, db)
+    tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
     scheduler.add_job(ops_web.tasks.get_cost_data, args=[tc])
     flask.flash('Cost data synchronization has started.', 'primary')
     return flask.redirect(flask.url_for('admin_settings'))
@@ -1476,7 +1476,7 @@ def sync_machines():
                 apm.capture_exception()
                 app.logger.exception(e)
         db.post_sync('aws')
-        tc = ops_web.tasks.TaskContext(apm.client, config, db)
+        tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
         scheduler.add_job(ops_web.tasks.update_termination_protection, args=[tc])
     else:
         app.logger.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')
@@ -1553,7 +1553,7 @@ def main():
             scheduler.add_job(sync_machines)
             scheduler.add_job(check_sync, 'interval', minutes=1)
 
-        tc = ops_web.tasks.TaskContext(apm.client, config, db)
+        tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
 
         # cost data synchronization
         scheduler.add_job(ops_web.tasks.get_cost_data, args=[tc])
@@ -1561,8 +1561,8 @@ def main():
 
         # op debrief survey jobs
         if 'op-debrief' in config.feature_flags:
-            scheduler.add_job(ops_web.op_debrief_surveys.generate, args=[config, app])
-            scheduler.add_job(ops_web.op_debrief_surveys.generate, 'interval', hours=6, args=[config, app])
-            scheduler.add_job(ops_web.op_debrief_surveys.remind, 'interval', hours=24, args=[config, app])
+            scheduler.add_job(ops_web.op_debrief_surveys.generate, args=[tc])
+            scheduler.add_job(ops_web.op_debrief_surveys.generate, 'interval', hours=6, args=[tc])
+            scheduler.add_job(ops_web.op_debrief_surveys.remind, 'interval', hours=24, args=[tc])
 
     waitress.serve(app, ident=None, threads=config.web_server_threads)

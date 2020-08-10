@@ -1,9 +1,8 @@
 import datetime
 import flask
 import logging
-import ops_web.config
-import ops_web.db
 import ops_web.send_email
+import ops_web.tasks
 import werkzeug.datastructures
 
 from typing import Dict
@@ -11,10 +10,9 @@ from typing import Dict
 log = logging.getLogger(__name__)
 
 
-def remind(config: ops_web.config.Config, app: flask.Flask):
+def remind(tc: ops_web.tasks.TaskContext):
     log.info('Checking for opportunity debrief surveys that need reminders sent')
-    db = ops_web.db.Database(config)
-    for survey in db.get_surveys_for_reminding():
+    for survey in tc.db.get_surveys_for_reminding():
         context = {
             'account_name': survey.get('account_name'),
             'opportunity_name': survey.get('name'),
@@ -23,37 +21,36 @@ def remind(config: ops_web.config.Config, app: flask.Flask):
             'survey_id': survey.get('id'),
             'email': survey.get('email')
         }
-        send_survey_email(config, app, context)
-        db.set_survey_reminder_sent(survey.get('id'))
+        send_survey_email(tc, context)
+        tc.db.set_survey_reminder_sent(survey.get('id'))
 
 
-def send_survey_email(config: ops_web.config.Config, app: flask.Flask, context: Dict):
-    with app.app_context():
+def send_survey_email(tc: ops_web.tasks.TaskContext, context: Dict):
+    with tc.app.app_context():
         body = flask.render_template('op-debrief/survey-email.html', c=context)
-    ops_web.send_email.send_email(config, context.get('email'), 'Opportunity debrief survey', body)
+    ops_web.send_email.send_email(tc.config, context.get('email'), 'Opportunity debrief survey', body)
 
 
-def generate(config: ops_web.config.Config, app: flask.Flask):
+def generate(tc: ops_web.tasks.TaskContext):
     log.info('Generating opportunity debrief surveys')
     now = datetime.datetime.utcnow()
-    db = ops_web.db.Database(config)
-    last_check = db.get_last_op_debrief_check()
+    last_check = tc.db.get_last_op_debrief_check()
     log.info(f'Looking for opportunities modified after {last_check}')
-    modified_ops = db.get_modified_opportunities(last_check)
-    existing_survey_op_numbers = db.get_op_numbers_for_existing_surveys()
-    selected_roles = [r.get('role_name') for r in db.get_roles() if r.get('generate_survey')]
+    modified_ops = tc.db.get_modified_opportunities(last_check)
+    existing_survey_op_numbers = tc.db.get_op_numbers_for_existing_surveys()
+    selected_roles = [r.get('role_name') for r in tc.db.get_roles() if r.get('generate_survey')]
     for op in modified_ops:
         op_number = op.get('opportunity_number')
         if op_number in existing_survey_op_numbers:
             log.debug(f'Already sent surveys for {op_number}')
             continue
         log.info(f'Generating surveys for {op_number}')
-        team_members = db.get_op_team_members(op.get('opportunity_key'))
+        team_members = tc.db.get_op_team_members(op.get('opportunity_key'))
         for t in team_members:
             email = t.get('email')
             role = t.get('role')
             if role in selected_roles:
-                survey_id = db.add_survey(op_number, email, t.get('role'))
+                survey_id = tc.db.add_survey(op_number, email, t.get('role'))
                 context = {
                     'account_name': op.get('account_name'),
                     'opportunity_name': op.get('name'),
@@ -62,11 +59,11 @@ def generate(config: ops_web.config.Config, app: flask.Flask):
                     'survey_id': survey_id,
                     'email': email
                 }
-                send_survey_email(config, app, context)
+                send_survey_email(tc, context)
             else:
                 log.debug(f'Skipping {email} because role {role!r} is not selected')
     log.info('Done generating opportunity debrief surveys')
-    db.update_op_debrief_tracking(now)
+    tc.db.update_op_debrief_tracking(now)
 
 
 survey_template = {
