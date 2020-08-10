@@ -12,21 +12,30 @@ import urllib.parse
 log = logging.getLogger(__name__)
 
 
-def get_cost_data(apm: elasticapm.Client):
-    apm.begin_transaction('task')
-    config = ops_web.config.Config()
+class TaskContext:
+    apm: elasticapm.Client
+    config: ops_web.config.Config
+    db: ops_web.db.Database
+
+    def __init__(self, apm, config, db):
+        self.apm = apm
+        self.config = config
+        self.db = db
+
+
+def get_cost_data(tc: TaskContext):
+    tc.apm.begin_transaction('task')
     log.info('Getting cost data from Cloudability')
 
-    db = ops_web.db.Database(config)
-    settings = ops_web.db.Settings(db)
+    settings = ops_web.db.Settings(tc.db)
     if not settings.cloudability_auth_token:
         log.info('cloudability-auth-token is not set')
-        apm.end_transaction('get-cost-data')
+        tc.apm.end_transaction('get-cost-data')
         return
 
     if not settings.cloudability_vendor_account_ids:
         log.info('cloudability-vendor-account-ids is not set')
-        apm.end_transaction('get-cost-data')
+        tc.apm.end_transaction('get-cost-data')
         return
 
     base_url = 'https://app.cloudability.com/api/1/reporting/cost'
@@ -62,19 +71,19 @@ def get_cost_data(apm: elasticapm.Client):
         results_response = requests.get(url)
         results_response.raise_for_status()
         results_data = results_response.json()
-        db.cost_data_pre_sync()
+        tc.db.cost_data_pre_sync()
         for result in results_data.get('results', []):
             log.debug(f'Adding result to database: {result}')
-            db.add_cost_data(**result)
-        db.cost_data_post_sync()
+            tc.db.add_cost_data(**result)
+        tc.db.cost_data_post_sync()
     else:
         log.critical(f'Cloudability report job {job_id} is {job_status}')
     log.info('Done getting cost data from Cloudability')
-    apm.end_transaction('get-cost-data')
+    tc.apm.end_transaction('get-cost-data')
 
 
-def update_termination_protection(apm: elasticapm.Client, db: ops_web.db.Database):
-    apm.begin_transaction('task')
+def update_termination_protection(tc: TaskContext):
+    tc.apm.begin_transaction('task')
     log.info('Checking termination protection for all AWS machines')
     sync_start = datetime.datetime.utcnow()
 
@@ -85,18 +94,18 @@ def update_termination_protection(apm: elasticapm.Client, db: ops_web.db.Databas
     aws_clients = {}
     with concurrent.futures.ThreadPoolExecutor() as ex:
         fs = []
-        for machine in db.get_all_visible_machines():
+        for machine in tc.db.get_all_visible_machines():
             if machine.get('cloud') == 'aws':
                 machine_id = machine.get('id')
                 account_id = machine.get('account_id')
                 if account_id in aws_clients:
                     aws = aws_clients.get(account_id)
                 else:
-                    cred = db.get_one_credential_for_use(account_id)
-                    aws = ops_web.aws.AWSClient(db.config, cred.get('username'), cred.get('password'))
+                    cred = tc.db.get_one_credential_for_use(account_id)
+                    aws = ops_web.aws.AWSClient(tc.config, cred.get('username'), cred.get('password'))
                     aws_clients[account_id] = aws
-                fs.append(ex.submit(_update_one_machine, aws, db, machine.get('region'), machine_id))
+                fs.append(ex.submit(_update_one_machine, aws, tc.db, machine.get('region'), machine_id))
         concurrent.futures.wait(fs)
     sync_duration = datetime.datetime.utcnow() - sync_start
     log.info(f'Done checking termination protection for all AWS machines / {sync_duration}')
-    apm.end_transaction('update-termination-protection')
+    tc.apm.end_transaction('update-termination-protection')

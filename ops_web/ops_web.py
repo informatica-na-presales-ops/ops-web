@@ -167,7 +167,8 @@ def admin_settings_cost_data():
 @permission_required('admin')
 def admin_cost_data_sync():
     db.add_log_entry(flask.g.email, 'Manual cost data sync')
-    scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
+    tc = ops_web.tasks.TaskContext(apm.client, config, db)
+    scheduler.add_job(ops_web.tasks.get_cost_data, args=[tc])
     flask.flash('Cost data synchronization has started.', 'primary')
     return flask.redirect(flask.url_for('admin_settings'))
 
@@ -1475,7 +1476,8 @@ def sync_machines():
                 apm.capture_exception()
                 app.logger.exception(e)
         db.post_sync('aws')
-        scheduler.add_job(ops_web.tasks.update_termination_protection, args=[apm.client, db])
+        tc = ops_web.tasks.TaskContext(apm.client, config, db)
+        scheduler.add_job(ops_web.tasks.update_termination_protection, args=[tc])
     else:
         app.logger.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     aws_duration = datetime.datetime.utcnow() - aws_start
@@ -1551,9 +1553,11 @@ def main():
             scheduler.add_job(sync_machines)
             scheduler.add_job(check_sync, 'interval', minutes=1)
 
+        tc = ops_web.tasks.TaskContext(apm.client, config, db)
+
         # cost data synchronization
-        scheduler.add_job(ops_web.tasks.get_cost_data, args=[apm.client])
-        scheduler.add_job(ops_web.tasks.get_cost_data, 'interval', hours=24, args=[apm.client])
+        scheduler.add_job(ops_web.tasks.get_cost_data, args=[tc])
+        scheduler.add_job(ops_web.tasks.get_cost_data, 'interval', hours=24, args=[tc])
 
         # op debrief survey jobs
         if 'op-debrief' in config.feature_flags:
