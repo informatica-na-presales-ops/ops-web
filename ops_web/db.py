@@ -114,6 +114,7 @@ class Settings(dict):
 
 
 class Database(fort.PostgresDatabase):
+    _settings_cache: Dict = None
     _version: int = None
 
     def __init__(self, config: ops_web.config.Config):
@@ -1004,16 +1005,19 @@ class Database(fort.PostgresDatabase):
     # settings
 
     def get_all_settings(self):
-        sql = 'select setting_id, setting_value from settings'
-        settings = self.q(sql)
-        return {s.get('setting_id'): s.get('setting_value') for s in settings}
+        if self._settings_cache is None:
+            sql = 'select setting_id, setting_value from settings'
+            settings = self.q(sql)
+            self._settings_cache = {s.get('setting_id'): s.get('setting_value') for s in settings}
+        return self._settings_cache
 
     def get_setting(self, setting_id: str) -> Optional[str]:
-        sql = '''select setting_value from settings where setting_id = %(setting_id)s'''
-        params = {'setting_id': setting_id}
-        return self.q_val(sql, params)
+        settings = self.get_all_settings()
+        return settings.get(setting_id)
 
     def set_setting(self, setting_id: str, setting_value: str):
+        if setting_value == self.get_setting(setting_id):
+            return
         sql = '''
             insert into settings (setting_id, setting_value)
             values (%(setting_id)s, %(setting_value)s)
@@ -1021,6 +1025,7 @@ class Database(fort.PostgresDatabase):
         '''
         params = {'setting_id': setting_id, 'setting_value': setting_value}
         self.u(sql, params)
+        self._settings_cache.update({setting_id: setting_value})
 
     # migrations and metadata
 
