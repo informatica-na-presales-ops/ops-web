@@ -114,6 +114,7 @@ class Settings(dict):
 
 
 class Database(fort.PostgresDatabase):
+    _permissions_cache: Dict = None
     _settings_cache: Dict = None
     _version: int = None
 
@@ -129,28 +130,38 @@ class Database(fort.PostgresDatabase):
         self.log.info(f'Adding a bootstrap admin: {self.config.bootstrap_admin}')
         self.add_permission(self.config.bootstrap_admin, 'admin')
 
-    def get_users(self):
-        sql = 'select email, permissions from permissions order by email'
-        for record in self.q(sql):
-            yield {'email': record['email'], 'permissions': record['permissions'].split()}
+    def get_all_permissions(self) -> Dict[str, Set]:
+        if self._permissions_cache is None:
+            sql = 'select email, permissions from permissions order by email'
+            self._permissions_cache = {r.get('email'): set(r.get('permissions').split()) for r in self.q(sql)}
+        return self._permissions_cache
 
     def add_permission(self, email: str, permission: str):
-        current_permissions = set(self.get_permissions(email))
+        current_permissions = self.get_permissions(email)
+        if permission in current_permissions:
+            return
         current_permissions.add(permission)
-        self.set_permissions(email, sorted(current_permissions))
+        self.set_permissions(email, current_permissions)
 
-    def get_permissions(self, email: str) -> List[str]:
-        sql = 'select permissions from permissions where email = %(email)s'
-        permissions = self.q_val(sql, {'email': email})
-        if permissions is None:
-            return []
-        return sorted(set(permissions.replace(',', ' ').split()))
+    def get_permissions(self, email: str) -> Set[str]:
+        _all_permissions = self.get_all_permissions()
+        return _all_permissions.get(email, set())
 
-    def set_permissions(self, email: str, permissions: List[str]):
-        params = {'email': email, 'permissions': ' '.join(sorted(set(permissions)))}
-        self.u('delete from permissions where email = %(email)s', params)
+    def set_permissions(self, email: str, permissions: Set[str]):
+        current_permissions = self.get_permissions(email)
+        if current_permissions == permissions:
+            return
         if permissions:
-            self.u('insert into permissions (email, permissions) values (%(email)s, %(permissions)s)', params)
+            self._permissions_cache.update({email: permissions})
+            sql = '''
+                insert into permissions (email, permissions) values (%(email)s, %(permissions)s)
+                on conflict (email) do update set permissions = %(permissions)s
+            '''
+        else:
+            self._permissions_cache.pop(email, None)
+            sql = 'delete from permissions where email = %(email)s'
+        params = {'email': email, 'permissions': ' '.join(sorted(permissions))}
+        self.u(sql, params)
 
     def has_permission(self, email: str, permission: str) -> bool:
         return permission in self.get_permissions(email)

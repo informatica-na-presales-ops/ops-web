@@ -44,18 +44,18 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for u in g.users %}
+                {% for email, permissions in g.users|dictsort %}
                     <tr>
-                        <td>{{ u.email }}</td>
+                        <td>{{ email }}</td>
                         <td>
-                        {% for p in u.permissions %}
+                        {% for p in permissions|sort %}
                             <span class="badge badge-pill badge-light">{{ p }}</span>
                         {% endfor %}
                         </td>
                         <td class="text-right">
                             <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
-                                    data-target="#modal-add-user" data-email="{{ u.email }}"
-                                    data-permissions="{{ ' '.join(u.permissions) }}" title="Edit user permissions">
+                                    data-target="#modal-add-user" data-email="{{ email }}"
+                                    data-permissions="{{ ' '.join(permissions|sort) }}" title="Edit user permissions">
                                 <span class="oi oi-pencil"></span>
                             </button>
                         </td>

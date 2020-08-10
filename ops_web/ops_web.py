@@ -198,7 +198,7 @@ def admin_settings_zendesk():
 @app.route('/admin/users')
 @permission_required('admin')
 def admin_users():
-    flask.g.users = db.get_users()
+    flask.g.users = db.get_all_permissions()
     flask.g.available_permissions = {
         'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
                   'cloud credentials'),
@@ -212,7 +212,7 @@ def admin_users():
 @permission_required('admin')
 def admin_users_edit():
     email = flask.request.values.get('email')
-    permissions = flask.request.values.getlist('permissions')
+    permissions = set(flask.request.values.getlist('permissions'))
     db.add_log_entry(flask.g.email, f'Set permissions for {email} to {permissions}')
     db.set_permissions(email, permissions)
     return flask.redirect(flask.url_for('admin'))
