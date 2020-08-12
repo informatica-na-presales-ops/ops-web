@@ -1038,6 +1038,36 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
         self._settings_cache.update({setting_id: setting_value})
 
+    # ecosystem certification
+
+    def add_ecosystem_certification(self, params: Dict):
+        sql = '''
+            insert into ecosystem_certification (
+                id, user_login, ecosystem, title, certification_date, expiration_date, aws_partner_portal_updated,
+                document_name, document_size, document_data, created_at
+            ) values (
+                %(id)s, %(user_login)s, %(ecosystem)s, %(title)s, %(certification_date)s, %(expiration_date)s,
+                %(aws_partner_portal_updated)s, %(document_name)s, %(document_size)s, %(document_data)s, %(created_at)s
+            )
+        '''
+        params.update({
+            'id': uuid.uuid4(),
+            'created_at': datetime.datetime.utcnow()
+        })
+        self.u(sql, params)
+
+    def get_ecosystem_certifications_for_user(self, user_login: str):
+        sql = '''
+            select
+                id, user_login, ecosystem, title, certification_date, expiration_date, aws_partner_portal_updated,
+                document_name, document_size, created_at
+            from ecosystem_certification
+            where user_login = %(user_login)s
+            order by ecosystem, certification_date
+        '''
+        params = {'user_login': user_login}
+        return self.q(sql, params)
+
     # migrations and metadata
 
     def add_schema_version(self, schema_version: int):
@@ -1590,6 +1620,24 @@ class Database(fort.PostgresDatabase):
                 add constraint security_group_pkey primary key (id)
             ''')
             self.add_schema_version(39)
+        if self.version < 40:
+            self.log.info('Migrating to database schema version 40')
+            self.u('''
+                create table ecosystem_certification (
+                    id uuid primary key,
+                    user_login text not null,
+                    ecosystem text not null,
+                    title text not null,
+                    certification_date date,
+                    expiration_date date,
+                    aws_partner_portal_updated boolean,
+                    document_name text,
+                    document_size int,
+                    document_data bytea,
+                    created_at timestamp
+                )
+            ''')
+            self.add_schema_version(40)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

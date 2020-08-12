@@ -255,6 +255,42 @@ def authorize():
     return flask.redirect(target)
 
 
+@app.route('/ecosystem-certification', methods=['GET', 'POST'])
+@login_required
+def ecosystem_certification():
+    if flask.request.method == 'POST':
+        app.logger.debug(f'Adding a new ecosystem certification for {flask.g.email}')
+        app.logger.debug(list(flask.request.values.items()))
+        params = {
+            'user_login': flask.g.email,
+            'ecosystem': flask.request.values.get('ecosystem'),
+            'title': flask.request.values.get('title'),
+            'certification_date': flask.request.values.get('date'),
+            'expiration_date': flask.request.values.get('expiration-date'),
+            'aws_partner_portal_updated': flask.request.values.get('aws-partner-portal-updated') == 'on',
+            'document_name': None,
+            'document_size': None,
+            'document_data': None
+        }
+
+        for field in ('certification_date', 'expiration_date'):
+            if params.get(field) == '':
+                params.update({field: None})
+
+        document = flask.request.files.get('document')
+        if document:
+            data = document.read()
+            params.update({
+                'document_name': document.filename,
+                'document_size': len(data),
+                'document_data': data
+            })
+        db.add_ecosystem_certification(params)
+
+    flask.g.certs = db.get_ecosystem_certifications_for_user(flask.g.email)
+    return flask.render_template('ecosystem-certification.html')
+
+
 @app.route('/environment-usage-events', methods=['POST'])
 def environment_usage_events():
     request_secret = flask.request.values.get('secret')

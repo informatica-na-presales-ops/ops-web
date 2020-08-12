@@ -1,0 +1,106 @@
+{% extends 'one-up.html' %}
+
+{% block title %}Ecosystem certification / {{ super() }}{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <h1>Ecosystem certification</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+            <h2>Existing certifications</h2>
+            <p class="lead">for {{ g.email }}</p>
+            <ul class="list-group">
+            {% for cert in g.certs %}
+                <li class="list-group-item list-group-item-dark">
+                    <h5>
+                        <span class="badge badge-light">{{ cert.ecosystem }}</span>
+                        {{ cert.title }}
+                    </h5>
+                    {% if cert.certification_date or cert.expiration_date %}
+                        <p>valid
+                            {% if cert.certification_date %}from {{ cert.certification_date }}{% endif %}
+                            {% if cert.expiration_date %}to {{ cert.expiration_date }}{% endif %}
+                        </p>
+                    {% endif %}
+                    {% if cert.ecosystem == 'aws' %}
+                        <p>
+                        {% if cert.aws_partner_portal_updated %}
+                            &#x2714; AWS Partner Portal updated
+                        {% else %}
+                            &#x2716; AWS Partner Portal not updated
+                        {% endif %}
+                        </p>
+                    {% endif %}
+                    {% if cert.document_name %}
+                        <small>{{ cert.document_name }} ({{ cert.document_size | filesizeformat }})</small>
+                    {% endif %}
+                </li>
+            {% else %}
+                <li class="list-group-item list-group-item-dark">
+                    <h5>No ecosystem certifications found</h5>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+            <h2>Add a new certification</h2>
+            <form method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="ecosystem">Ecosystem</label>
+                    <select class="custom-select" id="ecosystem" name="ecosystem" required>
+                        <option hidden disabled value selected>-- select an option --</option>
+                        <option value="aws">AWS</option>
+                        <option value="azure">Azure</option>
+                        <option value="gcp">GCP</option>
+                        <option value="g-suite">G Suite</option>
+                        <option value="snowflake">Snowflake</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="title">Certification title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="date">Certification date</label>
+                            <input type="date" class="form-control" id="date" name="date">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="expiration-date">Expiration date</label>
+                            <input type="date" class="form-control" id="expiration-date" name="expiration-date">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="document">Certification document</label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="document" name="document">
+                        <label for="document" class="custom-file-label">Choose a document...</label>
+                    </div>
+                </div>
+                <div class="form-group collapse show-on-ecosystem-aws">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="aws-partner-portal-updated" name="aws-partner-portal-updated">
+                        <label for="aws-partner-portal-updated" class="custom-control-label">Did you update the AWS Partner Portal?</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-outline-success">Add certification</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='ecosystem-certification.js') }}"></script>
+{% endblock %}

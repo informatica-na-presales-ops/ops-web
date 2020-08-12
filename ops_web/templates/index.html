@@ -75,6 +75,15 @@
                 </div>
                 {% endif %}
 
+                <div class="card text-light bg-dark border-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Ecosystem certification</h5>
+                        <a href="{{ url_for('ecosystem_certification') }}" class="card-link stretched-link text-light">
+                            Record your certifications for AWS, Azure, and other cloud ecosystems.
+                        </a>
+                    </div>
+                </div>
+
                 {% if g.settings.show_security_groups_link %}
                 <div class="card text-light bg-dark border-light">
                     <div class="card-body">
