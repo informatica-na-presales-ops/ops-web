@@ -10,7 +10,10 @@ $('#ecosystem').on('change', function () {
 });
 
 $('#document').on('change', function () {
-    let filename = this.files[0].name;
     let label = $('.custom-file-label', this.parentNode);
-    label.text(filename);
+    let label_text = label.data('default-text');
+    if (this.files.length > 0) {
+        label_text = this.files[0].name;
+    }
+    label.text(label_text);
 });
