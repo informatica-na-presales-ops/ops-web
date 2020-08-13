@@ -2,11 +2,12 @@
 .date-column { width: 100px; }
 .max-width-600px { max-width: 600px; }
 .min-width-115px { min-width: 115px; }
-
-/* for displaying hosts file and machine id in environment detail pages */
-.user-select-all { user-select: all; }
-
 .text-all-small-caps { font-variant-caps: all-small-caps; }
 
+/* for displaying hosts file and machine id in environment detail pages */
+/* remove after upgrading to bootstrap 4.5.0 */
+.user-select-all { user-select: all; }
+
 /* for making just about anything look clickable (used on table rows in environment list and op-debrief) */
-[data-href] { cursor: pointer; }
+/* remove after upgrading to bootstrap 4.5.0 */
+[role='button'] { cursor: pointer; }

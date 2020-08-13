@@ -25,7 +25,7 @@
                     <th>Owner</th>
                     <th class="text-right">
                         30 day cost
-                        <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-container="body"
+                        <span class="badge badge-secondary" role="button" data-toggle="popover" data-container="body"
                               data-placement="bottom" data-content="Cost of a machine includes compute, attached volumes, and attached network interfaces">
                             <span class="oi oi-info"></span>
                         </span>
@@ -36,7 +36,7 @@
                 </thead>
                 <tbody>
                 {% for e in g.environments %}
-                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}"
+                    <tr class="filter-candidate" role="button" data-filter-value="{{ e.filter_value }}"
                         data-href="{{ url_for('environment_detail', environment=e.env_group) }}">
                         <td>
                             <span class="oi oi-media-record {{ 'text-success' if e.running else 'text-danger' }}"></span>

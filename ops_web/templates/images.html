@@ -28,7 +28,7 @@
                     <th class="min-width-115px">Created</th>
                     <th class="text-right min-width-115px">
                         30 day cost
-                        <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-container="body"
+                        <span class="badge badge-secondary" role="button" data-toggle="popover" data-container="body"
                               data-placement="bottom" data-content="Cost of an image includes all snapshots registered for that image">
                             <span class="oi oi-info"></span>
                         </span>
@@ -48,7 +48,7 @@
                         {% endif %}
                         <td>{{ i.region }}</td>
                         <td>
-                            <span class="badge badge-secondary" data-href="#" data-toggle="popover" data-html="true"
+                            <span class="badge badge-secondary" role="button" data-toggle="popover" data-html="true"
                                   data-container="body" data-placement="bottom"
                                   data-content="ID: {{ i.id }}<br>Name: {{ i.name }}<br>Account: {{ i.description }}">
                                 <span class="oi oi-info"></span>

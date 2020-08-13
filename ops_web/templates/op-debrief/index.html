@@ -47,7 +47,8 @@
                 </thead>
                 <tbody>
                 {%  for s in g.surveys %}
-                    <tr class="filter-candidate" data-filter-value="{{ s.filter_value }}" data-href="{{ url_for('op_debrief_survey', survey_id=s.id) }}">
+                    <tr class="filter-candidate"  role="button" data-filter-value="{{ s.filter_value }}"
+                        data-href="{{ url_for('op_debrief_survey', survey_id=s.id) }}">
                         {% if 'survey-admin' in g.permissions %}<td>{{ s.email }}</td>{% endif %}
                         <td>{{ s.opportunity_number }}</td>
                         <td>{{ s.name }}</td>
