@@ -92,10 +92,43 @@
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="aws-partner-portal-updated" name="aws-partner-portal-updated">
                         <label for="aws-partner-portal-updated" class="custom-control-label">Did you update the AWS Partner Portal?</label>
+                        <a href="#" data-toggle="modal" data-target="#aws-partner-portal-instructions">Instructions</a>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-outline-success">Add certification</button>
             </form>
+        </div>
+    </div>
+
+    <div class="modal text-light" id="aws-partner-portal-instructions">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">How to update the AWS Partner Portal</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <ol>
+                        <li>Identify the email address that is associated with your certification. This could be a
+                            personal or company email address.</li>
+                        <li>If you have not already, create an
+                            <a href="https://partnercentral.awspartner.com/home" target="_blank">APN Partner Central</a>
+                            account. Use your Informatica email address when you register.</li>
+                        <li>In the left column, under <span class="text-all-small-caps">Quick Links</span>, select
+                            <a href="https://partnercentral.awspartner.com/PartnerProfile" target="_blank">
+                                View My Profile</a>.</li>
+                        <li>In the &ldquo;AWS Certification&rdquo; section of your profile, verify the following:<br>
+                            <ul>
+                                <li><strong>AWS T&amp;C Account Email</strong> is the email address associated with your
+                                    certification.</li>
+                                <li><strong>I consent to share my AWS Certification with &ldquo;Informatica&rdquo;</strong>
+                                    is <strong>Yes</strong>.</li>
+                            </ul>
+                            Edit your profile to change either of these settings.
+                        </li>
+                    </ol>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
