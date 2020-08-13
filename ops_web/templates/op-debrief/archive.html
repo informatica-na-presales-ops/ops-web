@@ -41,7 +41,7 @@
                 </thead>
                 <tbody>
                 {%  for s in g.surveys %}
-                    <tr class="filter-candidate" role="button" data-filter-value="{{ s.filter_value }}"
+                    <tr class="filter-candidate collapse show" role="button" data-filter-value="{{ s.filter_value }}"
                         data-href="{{ url_for('op_debrief_survey', survey_id=s.id) }}">
                         {% if 'survey-admin' in g.permissions %}<td>{{ s.email }}</td>{% endif %}
                         <td>{{ s.opportunity_number }}</td>
@@ -57,7 +57,8 @@
 
             <div class="d-block d-sm-none">
             {% for s in g.surveys %}
-                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ s.filter_value }}">
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show"
+                     data-filter-value="{{ s.filter_value }}">
                     <div class="card-body">
                         <h5 class="card-title">
                             <a class="card-link stretched-link text-light" href="{{ url_for('op_debrief_survey', survey_id=s.id) }}">{{ s.opportunity_number }}</a>

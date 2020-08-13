@@ -36,7 +36,7 @@
                 </thead>
                 <tbody>
                 {% for e in g.environments %}
-                    <tr class="filter-candidate" role="button" data-filter-value="{{ e.filter_value }}"
+                    <tr class="filter-candidate collapse show" role="button" data-filter-value="{{ e.filter_value }}"
                         data-href="{{ url_for('environment_detail', environment=e.env_group) }}">
                         <td>
                             <span class="oi oi-media-record {{ 'text-success' if e.running else 'text-danger' }}"></span>
@@ -56,7 +56,8 @@
 
             <div class="d-block d-sm-none">
             {% for e in g.environments %}
-                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ e.filter_value }}">
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show"
+                     data-filter-value="{{ e.filter_value }}">
                     <div class="card-body">
                         <h5 class="card-title">
                             <span class="oi oi-media-record {{ 'text-success' if e.running else 'text-danger' }}"></span>

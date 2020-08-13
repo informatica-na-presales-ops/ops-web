@@ -1,54 +1,55 @@
-let cloud_radios = $('.cloud-radio');
-
 function set_cloud_credential_labels () {
-    cloud_radios.each(function () {
-        if (this.checked) {
-            $('#username-label').text($(this).attr('data-username-label'));
-            $('.password-label').text($(this).attr('data-password-label'));
-            if (this.id === 'radio-cloud-aws') {
-                $('#div-azure-tenant-id').hide();
-                $('#cloud-credential-azure-tenant-id').prop('required', false)
+    document.querySelectorAll('.cloud-radio').forEach(function (cr) {
+        if (cr.checked) {
+            document.getElementById('username-label').textContent = cr.dataset.usernameLabel;
+            document.querySelectorAll('.password-label').forEach(function (pl) {
+                pl.textContent = cr.dataset.passwordLabel;
+            });
+            if (cr.id === 'radio-cloud-aws') {
+                document.getElementById('div-azure-tenant-id').classList.remove('show');
+                document.getElementById('cloud-credential-azure-tenant-id').required = false;
             } else {
-                $('#div-azure-tenant-id').show();
-                $('#cloud-credential-azure-tenant-id').prop('required', true)
+                document.getElementById('div-azure-tenant-id').classList.add('show');
+                document.getElementById('cloud-credential-azure-tenant-id').required = true;
             }
         }
-    })
+    });
 }
 
-cloud_radios.change(set_cloud_credential_labels);
+document.querySelectorAll('.cloud-radio').forEach(function (el) {
+    el.addEventListener('change', set_cloud_credential_labels);
+});
 
 $('#modal-cloud-credentials').on('show.bs.modal', function (e) {
-    let button = $(e.relatedTarget);
-    let id = button.attr('data-id');
-    $('#cloud-credentials-id').val(id);
-    $('#cloud-credential-description').val(button.attr('data-description'));
-    $('#cloud-credential-username').val(button.attr('data-username'));
-    let p = $('#cloud-credential-password');
-    p.val('');
-    $('#cloud-credential-azure-tenant-id').val(button.attr('data-azure-tenant-id'));
+    let button = e.relatedTarget;
+    let id = button.dataset.id;
+    document.getElementById('cloud-credentials-id').value = id;
+    document.getElementById('cloud-credential-description').value = button.dataset.description;
+    document.getElementById('cloud-credential-username').value = button.dataset.username;
+    document.getElementById('cloud-credential-password').value = '';
+    document.getElementById('cloud-credential-azure-tenant-id').value = button.dataset.azureTenantId;
     if (id) {
-        let c = button.attr('data-cloud');
-        $(`#radio-cloud-${c}`).prop('checked', true);
-        $('#checkbox-set-password').prop('checked', false);
-        $('#div-set-password').show();
-        $('#div-password').hide();
+        document.getElementById(`radio-cloud-${button.dataset.cloud}`).checked = true;
+        document.getElementById('checkbox-set-password').checked = false;
+        document.getElementById('div-set-password').classList.add('show');
+        document.getElementById('div-password').classList.remove('show');
+        document.getElementById('cloud-credential-delete-button').classList.add('show');
     } else {
-        $('#radio-cloud-aws').prop('checked', true);
-        $('#checkbox-set-password').prop('checked', true);
-        $('#div-set-password').hide();
-        p.show();
-        $('#cloud-credential-delete-button').hide();
+        document.getElementById('radio-cloud-aws').checked = true;
+        document.getElementById('checkbox-set-password').checked = true;
+        document.getElementById('div-set-password').classList.remove('show');
+        document.getElementById('div-password').classList.add('show');
+        document.getElementById('cloud-credential-delete-button').classList.remove('show');
     }
     set_cloud_credential_labels();
 }).on('shown.bs.modal', function () {
-    $('#cloud-credential-description').focus();
+    document.getElementById('cloud-credential-description').focus();
 });
 
-$('#checkbox-set-password').change(function () {
+document.getElementById('checkbox-set-password').addEventListener('change', function () {
     if (this.checked) {
-        $('#div-password').show();
+        document.getElementById('div-password').classList.add('show');
     } else {
-        $('#div-password').hide();
+        document.getElementById('div-password').classList.remove('show');
     }
 });

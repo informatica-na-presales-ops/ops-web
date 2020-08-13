@@ -1,3 +1,5 @@
-$('*[data-href]').on('click', function () {
-    window.location = $(this).data('href');
+document.querySelectorAll('[data-href]').forEach(function (el) {
+    el.addEventListener('click', function () {
+        window.location = this.dataset.href;
+    });
 });

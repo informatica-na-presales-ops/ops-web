@@ -19,7 +19,8 @@
 
     <div class="row pt-3">
         <div class="col-12">
-            <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-add-user" data-permissions="none">
+            <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-add-user"
+                    data-email="" data-permissions="none">
                 <span class="oi oi-plus"></span>
                 Add user
             </button>
@@ -33,7 +34,8 @@
     <div class="row pt-3">
         <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
             <p class="text-light">
-                The following users have custom permissions. If a user does not appear in this list, they still have default permissions.
+                The following users have custom permissions. If a user does not appear in this list, they still have
+                default permissions.
             </p>
             <table class="table table-dark table-striped">
                 <thead>
@@ -101,11 +103,13 @@
                     <form id="form-add-user" action="{{ url_for('admin_users_edit') }}" method="post">
                         <div class="form-group">
                             <label for="add-user-email">Email address</label>
-                            <input type="email" name="email" class="form-control" id="add-user-email" placeholder="example@informatica.com" required>
+                            <input type="email" name="email" class="form-control" id="add-user-email"
+                                   placeholder="example@informatica.com" required>
                         </div>
                         {% for p, d in g.available_permissions.items() %}
                         <div class="form-group form-check">
-                            <input type="checkbox" class="form-check-input" id="permission-{{ p }}" name="permissions" value="{{ p }}">
+                            <input type="checkbox" class="form-check-input" id="permission-{{ p }}" name="permissions"
+                                   value="{{ p }}">
                             <label class="form-check-label" for="permission-{{ p }}">{{ p }}</label>
                             <small class="form-text text-muted">{{ d }}</small>
                         </div>

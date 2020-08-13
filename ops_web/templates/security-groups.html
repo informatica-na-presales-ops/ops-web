@@ -29,7 +29,7 @@
                 </thead>
                 <tbody>
                 {% for group in g.sg %}
-                    <tr class="filter-candidate" data-filter-value="{{ group.filter_value }}">
+                    <tr class="filter-candidate collapse show" data-filter-value="{{ group.filter_value }}">
                         <td>{{ group.cloud }}</td>
                         <td>{{ group.region }}</td>
                         <td>{{ group.group_name }}</td>
@@ -48,7 +48,7 @@
 
             <div class="d-block d-sm-none">
                 {% for s in g.sg %}
-                    <div class="card text-light bg-dark border-light mb-2 filter-candidate"
+                    <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show"
                          data-filter-value="{{ s.filter_value }}">
                         <div class="card-body">
                             <p class="card-text">

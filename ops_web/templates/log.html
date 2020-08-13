@@ -28,7 +28,7 @@
                 </thead>
                 <tbody>
                 {% for e in g.log_entries %}
-                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}">
+                    <tr class="filter-candidate collapse show" data-filter-value="{{ e.filter_value }}">
                         <td>{{ e.log_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>{{ e.actor }}</td>
                         <td>{{ e.action }}</td>
@@ -39,7 +39,8 @@
 
             <div class="d-block d-sm-none">
             {% for e in g.log_entries %}
-                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ e.filter_value }}">
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show"
+                     data-filter-value="{{ e.filter_value }}">
                     <div class="card-body">
                         <p class="card-text">
                             {{ e.log_time.strftime('%Y-%m-%d %H:%M:%S') }}<br>

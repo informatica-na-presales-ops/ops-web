@@ -1,19 +1,23 @@
-$('#ecosystem').on('change', function () {
-    let nodes = $('.show-on-ecosystem-aws');
+document.getElementById('ecosystem').addEventListener('change', function () {
+    const nodes = document.querySelectorAll('.show-on-ecosystem-aws');
     switch (this.value) {
         case 'aws':
-            nodes.collapse('show');
+            nodes.forEach(function (el) {
+                el.classList.add('show');
+            });
             break;
         default:
-            nodes.collapse('hide');
+            nodes.forEach(function (el) {
+                el.classList.remove('show');
+            });
     }
 });
 
-$('#document').on('change', function () {
-    let label = $('.custom-file-label', this.parentNode);
-    let label_text = label.data('default-text');
+document.getElementById('document').addEventListener('change', function () {
+    const label = document.getElementById('document-label');
+    let label_text = label.dataset.defaultText;
     if (this.files.length > 0) {
         label_text = this.files[0].name;
     }
-    label.text(label_text);
+    label.textContent = label_text;
 });

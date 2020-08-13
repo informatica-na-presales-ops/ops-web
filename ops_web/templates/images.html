@@ -41,7 +41,7 @@
                 </thead>
                 <tbody>
                 {% for i in g.images %}
-                    <tr class="filter-candidate" data-filter-value="{{ i.filter_value }}">
+                    <tr class="filter-candidate collapse show" data-filter-value="{{ i.filter_value }}">
                         <td>{{ i.cloud }}</td>
                         {% if g.settings.show_account_for_images %}
                             <td>{{ i.description }}</td>
@@ -83,7 +83,8 @@
 
             <div class="d-block d-sm-none">
             {% for i in g.images %}
-                <div class="card text-light bg-dark border-light mb-2 filter-candidate" data-filter-value="{{ i.filter_value }}">
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show"
+                     data-filter-value="{{ i.filter_value }}">
                     <div class="card-body">
                         <h5 class="card-title">
                             {{ i.name }}

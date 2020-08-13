@@ -1,21 +1,24 @@
+const filter_input = document.getElementById('filter-input');
 const url_params = new URLSearchParams(window.location.search);
 
 function do_filter (event) {
     if (event && event.keyCode === 27) {
         // [Esc] was pressed
-        $(this).val('');
+        this.value = '';
     }
-    let query = $('#filter-input').val().toLowerCase();
-    let items = $('.filter-candidate');
+    let query = filter_input.value.toLowerCase();
+    let items = document.querySelectorAll('.filter-candidate');
     if (query === '') {
-        items.show();
+        items.forEach(function (el) {
+            el.classList.add('show');
+        })
         url_params.delete('filter');
     } else {
-        items.each(function () {
-            if (this.getAttribute('data-filter-value').includes(query)) {
-                $(this).show();
+        items.forEach(function (el) {
+            if (el.dataset.filterValue.includes(query)) {
+                el.classList.add('show');
             } else {
-                $(this).hide();
+                el.classList.remove('show');
             }
         });
         url_params.set('filter', query);
@@ -27,4 +30,5 @@ if (url_params.has('filter')) {
     do_filter();
 }
 
-$('#filter-input').keyup($.debounce(250, do_filter));
+// after removing jquery, change this to Cowboy.debounce
+filter_input.addEventListener('keyup', $.debounce(250, do_filter));

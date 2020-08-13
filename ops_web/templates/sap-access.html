@@ -28,7 +28,7 @@
                 </thead>
                 <tbody>
                 {% for e in g.environments %}
-                    <tr class="filter-candidate" data-filter-value="{{ e.filter_value }}">
+                    <tr class="filter-candidate collapse show" data-filter-value="{{ e.filter_value }}">
                         <td><a href="{{ url_for('sap_access_detail', environment=e.env_group) }}">{{ e.env_group }}</a>
                         </td>
                         <td>{{ e.owner }}</td>
