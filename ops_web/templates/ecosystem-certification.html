@@ -62,13 +62,34 @@
                         <option value="aws">AWS</option>
                         <option value="azure">Azure</option>
                         <option value="gcp">GCP</option>
-                        <option value="g-suite">G Suite</option>
                         <option value="snowflake">Snowflake</option>
                     </select>
                 </div>
+                <div class="form-group collapse text-danger" id="aws-partner-portal-updated-wrapper">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="aws-partner-portal-updated"
+                               name="aws-partner-portal-updated">
+                        <label for="aws-partner-portal-updated" class="custom-control-label">
+                            <strong>Did you update the AWS Partner Portal?</strong>
+                        </label>
+                        <a href="#" data-toggle="modal" data-target="#aws-partner-portal-instructions">Instructions</a>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label for="title">Certification title</label>
-                    <input type="text" class="form-control" id="title" name="title" required>
+                    <select class="custom-select" id="title" name="title" required>
+                        <option hidden disabled value selected>-- select an option --</option>
+                        <option id="default-title-aws">AWS Certified Cloud Practitioner</option>
+                        <option id="default-title-azure">Microsoft Certified: Azure Fundamentals</option>
+                        <option id="default-title-gcp">Google Cloud Professional Cloud Architect</option>
+                        <option id="default-title-snowflake">SnowPro Core Certification</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group collapse" id="custom-title-wrapper">
+                    <label class="sr-only" for="custom-title">Other certification title</label>
+                    <input type="text" class="form-control" id="custom-title" name="custom-title"
+                           placeholder="Enter a title ...">
                 </div>
                 <div class="form-row">
                     <div class="col">
@@ -89,14 +110,7 @@
                     <div class="custom-file">
                         <input type="file" class="custom-file-input" id="document" name="document">
                         <label for="document" id="document-label" class="custom-file-label"
-                               data-default-text="Choose a document...">Choose a document...</label>
-                    </div>
-                </div>
-                <div class="form-group collapse show-on-ecosystem-aws">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="aws-partner-portal-updated" name="aws-partner-portal-updated">
-                        <label for="aws-partner-portal-updated" class="custom-control-label">Did you update the AWS Partner Portal?</label>
-                        <a href="#" data-toggle="modal" data-target="#aws-partner-portal-instructions">Instructions</a>
+                               data-default-text="Choose a document ...">Choose a document ...</label>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-outline-success">Add certification</button>
@@ -112,6 +126,8 @@
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <p><strong class="text-danger">These steps are critical</strong> and affect Informatica&#x02bc;s
+                        partner level with AWS.</p>
                     <ol>
                         <li>Identify the email address that is associated with your certification. This could be a
                             personal or company email address.</li>

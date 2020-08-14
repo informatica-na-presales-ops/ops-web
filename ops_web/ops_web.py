@@ -273,6 +273,9 @@ def ecosystem_certification():
             'document_data': None
         }
 
+        if flask.request.values.get('title') == 'other':
+            params.update({'title': flask.request.values.get('custom-title')})
+
         for field in ('certification_date', 'expiration_date'):
             if params.get(field) == '':
                 params.update({field: None})
