@@ -1056,6 +1056,16 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
+    def get_ecosystem_certification_document(self, document_id: uuid.UUID):
+        sql = '''
+            select document_name, document_data
+            from ecosystem_certification
+            where id = %(document_id)s
+            limit 1
+        '''
+        params = {'document_id': document_id}
+        return self.q_one(sql, params)
+
     def get_ecosystem_certifications_for_user(self, user_login: str):
         sql = '''
             select

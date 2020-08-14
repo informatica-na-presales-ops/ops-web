@@ -36,7 +36,10 @@
                         </p>
                     {% endif %}
                     {% if cert.document_name %}
-                        <small>{{ cert.document_name }} ({{ cert.document_size | filesizeformat }})</small>
+                        <small>
+                            <a href="{{ url_for('ecosystem_certification_document', document_id=cert.id) }}">{{ cert.document_name }}</a>
+                            ({{ cert.document_size | filesizeformat }})
+                        </small>
                     {% endif %}
                 </li>
             {% else %}

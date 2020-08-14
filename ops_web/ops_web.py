@@ -291,6 +291,15 @@ def ecosystem_certification():
     return flask.render_template('ecosystem-certification.html')
 
 
+@app.route('/ecosystem-certification/<document_id>/document')
+@login_required
+def ecosystem_certification_document(document_id):
+    document = db.get_ecosystem_certification_document(document_id)
+    data = io.BytesIO(document.get('document_data'))
+    filename = document.get('document_name')
+    return flask.send_file(data, as_attachment=True, attachment_filename=filename)
+
+
 @app.route('/environment-usage-events', methods=['POST'])
 def environment_usage_events():
     request_secret = flask.request.values.get('secret')
