@@ -10,51 +10,59 @@
     </div>
 
     <div class="row pt-3 text-light">
-        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+        <div class="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-6">
             <h2>Existing certifications</h2>
             <p class="lead">for {{ g.email }}</p>
             <ul class="list-group">
             {% for cert in g.certs %}
-                <li class="list-group-item list-group-item-dark">
-                    <h5>
-                        <span class="badge badge-light">{{ cert.ecosystem }}</span>
-                        {{ cert.title }}
-                    </h5>
+                <li class="list-group-item bg-dark border-light">
+                    <div class="d-flex">
+                        <h5 class="mr-2"><span class="badge badge-light">{{ cert.ecosystem }}</span></h5>
+                        <h5 class="flex-grow-1 mr-2">{{ cert.title }}</h5>
+                        <div class="align-self-start d-flex flex-nowrap">
+                            <button type="button" class="btn btn-outline-light mr-1" title="Edit this certification">
+                                <span class="oi oi-pencil"></span>
+                            </button>
+                            <form action="{{ url_for('ecosystem_certification_delete') }}" method="post">
+                                <input type="hidden" name="cert-id" value="{{ cert.id }}">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete this certification">
+                                    <span class="oi oi-trash"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <p class="mb-1">
+                        Approved:
+                        {% if cert.approved_at %}
+                            <span class="oi oi-check"></span> {{ cert.approved_at.date() }} by {{ cert.approved_by }}
+                        {% else %}
+                            <span class="oi oi-x"></span> No
+                        {% endif %}
+                    </p>
                     {% if cert.certification_date or cert.expiration_date %}
-                        <p>valid
+                        <p class="mb-1">Valid
                             {% if cert.certification_date %}from {{ cert.certification_date }}{% endif %}
                             {% if cert.expiration_date %}to {{ cert.expiration_date }}{% endif %}
                         </p>
                     {% endif %}
-                    {% if cert.ecosystem == 'aws' %}
-                        <p>
-                        {% if cert.aws_partner_portal_updated %}
-                            &#x2714; AWS Partner Portal updated
-                        {% else %}
-                            &#x2716; AWS Partner Portal not updated
-                        {% endif %}
-                        </p>
-                    {% endif %}
                     {% if cert.document_name %}
                         <small>
-                            <a href="{{ url_for('ecosystem_certification_document', document_id=cert.id) }}">{{ cert.document_name }}</a>
+                            <a href="{{ url_for('ecosystem_certification_document', document_id=cert.id) }}" class="text-light">{{ cert.document_name }}</a>
                             ({{ cert.document_size | filesizeformat }})
                         </small>
                     {% endif %}
                 </li>
             {% else %}
-                <li class="list-group-item list-group-item-dark">
-                    <h5>No ecosystem certifications found</h5>
-                </li>
+                <li class="list-group-item bg-dark border-light">No ecosystem certifications found</li>
             {% endfor %}
             </ul>
         </div>
     </div>
 
     <div class="row pt-3 text-light">
-        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+        <div class="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-6">
             <h2>Add a new certification</h2>
-            <form method="post" enctype="multipart/form-data">
+            <form action="{{ url_for('ecosystem_certification_add') }}" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="ecosystem">Ecosystem</label>
                     <select class="custom-select" id="ecosystem" name="ecosystem" required>

@@ -103,6 +103,7 @@ def load_request_data():
 def index():
     if flask.g.email is None:
         return flask.render_template('sign-in.html')
+    flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('index.html')
 
 
@@ -203,6 +204,7 @@ def admin_users():
     flask.g.available_permissions = {
         'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
                   'cloud credentials'),
+        'cert-approval': 'receive notifications of and approve new ecosystem certifications',
         'sc-assignments': 'view and manage sales consultant assignments',
         'survey-admin': 'view all opportunity debrief surveys'
     }
@@ -255,46 +257,75 @@ def authorize():
     return flask.redirect(target)
 
 
-@app.route('/ecosystem-certification', methods=['GET', 'POST'])
+@app.route('/ecosystem-certification')
 @login_required
 def ecosystem_certification():
-    if flask.request.method == 'POST':
-        app.logger.debug(f'Adding a new ecosystem certification for {flask.g.email}')
-        app.logger.debug(list(flask.request.values.items()))
-        params = {
-            'user_login': flask.g.email,
-            'ecosystem': flask.request.values.get('ecosystem'),
-            'title': flask.request.values.get('title'),
-            'certification_date': flask.request.values.get('date'),
-            'expiration_date': flask.request.values.get('expiration-date'),
-            'aws_partner_portal_updated': flask.request.values.get('aws-partner-portal-updated') == 'on',
-            'document_name': None,
-            'document_size': None,
-            'document_data': None
-        }
-
-        if flask.request.values.get('title') == 'other':
-            params.update({'title': flask.request.values.get('custom-title')})
-
-        for field in ('certification_date', 'expiration_date'):
-            if params.get(field) == '':
-                params.update({field: None})
-
-        document = flask.request.files.get('document')
-        if document:
-            data = document.read()
-            params.update({
-                'document_name': document.filename,
-                'document_size': len(data),
-                'document_data': data
-            })
-        db.add_ecosystem_certification(params)
-
     flask.g.certs = db.get_ecosystem_certifications_for_user(flask.g.email)
-    return flask.render_template('ecosystem-certification.html')
+    return flask.render_template('ecosystem-certification/index.html')
 
 
-@app.route('/ecosystem-certification/<document_id>/document')
+@app.route('/ecosystem-certification/add', methods=['POST'])
+@login_required
+def ecosystem_certification_add():
+    app.logger.debug(f'Adding a new ecosystem certification for {flask.g.email}')
+    app.logger.debug(list(flask.request.values.items()))
+    ecosystem = flask.request.values.get('ecosystem')
+    title = flask.request.values.get('title')
+    params = {
+        'user_login': flask.g.email,
+        'ecosystem': ecosystem,
+        'title': title,
+        'certification_date': flask.request.values.get('date'),
+        'expiration_date': flask.request.values.get('expiration-date'),
+        'aws_partner_portal_updated': flask.request.values.get('aws-partner-portal-updated') == 'on',
+        'document_name': None,
+        'document_size': None,
+        'document_data': None
+    }
+
+    if flask.request.values.get('title') == 'other':
+        params.update({'title': flask.request.values.get('custom-title')})
+
+    for field in ('certification_date', 'expiration_date'):
+        if params.get(field) == '':
+            params.update({field: None})
+
+    document = flask.request.files.get('document')
+    if document:
+        data = document.read()
+        params.update({
+            'document_name': document.filename,
+            'document_size': len(data),
+            'document_data': data
+        })
+    db.add_ecosystem_certification(params)
+    db.add_log_entry(flask.g.email, f'Add ecosystem certification: {ecosystem}, {title}')
+    return flask.redirect(flask.url_for('ecosystem_certification'))
+
+
+@app.route('/ecosystem-certification/approval', methods=['GET', 'POST'])
+@permission_required('cert-approval')
+def ecosystem_certification_approval():
+    if flask.request.method == 'POST':
+        cert_id = flask.request.values.get('cert-id')
+        db.approve_ecosystem_certification(cert_id, flask.g.email)
+        db.add_log_entry(flask.g.email, f'Approve ecosystem certification {cert_id}')
+        flask.flash(f'Successfully approved ecosystem certification with id {cert_id}', 'success')
+    flask.g.certs = db.get_ecosystem_certifications_for_approval()
+    return flask.render_template('ecosystem-certification/approval.html')
+
+
+@app.route('/ecosystem-certification/delete', methods=['POST'])
+@login_required
+def ecosystem_certification_delete():
+    cert_id = flask.request.values.get('cert-id')
+    db.delete_ecosystem_certification(cert_id)
+    db.add_log_entry(flask.g.email, f'Delete ecosystem certification {cert_id}')
+    flask.flash(f'Successfully deleted ecosystem certification with id {cert_id}', 'success')
+    return flask.redirect(flask.url_for('ecosystem_certification'))
+
+
+@app.route('/ecosystem-certification/document/<document_id>')
 @login_required
 def ecosystem_certification_document(document_id):
     document = db.get_ecosystem_certification_document(document_id)

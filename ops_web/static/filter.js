@@ -31,4 +31,6 @@ if (url_params.has('filter')) {
 }
 
 // after removing jquery, change this to Cowboy.debounce
-filter_input.addEventListener('keyup', $.debounce(250, do_filter));
+if (filter_input) {
+    filter_input.addEventListener('keyup', $.debounce(250, do_filter));
+}

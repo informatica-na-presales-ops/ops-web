@@ -1056,6 +1056,24 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
+    def approve_ecosystem_certification(self, cert_id: uuid.UUID, approver: str):
+        sql = '''
+            update ecosystem_certification
+            set approved_at = %(approved_at)s, approved_by = %(approved_by)s
+            where id = %(id)s
+        '''
+        params = {
+            'id': cert_id,
+            'approved_at': datetime.datetime.utcnow(),
+            'approved_by': approver
+        }
+        self.u(sql, params)
+
+    def delete_ecosystem_certification(self, cert_id: uuid.UUID):
+        sql = 'delete from ecosystem_certification where id = %(id)s'
+        params = {'id': cert_id}
+        self.u(sql, params)
+
     def get_ecosystem_certification_document(self, document_id: uuid.UUID):
         sql = '''
             select document_name, document_data
@@ -1066,11 +1084,22 @@ class Database(fort.PostgresDatabase):
         params = {'document_id': document_id}
         return self.q_one(sql, params)
 
+    def get_ecosystem_certifications_for_approval(self):
+        sql = '''
+            select
+                id, user_login, ecosystem, title, certification_date, expiration_date, aws_partner_portal_updated,
+                document_name, document_size, created_at, approved_at, approved_by
+            from ecosystem_certification
+            where approved_at is null
+            order by user_login, ecosystem, certification_date
+        '''
+        return self.q(sql)
+
     def get_ecosystem_certifications_for_user(self, user_login: str):
         sql = '''
             select
                 id, user_login, ecosystem, title, certification_date, expiration_date, aws_partner_portal_updated,
-                document_name, document_size, created_at
+                document_name, document_size, created_at, approved_at, approved_by
             from ecosystem_certification
             where user_login = %(user_login)s
             order by ecosystem, certification_date
@@ -1094,11 +1123,11 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'environment_usage_events', 'external_links',
-                      'images', 'log_entries', 'op_debrief_roles', 'op_debrief_surveys', 'op_debrief_tracking',
-                      'permissions', 'sales_consultants', 'sales_reps', 'sc_rep_assignments', 'schema_versions',
-                      'security_group', 'settings', 'sf_opportunities', 'sf_opportunity_contacts',
-                      'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
+        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'ecosystem_certification',
+                      'environment_usage_events', 'external_links', 'images', 'log_entries', 'op_debrief_roles',
+                      'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
+                      'sc_rep_assignments', 'schema_versions', 'security_group', 'settings', 'sf_opportunities',
+                      'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
             self.u(f'drop table if exists {table} cascade ')
 
     def migrate(self):
@@ -1648,6 +1677,14 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(40)
+        if self.version < 41:
+            self.log.info('Migrating to database schema version 41')
+            self.u('''
+                alter table ecosystem_certification
+                add column approved_at timestamp,
+                add column approved_by text
+            ''')
+            self.add_schema_version(41)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

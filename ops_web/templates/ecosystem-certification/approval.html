@@ -1,0 +1,49 @@
+{% extends 'ecosystem-certification/index.html' %}
+
+{% block title %}Approval / {{ super() }}{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <h1>Ecosystem certification approval</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+            <ul class="list-group">
+            {% for cert in g.certs %}
+                <li class="list-group-item bg-dark border-light">
+                    <div class="d-flex justify-content-between">
+                        <h5>
+                            <span class="badge badge-light">{{ cert.ecosystem }}</span>
+                            {{ cert.title }}
+                        </h5>
+                        <form method="post">
+                            <input type="hidden" name="cert-id" value="{{ cert.id }}">
+                            <button type="submit" class="btn btn-success" title="Approve this certification">
+                                <span class="oi oi-check"></span>
+                            </button>
+                        </form>
+                    </div>
+                    <p class="mb-1">{{ cert.user_login }}</p>
+                    {% if cert.certification_date or cert.expiration_date %}
+                        <p class="mb-1">Valid
+                            {% if cert.certification_date %}from {{ cert.certification_date }}{% endif %}
+                            {% if cert.expiration_date %}to {{ cert.expiration_date }}{% endif %}
+                        </p>
+                    {% endif %}
+                    {% if cert.document_name %}
+                        <small>
+                            <a href="{{ url_for('ecosystem_certification_document', document_id=cert.id) }}">{{ cert.document_name }}</a>
+                            ({{ cert.document_size | filesizeformat }})
+                        </small>
+                    {% endif %}
+                </li>
+            {% else %}
+                <li class="list-group-item bg-dark border-light">There is nothing to approve.</li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}
