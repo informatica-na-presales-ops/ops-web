@@ -14,8 +14,19 @@
 {% block main_content %}
     <div class="row pt-3">
         <div class="col-12">
+            <div class="form-inline">
+                <label class="sr-only" for="filter-input">Find a tool</label>
+                <input class="form-control" placeholder="Find a tool ..." id="filter-input"
+                       value="{{ g.default_filter if g.default_filter }}" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
             <div class="card-columns">
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="environments">
                     <div class="card-body">
                         <h5 class="card-title">Environments</h5>
                         <a href="{{ url_for('environments') }}" class="card-link stretched-link text-light">
@@ -24,7 +35,8 @@
                     </div>
                 </div>
 
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="images">
                     <div class="card-body">
                         <h5 class="card-title">Images</h5>
                         <a href="{{ url_for('images') }}" class="card-link stretched-link text-light">
@@ -33,8 +45,21 @@
                     </div>
                 </div>
 
+                {% if g.settings.show_security_groups_link %}
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="security groups">
+                    <div class="card-body">
+                        <h5 class="card-title">Security groups</h5>
+                        <a href="{{ url_for('security_groups') }}" class="card-link stretched-link text-light">
+                            View and manage your security groups.
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
                 {% if g.settings.show_op_debrief_survey_link %}
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="opportunity debrief surveys">
                     <div class="card-body">
                         <h5 class="card-title">Opportunity debrief surveys</h5>
                         <a href="{{ url_for('op_debrief') }}" class="card-link stretched-link text-light">
@@ -44,7 +69,8 @@
                 </div>
                 {% endif %}
 
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="sync information">
                     <div class="card-body">
                         <h5 class="card-title">Sync information</h5>
                         <a href="{{ url_for('sync_info') }}" class="card-link stretched-link text-light">
@@ -54,7 +80,8 @@
                 </div>
 
                 {% if g.settings.show_sap_access_link %}
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="sap access">
                     <div class="card-body">
                         <h5 class="card-title">SAP access</h5>
                         <a href="{{ url_for('sap_access') }}" class="card-link stretched-link text-light">
@@ -65,7 +92,8 @@
                 {% endif %}
 
                 {% if 'sc-assignments' in g.permissions %}
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="sc sales consultant assignments">
                     <div class="card-body">
                         <h5 class="card-title">Sales Consultant assignments</h5>
                         <a href="{{ url_for('sc_assignments_sales_reps') }}" class="card-link stretched-link text-light">
@@ -75,7 +103,8 @@
                 </div>
                 {% endif %}
 
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="ecosystem certification">
                     <div class="card-body">
                         <h5 class="card-title">Ecosystem certification</h5>
                         <a href="{{ url_for('ecosystem_certification') }}" class="card-link stretched-link text-light">
@@ -84,18 +113,8 @@
                     </div>
                 </div>
 
-                {% if g.settings.show_security_groups_link %}
-                <div class="card text-light bg-dark border-light">
-                    <div class="card-body">
-                        <h5 class="card-title">Security groups</h5>
-                        <a href="{{ url_for('security_groups') }}" class="card-link stretched-link text-light">
-                            View and manage your security groups.
-                        </a>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="external links">
                     <div class="card-body">
                         <h5 class="card-title">External links</h5>
                         <a href="{{ url_for('external_links') }}" class="card-link stretched-link text-light">
@@ -105,7 +124,8 @@
                 </div>
 
                 {% if 'admin' in g.permissions %}
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="toolbox">
                     <div class="card-body">
                         <h5 class="card-title">Toolbox</h5>
                         <a href="{{ url_for('toolbox') }}" class="card-link stretched-link text-light">
@@ -114,7 +134,8 @@
                     </div>
                 </div>
 
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="administration">
                     <div class="card-body">
                         <h5 class="card-title">Administration</h5>
                         <a href="{{ url_for('admin') }}" class="card-link stretched-link text-light">
@@ -123,7 +144,8 @@
                     </div>
                 </div>
 
-                <div class="card text-light bg-dark border-light">
+                <div class="card text-light bg-dark border-light filter-candidate collapse show"
+                     data-filter-value="audit log">
                     <div class="card-body">
                         <h5 class="card-title">Audit log</h5>
                         <a href="{{ url_for('audit_log') }}" class="card-link stretched-link text-light">
@@ -138,8 +160,11 @@
 {% endblock %}
 
 {% block end_of_body %}
+    {{ super() }}
     {% if g.settings.zendesk_widget_key %}
     <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key={{ g.settings.zendesk_widget_key }}"></script>
     <script src="{{ url_for('static', filename='zendesk-widget-setup.js') }}"></script>
     {% endif %}
+    <script src="{{ url_for('static', filename='debounce-1.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='filter.js') }}"></script>
 {% endblock %}
