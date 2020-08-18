@@ -27,6 +27,7 @@ function do_filter (event) {
 }
 
 if (url_params.has('filter')) {
+    filter_input.value = url_params.get('filter');
     do_filter();
 }
 

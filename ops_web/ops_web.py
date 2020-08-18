@@ -103,7 +103,6 @@ def load_request_data():
 def index():
     if flask.g.email is None:
         return flask.render_template('sign-in.html')
-    flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('index.html')
 
 
@@ -357,7 +356,6 @@ def environment_usage_events():
 @login_required
 def environments():
     flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_environments())
-    flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('environments/index.html')
 
 
@@ -478,7 +476,6 @@ def images():
     flask.g.environments = db.get_env_list()
     username = flask.g.email.split('@')[0]
     flask.g.default_environment = f'{username}-{datetime.datetime.utcnow():%Y%m%d-%H%M%S}'
-    flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('images.html')
 
 
@@ -595,7 +592,6 @@ def images_edit():
 @login_required
 def sap_access():
     flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_own_environments(flask.g.email))
-    flask.g.default_filter = flask.request.values.get('filter', '').lower()
     return flask.render_template('sap-access.html')
 
 
