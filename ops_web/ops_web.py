@@ -1286,11 +1286,24 @@ def rep_sc_pairs_redirect():
 
 
 @app.route('/sc-assignments/sales-reps')
-@permission_required('sc-assignments')
+@login_required
 def sc_assignments_sales_reps():
     flask.g.sales_reps = db.get_rep_sc_pairs()
     flask.g.sales_consultants = db.get_sales_consultants()
     return flask.render_template('sc-assignments/sales-reps.html')
+
+
+@app.route('/sc-assignments/sales-reps/edit', methods=['POST'])
+@permission_required('sc-assignments')
+def sc_assignments_sales_reps_edit():
+    territory_name = flask.request.values.get('territory_name')
+    sc_employee_id = flask.request.values.get('sc_employee_id')
+    app.logger.debug(f'sc assignment territory: {territory_name}, employee_id: {sc_employee_id}')
+    db.add_log_entry(flask.g.email, f'Update SC assignment: {territory_name}/{sc_employee_id}')
+    if sc_employee_id == 'none':
+        sc_employee_id = None
+    db.set_rep_sc_pair(territory_name, sc_employee_id)
+    return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
 
 
 @app.route('/excel_sheet', methods=['GET', 'POST'])
@@ -1342,7 +1355,7 @@ def rep_sc_pairs_xlsx_redirect():
 
 
 @app.route('/sc-assignments/sales-reps.xlsx')
-@permission_required('sc-assignments')
+@login_required
 def sc_assignments_sales_reps_xlsx():
     records = db.get_rep_sc_pairs()
     filter_input = flask.request.values.get('filter-input')
@@ -1370,19 +1383,6 @@ def sc_assignments_sales_reps_xlsx():
     response.headers['Content-Disposition'] = 'attachment; filename="rep-sc-pairs.xlsx"'
     response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     return response
-
-
-@app.route('/sc-assignments/sales-reps/edit', methods=['POST'])
-@permission_required('sc-assignments')
-def sc_assignments_sales_reps_edit():
-    territory_name = flask.request.values.get('territory_name')
-    sc_employee_id = flask.request.values.get('sc_employee_id')
-    app.logger.debug(f'sc assignment territory: {territory_name}, employee_id: {sc_employee_id}')
-    db.add_log_entry(flask.g.email, f'Update SC assignment: {territory_name}/{sc_employee_id}')
-    if sc_employee_id == 'none':
-        sc_employee_id = None
-    db.set_rep_sc_pair(territory_name, sc_employee_id)
-    return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
 
 
 @app.route('/sign-in')

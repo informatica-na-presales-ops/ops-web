@@ -35,8 +35,9 @@
                 </thead>
                 <tbody>
                 {% for r in g.sales_reps %}
-                    <tr class="filter-candidate collapse show" role="button" data-filter-value="{{ r.filter_value }}"
-                        data-toggle="modal"  data-target="#modal-edit-rep" data-rep-name="{{ r.rep_name }}"
+                    <tr class="filter-candidate collapse show" data-filter-value="{{ r.filter_value }}"
+                        {% if 'sc-assignments' in g.permissions %}role="button" data-toggle="modal"{% endif %}
+                        data-target="#modal-edit-rep" data-rep-name="{{ r.rep_name }}"
                         data-rep-territory="{{ ' / '.join([r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name]) }}"
                         data-rep-territory-name="{{ r.territory_name }}" data-sc-name="{{ r.sc_name }}"
                         data-sc-employee-id="{{ r.sc_employee_id }}">
@@ -55,8 +56,9 @@
 
             <div class="d-block d-sm-none">
             {% for r in g.sales_reps %}
-                <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show" role="button"
-                     data-filter-value="{{ r.filter_value }}"  data-toggle="modal" data-target="#modal-edit-rep"
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show"
+                     {% if 'sc-assignments' in g.permissions %}role="button" data-toggle="modal"{% endif %}
+                     data-filter-value="{{ r.filter_value }}" data-target="#modal-edit-rep"
                      data-rep-name="{{ r.rep_name }}"
                      data-rep-territory="{{ ' / '.join([r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name]) }}"
                      data-rep-territory-name="{{ r.territory_name }}" data-sc-name="{{ r.sc_name }}"
