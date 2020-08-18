@@ -244,7 +244,7 @@ def authorize():
     claim = jwt.decode(id_token, verify=False, algorithms='RS256')
     app.logger.debug(claim)
     state = flask.request.values.get('state')
-    if state != flask.session['state']:
+    if state is None or state != flask.session.get('state'):
         raise ValueError('State does not match')
     flask.session.pop('state')
 
