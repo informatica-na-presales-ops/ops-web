@@ -9,6 +9,17 @@
         </div>
     </div>
 
+    {% if 'cert-approval' in g.permissions %}
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <a href="{{ url_for('ecosystem_certification_approval') }}" class="btn btn-outline-light">
+                <span class="oi oi-check"></span>
+                Approve certifications
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row pt-3 text-light">
         <div class="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-6">
             <h2>Existing certifications</h2>

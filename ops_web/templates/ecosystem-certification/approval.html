@@ -2,6 +2,13 @@
 
 {% block title %}Approval / {{ super() }}{% endblock %}
 
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('ecosystem_certification') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Ecosystem certification</strong>
+    </a>
+{% endblock %}
+
 {% block main_content %}
     <div class="row pt-3 text-light">
         <div class="col-12">
