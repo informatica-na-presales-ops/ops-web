@@ -303,16 +303,21 @@ def ecosystem_certification_add():
     return flask.redirect(flask.url_for('ecosystem_certification'))
 
 
-@app.route('/ecosystem-certification/approval', methods=['GET', 'POST'])
+@app.route('/ecosystem-certification/approval')
 @permission_required('cert-approval')
 def ecosystem_certification_approval():
-    if flask.request.method == 'POST':
-        cert_id = flask.request.values.get('cert-id')
-        db.approve_ecosystem_certification(cert_id, flask.g.email)
-        db.add_log_entry(flask.g.email, f'Approve ecosystem certification {cert_id}')
-        flask.flash(f'Successfully approved ecosystem certification with id {cert_id}', 'success')
     flask.g.certs = db.get_ecosystem_certifications_for_approval()
     return flask.render_template('ecosystem-certification/approval.html')
+
+
+@app.route('/ecosystem-certification/approval/add', methods=['POST'])
+@permission_required('cert-approval')
+def ecosystem_certification_approval_add():
+    cert_id = flask.request.values.get('cert-id')
+    db.approve_ecosystem_certification(cert_id, flask.g.email)
+    db.add_log_entry(flask.g.email, f'Approve ecosystem certification {cert_id}')
+    flask.flash(f'Successfully approved ecosystem certification with id {cert_id}', 'success')
+    return flask.redirect(flask.url_for('ecosystem_certification_approval'))
 
 
 @app.route('/ecosystem-certification/delete', methods=['POST'])
