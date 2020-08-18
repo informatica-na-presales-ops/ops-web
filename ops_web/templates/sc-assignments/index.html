@@ -1,11 +1,29 @@
 {% extends 'one-up.html' %}
 
-{% block title %}{{ super() }} / SC assignments{% endblock %}
+{% block title %}SC assignments / {{ super() }}{% endblock %}
+
+{% set tabs = [
+    ('sales-reps', 'Sales Reps', url_for('sc_assignments_sales_reps'))
+] %}
+
+{% set active_tab = active_tab | default('sales-reps') %}
 
 {% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <h1>SC assignments</h1>
+        </div>
+    </div>
+
     <div class="row pt-3">
         <div class="col-12">
-            <h1 class="text-light">SC assignments</h1>
+            <ul class="nav nav-tabs">
+            {% for id, title, href in tabs %}
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if id == active_tab else 'text-light' }}" href="{{ href }}">{{ title }}</a>
+                </li>
+            {% endfor %}
+            </ul>
         </div>
     </div>
 

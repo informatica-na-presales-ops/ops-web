@@ -1,9 +1,31 @@
 {% extends 'one-up.html' %}
 
+{% block title %}Administration / {{ super() }}{% endblock %}
+
+{% set tabs = [
+    ('users', 'Users', url_for('admin_users')),
+    ('cloud-credentials', 'Cloud credentials', url_for('admin_cloud_credentials')),
+    ('settings', 'Settings', url_for('admin_settings'))
+] %}
+
+{% set active_tab = active_tab | default('users') %}
+
 {% block main_content %}
     <div class="row pt-3">
         <div class="col-12">
             <h1 class="text-light">Administration</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <ul class="nav nav-tabs">
+            {% for id, title, href in tabs %}
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if id == active_tab else 'text-light' }}" href="{{ href }}">{{ title }}</a>
+                </li>
+            {% endfor %}
+            </ul>
         </div>
     </div>
 

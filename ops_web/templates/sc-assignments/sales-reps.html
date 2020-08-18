@@ -1,18 +1,10 @@
 {% extends 'sc-assignments/index.html' %}
 
+{% set active_tab = 'sales-reps' %}
+
 {% block title %}{{ super() }} / Sales Reps{% endblock %}
 
 {% block sub_content %}
-    <div class="row pt-3">
-        <div class="col-12">
-            <ul class="nav nav-tabs">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#">Sales Reps</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-
     <div class="row pt-3">
         <div class="col-12">
             <form class="form-inline" action="{{ url_for('sc_assignments_sales_reps_xlsx') }}" method="get">

@@ -1,22 +1,8 @@
 {% extends 'admin/index.html' %}
 
-{% block admin_content %}
-    <div class="row pt-3">
-        <div class="col-12">
-            <ul class="nav nav-pills">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('admin_users') }}">Users</a>
-                </li>
-                <li>
-                    <a class="nav-link" href="{{ url_for('admin_cloud_credentials') }}">Cloud credentials</a>
-                </li>
-                <li>
-                    <a class="nav-link active" href="#">Settings</a>
-                </li>
-            </ul>
-        </div>
-    </div>
+{% set active_tab = 'settings' %}
 
+{% block admin_content %}
     <div class="row pt-3">
         <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6 text-light">
 
