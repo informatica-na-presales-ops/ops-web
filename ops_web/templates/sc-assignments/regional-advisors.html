@@ -1,0 +1,83 @@
+{% extends 'sc-assignments/index.html' %}
+
+{% set active_tab = 'regional-advisors' %}
+
+{% block title %}Regional advisors / {{ super() }}{% endblock %}
+
+{% block sub_content %}
+    <div class="row pt-3">
+        <div class="col-12">
+            <div class="form-inline">
+                <label for="filter-input" class="sr-only">Filter input</label>
+                <input class="form-control mr-2 mb-2" placeholder="Filter sales consultants ..." id="filter-input" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <div class="list-group list-group-flush">
+                <div class="list-group-item bg-dark border-light">
+                    <div class="row">
+                        <div class="col"><strong>Sales consultant</strong></div>
+                        <div class="col"><strong>Manager</strong></div>
+                        <div class="col"><strong>Regional advisor</strong></div>
+                    </div>
+                </div>
+            {% for a in g.assignments %}
+                <a class="list-group-item list-group-item-action bg-dark border-light text-light filter-candidate collapse show"
+                    type="button" data-toggle="modal" data-target="#modal-edit" data-filter-value="{{ a.filter_value }}"
+                    data-sc-employee-name="{{ a.sc_employee_name }}" data-sc-employee-id="{{ a.sc_employee_id }}"
+                    data-ra-employee-id="{{ a.ra_employee_id }}">
+                    <div class="row">
+                        <div class="col">{{ a.sc_employee_name }}</div>
+                        <div class="col">{{ a.sc_manager_name }}</div>
+                        <div class="col">{{ a.ra_employee_name if a.ra_employee_id }}</div>
+                    </div>
+                </a>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="modal text-light" id="modal-edit">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Regional advisor assignment</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-edit" action="{{ url_for('sc_assignments_regional_advisors_edit') }}" method="post">
+                        <input type="hidden" id="sc-employee-id" name="sc-employee-id">
+                        <div class="form-group">
+                            <label for="sc-employee-name">Sales consultant</label>
+                            <input type="text" class="form-control" id="sc-employee-name" name="sc-employee-name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="ra-employee-id">Regional advisor</label>
+                            <select class="custom-select" name="ra-employee-id" id="ra-employee-id">
+                                <option value="none">-- none --</option>
+                                {% for ra in g.regional_advisors %}
+                                    <option value="{{ ra.employee_id }}">{{ ra.employee_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-outline-success" form="form-edit"
+                        {% if 'sc-assignments' not in g.permissions %}disabled title="You do not have permission to save changes." {% endif %}>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='sc-assignments/regional-advisors.js') }}"></script>
+{% endblock %}

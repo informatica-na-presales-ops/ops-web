@@ -1281,6 +1281,31 @@ def rep_sc_pairs_redirect():
     return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
 
 
+@app.route('/rep-sc-pairs.xlsx')
+def rep_sc_pairs_xlsx_redirect():
+    return flask.redirect(flask.url_for('sc_assignments_sales_reps_xlsx'))
+
+
+@app.route('/sc-assignments/regional-advisors')
+@login_required
+def sc_assignments_regional_advisors():
+    flask.g.assignments = db.get_sc_ra_assignments()
+    flask.g.regional_advisors = db.get_regional_advisors()
+    return flask.render_template('sc-assignments/regional-advisors.html')
+
+
+@app.route('/sc-assignments/regional-advisors/edit', methods=['POST'])
+@permission_required('sc-assignments')
+def sc_assignments_regional_advisors_edit():
+    sc_employee_id = flask.request.values.get('sc-employee-id')
+    ra_employee_id = flask.request.values.get('ra-employee-id')
+    if ra_employee_id == 'none':
+        ra_employee_id = None
+    db.set_sc_ra_assignment(sc_employee_id, ra_employee_id)
+    db.add_log_entry(flask.g.email, f'Update SC assignment to regional advisor: {sc_employee_id} / {ra_employee_id}')
+    return flask.redirect(flask.url_for('sc_assignments_regional_advisors'))
+
+
 @app.route('/sc-assignments/sales-reps')
 @login_required
 def sc_assignments_sales_reps():
@@ -1295,11 +1320,42 @@ def sc_assignments_sales_reps_edit():
     territory_name = flask.request.values.get('territory_name')
     sc_employee_id = flask.request.values.get('sc_employee_id')
     app.logger.debug(f'sc assignment territory: {territory_name}, employee_id: {sc_employee_id}')
-    db.add_log_entry(flask.g.email, f'Update SC assignment: {territory_name}/{sc_employee_id}')
+    db.add_log_entry(flask.g.email, f'Update SC assignment to sales rep: {territory_name} / {sc_employee_id}')
     if sc_employee_id == 'none':
         sc_employee_id = None
     db.set_rep_sc_pair(territory_name, sc_employee_id)
     return flask.redirect(flask.url_for('sc_assignments_sales_reps'))
+
+
+@app.route('/sc-assignments/sales-reps.xlsx')
+@login_required
+def sc_assignments_sales_reps_xlsx():
+    records = db.get_rep_sc_pairs()
+    filter_input = flask.request.values.get('filter-input')
+    if filter_input is not None:
+        def matches_filter(record):
+            return filter_input in record['filter_value']
+
+        records = filter(matches_filter, records)
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
+    headers = ['Geo', 'Area', 'Sub-Area', 'Region', 'Sub-Region', 'Territory Name', 'Sales Rep', 'Sales Consultant']
+    worksheet.write_row(0, 0, headers)
+    for i, r in enumerate(records, start=1):
+        worksheet.write_string(i, 0, r['geo'])
+        worksheet.write_string(i, 1, r['area'])
+        worksheet.write_string(i, 2, r['sub_area'])
+        worksheet.write_string(i, 3, r['region'])
+        worksheet.write_string(i, 4, r['sub_region'])
+        worksheet.write_string(i, 5, r['territory_name'])
+        worksheet.write_string(i, 6, r['rep_name'])
+        worksheet.write_string(i, 7, r['sc_name'])
+    workbook.close()
+    response = flask.make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename="rep-sc-pairs.xlsx"'
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    return response
 
 
 @app.route('/excel_sheet', methods=['GET', 'POST'])
@@ -1343,42 +1399,6 @@ def excel_sheet():
         response.headers['Content-Disposition'] = 'attachment; filename="workshop_CDW.csv"'
         response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         return response
-
-
-@app.route('/rep-sc-pairs.xlsx')
-def rep_sc_pairs_xlsx_redirect():
-    return flask.redirect(flask.url_for('sc_assignments_sales_reps_xlsx'))
-
-
-@app.route('/sc-assignments/sales-reps.xlsx')
-@login_required
-def sc_assignments_sales_reps_xlsx():
-    records = db.get_rep_sc_pairs()
-    filter_input = flask.request.values.get('filter-input')
-    if filter_input is not None:
-        def matches_filter(record):
-            return filter_input in record['filter_value']
-
-        records = filter(matches_filter, records)
-    output = io.BytesIO()
-    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    worksheet = workbook.add_worksheet()
-    headers = ['Geo', 'Area', 'Sub-Area', 'Region', 'Sub-Region', 'Territory Name', 'Sales Rep', 'Sales Consultant']
-    worksheet.write_row(0, 0, headers)
-    for i, r in enumerate(records, start=1):
-        worksheet.write_string(i, 0, r['geo'])
-        worksheet.write_string(i, 1, r['area'])
-        worksheet.write_string(i, 2, r['sub_area'])
-        worksheet.write_string(i, 3, r['region'])
-        worksheet.write_string(i, 4, r['sub_region'])
-        worksheet.write_string(i, 5, r['territory_name'])
-        worksheet.write_string(i, 6, r['rep_name'])
-        worksheet.write_string(i, 7, r['sc_name'])
-    workbook.close()
-    response = flask.make_response(output.getvalue())
-    response.headers['Content-Disposition'] = 'attachment; filename="rep-sc-pairs.xlsx"'
-    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    return response
 
 
 @app.route('/sign-in')

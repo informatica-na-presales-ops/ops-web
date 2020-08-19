@@ -732,6 +732,49 @@ class Database(fort.PostgresDatabase):
             '''
         self.u(sql, params)
 
+    def get_regional_advisors(self):
+        sql = '''
+            select employee_id, employee_name
+            from employees
+            where is_ra is true and visible is true
+            order by employee_name
+        '''
+        return self.q(sql)
+
+    def get_sc_ra_assignments(self):
+        sql = '''
+            with sc as (
+                select employee_id, employee_name, manager_name
+                from employees
+                where is_sc is true and visible is true),
+            ra as (
+                select employee_id, employee_name
+                from employees
+                where is_ra is true and visible is true)
+            select
+                sc.employee_id sc_employee_id, sc.employee_name sc_employee_name, sc.manager_name sc_manager_name,
+                ra.employee_id ra_employee_id, ra.employee_name ra_employee_name,
+                lower(concat_ws(' ', sc.employee_name, sc.manager_name, ra.employee_name)) filter_value
+            from sc
+            left join sc_ra_assignments a on a.sc_employee_id = sc.employee_id
+            left join ra on ra.employee_id = a.ra_employee_id
+            order by sc_employee_name
+        '''
+        return self.q(sql)
+
+    def set_sc_ra_assignment(self, sc_employee_id: str, ra_employee_id: str):
+        sql = '''
+            insert into sc_ra_assignments (sc_employee_id, ra_employee_id)
+            values (%(sc_employee_id)s, %(ra_employee_id)s)
+            on conflict (sc_employee_id) do update
+            set ra_employee_id = %(ra_employee_id)s
+        '''
+        params = {
+            'sc_employee_id': sc_employee_id,
+            'ra_employee_id': ra_employee_id
+        }
+        self.u(sql, params)
+
     # opportunity debrief surveys
 
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:

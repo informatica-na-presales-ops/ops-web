@@ -3,7 +3,8 @@
 {% block title %}SC assignments / {{ super() }}{% endblock %}
 
 {% set tabs = [
-    ('sales-reps', 'Sales Reps', url_for('sc_assignments_sales_reps'))
+    ('sales-reps', 'Sales reps', url_for('sc_assignments_sales_reps')),
+    ('regional-advisors', 'Regional advisors', url_for('sc_assignments_regional_advisors'))
 ] %}
 
 {% set active_tab = active_tab | default('sales-reps') %}
