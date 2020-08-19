@@ -1123,7 +1123,7 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'ecosystem_certification',
+        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'ecosystem_certification', 'employees',
                       'environment_usage_events', 'external_links', 'images', 'log_entries', 'op_debrief_roles',
                       'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
                       'sc_rep_assignments', 'schema_versions', 'security_group', 'settings', 'sf_opportunities',
@@ -1685,6 +1685,21 @@ class Database(fort.PostgresDatabase):
                 add column approved_by text
             ''')
             self.add_schema_version(41)
+        if self.version < 42:
+            self.log.info('Migrating to database schema version 42')
+            self.u('''
+                create table employees (
+                    employee_id text primary key,
+                    employee_name text,
+                    employee_email text,
+                    manager_name text,
+                    is_sc boolean,
+                    is_ra boolean,
+                    visible boolean,
+                    synced boolean
+                )
+            ''')
+            self.add_schema_version(42)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
