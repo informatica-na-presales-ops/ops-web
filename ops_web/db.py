@@ -1714,6 +1714,15 @@ class Database(fort.PostgresDatabase):
                 drop table cost_tracking, sales_consultants
             ''')
             self.add_schema_version(43)
+        if self.version < 44:
+            self.log.info('Migrating to database schema version 44')
+            self.u('''
+                create table sc_ra_assignments (
+                    sc_employee_id text primary key,
+                    ra_employee_id text
+                )
+            ''')
+            self.add_schema_version(44)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
