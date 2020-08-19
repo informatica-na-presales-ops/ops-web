@@ -686,18 +686,26 @@ class Database(fort.PostgresDatabase):
         sql = '''
             select
                 geo, area, sub_area, region, sub_region, territory_name, sales_rep rep_name,
-                coalesce(c.name, '') sc_name, c.employee_id sc_employee_id,
-                lower(geo || ' ' || area || ' ' || sub_area || ' ' || region || ' ' || sub_region || ' ' ||
-                      territory_name || ' ' || sales_rep || ' ' || coalesce(c.name, '')) filter_value
+                coalesce(e.employee_name, '') sc_name, e.employee_id sc_employee_id,
+                lower(concat_ws(
+                    ' ', geo, area, sub_area, region, sub_region, territory_name, sales_rep,
+                    coalesce(e.employee_name, '')
+                )) filter_value
             from sales_reps r
             left join sc_rep_assignments a on a.rep_territory = r.territory_name
-            left join sales_consultants c on c.employee_id = a.sc_employee_id
+            left join employees e on e.employee_id = a.sc_employee_id and e.is_sc is true and e.visible is true
             order by geo, area, sub_area, region, sub_region, territory_name, rep_name
         '''
         return self.q(sql)
 
     def get_sales_consultants(self):
-        sql = 'select name sc_name, employee_id from sales_consultants order by name'
+        sql = '''
+            select employee_name sc_name, employee_id
+            from employees
+            where is_sc is true
+            and visible is true
+            order by employee_name
+        '''
         return self.q(sql)
 
     def set_rep_sc_pair(self, rep_territory, sc_employee_id):
@@ -1700,6 +1708,12 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(42)
+        if self.version < 43:
+            self.log.info('Migrating to database schema version 43')
+            self.u('''
+                drop table cost_tracking, sales_consultants
+            ''')
+            self.add_schema_version(43)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

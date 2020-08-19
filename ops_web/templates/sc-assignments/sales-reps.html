@@ -2,14 +2,14 @@
 
 {% set active_tab = 'sales-reps' %}
 
-{% block title %}{{ super() }} / Sales Reps{% endblock %}
+{% block title %}Sales reps / {{ super() }}{% endblock %}
 
 {% block sub_content %}
     <div class="row pt-3">
         <div class="col-12">
             <form class="form-inline" action="{{ url_for('sc_assignments_sales_reps_xlsx') }}" method="get">
                 <label for="filter-input" class="sr-only">Filter input</label>
-                <input class="form-control mr-2 mb-2" placeholder="Filter sales reps..." id="filter-input" name="filter-input" autofocus>
+                <input class="form-control mr-2 mb-2" placeholder="Filter sales reps ..." id="filter-input" name="filter-input" autofocus>
                 <button class="btn btn-outline-light mb-2" title="Active filter applies to downloaded XLSX file">
                     <span class="oi oi-spreadsheet"></span>
                     Download XLSX
@@ -104,12 +104,6 @@
             </div>
         </div>
     </div>
-
-    <datalist id="sales-consultants">
-    {% for sc in g.sales_consultants %}
-        <option value="{{ sc.sc_name }}">
-    {% endfor %}
-    </datalist>
 {% endblock %}
 
 {% block end_of_body %}
