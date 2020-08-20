@@ -256,6 +256,55 @@ def authorize():
     return flask.redirect(target)
 
 
+@app.route('/az_launch', methods=['POST'])
+@login_required
+def az_launch():
+    cdwversion = flask.request.values.get("cdwversion")
+    app.logger.info(cdwversion)
+    quantity = flask.request.values.get('count')
+    name = flask.request.values.get('name')
+    owner = flask.request.values.get('owner').lower()
+    q = int(quantity)
+    idlist = []
+    instance_info = []
+    for account in db.get_all_credentials_for_use('az'):
+        for i in range(q):
+            az_idlist = []
+            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                     account.get('azure_tenant_id'))
+            if cdwversion == 'CDW104-AZ':
+                vmbase = name + str("104") + "-" + str(i)
+                infa_result = az.launch_infa104(account.get('username'), account.get('password'),
+                                                account.get('azure_tenant_id'), vmbase, owner)
+                windows_result = az.launch_windows104(account.get('username'), account.get('password'),
+                                                      account.get('azure_tenant_id'), vmbase, owner)
+
+            else:
+                vmbase = name + "-" + str(i)
+
+                cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
+                                                    account.get('azure_tenant_id'), vmbase, owner)
+
+                windows_result = az.launch_windows(account.get('username'), account.get('password'),
+                                                   account.get('azure_tenant_id'), vmbase, owner)
+                infa_result = az.launch_infa(account.get('username'), account.get('password'),
+                                             account.get('azure_tenant_id'), vmbase, owner)
+                az_idlist.append(cdh_result)
+
+            az_idlist.append(windows_result)
+            az_idlist.append(infa_result)
+            app.logger.info(az_idlist)
+            for i in az_idlist:
+                virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
+                instance_info.append(virtualmachine_info)
+                idlist.append(virtualmachine_info['id'])
+                virtualmachine_info['account_id'] = account.get('id')
+                db.add_machine(virtualmachine_info)
+            app.logger.info(idlist)
+            app.logger.info(instance_info)
+        return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
+
+
 @app.route('/ecosystem-certification')
 @login_required
 def ecosystem_certification():
@@ -336,6 +385,22 @@ def ecosystem_certification_document(document_id):
     data = io.BytesIO(document.get('document_data'))
     filename = document.get('document_name')
     return flask.send_file(data, as_attachment=True, attachment_filename=filename)
+
+
+@app.route('/elasticip', methods=['GET', 'POST'])
+@login_required
+def elasticip():
+    idlist_str = flask.request.values.get('instance')
+    region = 'us-west-2'
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        aws.allocate_elasticip(idlist_str)
+        instances_list = []
+        idlist = aws.convert_instanceidstr_list(idlist_str)
+        for i in idlist:
+            result = aws.get_single_instance(region, i)
+            instances_list.append(result)
+    return flask.render_template('postdep.html', idlist=idlist_str, instance=instances_list)
 
 
 @app.route('/environment-usage-events', methods=['POST'])
@@ -439,6 +504,49 @@ def environment_stop(environment):
         else:
             app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
+
+
+@app.route('/excel_sheet', methods=['GET', 'POST'])
+@login_required
+def excel_sheet():
+    idlist = flask.request.values.get('instance')
+    app.logger.info(idlist)
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        idlist2 = aws.convert_instanceidstr_list(idlist)
+        app.logger.info(idlist2)
+        instance_list = []
+        valdir = {}
+        for i in idlist2:
+
+            instance_info = aws.get_single_instance('us-west-2', i)
+            instance_name = instance_info['name']
+            instance_ip = instance_info['public_ip']
+
+            app.logger.info(instance_name)
+            if "Windows" in instance_name:
+                valdir[instance_name] = instance_ip
+                instance_list.append(valdir)
+            app.logger.info(valdir)
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet()
+
+        headers = ['Instance name', 'Public IP']
+        worksheet.write_row(0, 0, headers)
+        row = 0
+        col = 0
+
+        for key in valdir.keys():
+            row = row + 1
+            worksheet.write(row, col, key)
+            worksheet.write(row, col + 1, valdir[key])
+
+        workbook.close()
+        response = flask.make_response(output.getvalue())
+        response.headers['Content-Disposition'] = 'attachment; filename="workshop_CDW.csv"'
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        return response
 
 
 @app.route('/external-links')
@@ -589,308 +697,6 @@ def images_edit():
     return flask.redirect(flask.url_for('images'))
 
 
-@app.route('/sap_access', methods=['GET', 'POST'])
-@login_required
-def sap_access():
-    flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_own_environments(flask.g.email))
-    return flask.render_template('sap-access.html')
-
-
-@app.route('/sap_access/<environment>')
-@login_required
-def sap_access_detail(environment):
-    app.logger.debug(f'Getting information for environment {environment!r}')
-    flask.g.environment = environment
-    _machines = db.get_machines_for_env(flask.g.email, environment)
-    flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
-    flask.g.environments = db.get_env_list()
-    flask.g.today = datetime.date.today()
-    return flask.render_template('sap_access_detail.html')
-
-
-@app.route('/sap_access/<environment>/attach_sap_sg', methods=['GET', 'POST'])
-@login_required
-def attach_sap_sg(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
-    machines = db.get_machines_for_env(flask.g.email, environment)
-    final_result = []
-    for machine in machines:
-        app.logger.info(machine.get('id'))
-        region = machine.get('region')
-        machine_id = machine.get('id')
-        vpc = machine.get('vpc')
-        account = db.get_one_credential_for_use(machine.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        app.logger.info(machine_id)
-        result = aws.add_sap_sg(region, machine_id, vpc)
-        final_result.append(result)
-    if all(c == 'Successful' for c in final_result):
-        return flask.redirect(flask.url_for('sap_access'))
-    else:
-        _error = ("Cannot give SAP Access to this environment. "
-                  "Check if the instances already have access or if they are in the correct VPC.")
-        return flask.render_template('500.html', error=_error)
-
-
-@app.route('/sap_access/<environment>/detach_sap_sg', methods=['GET', 'POST'])
-@login_required
-def detach_sap_sg(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
-    machines = db.get_machines_for_env(flask.g.email, environment)
-    final_result = []
-    for machine in machines:
-        region = machine.get('region')
-        machine_id = machine.get('id')
-        vpc = machine.get('vpc')
-        account = db.get_one_credential_for_use(machine.get('account_id'))
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        app.logger.info(machine_id)
-        result = aws.remove_sap_sg(region, machine_id, vpc)
-        final_result.append(result)
-    if all(c == 'Successful' for c in final_result):
-        return flask.redirect(flask.url_for('sap_access'))
-    else:
-        return flask.render_template('500.html',
-                                     error="Cannot remove SAP Access from this environment. Check if the Access has "
-                                           "already been revoked")
-
-
-@app.route('/sap_access/attach_sap_sg_machine', methods=['POST'])
-@login_required
-def attach_sap_sg_machine():
-    machine_id = flask.request.values.get('machine-id')
-    environment = flask.request.values.get('environment')
-    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {machine_id}')
-    machine = db.get_machine(machine_id, flask.g.email)
-    region = machine.get('region')
-    vpc = machine.get('vpc')
-    account = db.get_one_credential_for_use(machine.get('account_id'))
-    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-    result = aws.add_sap_sg(region, machine_id, vpc)
-    if result == "Successful":
-        return flask.redirect(flask.url_for('sap_access_detail', environment=environment))
-    else:
-        return flask.render_template('500.html',
-                                     error="Cannot give SAP Access to this instance. Check if the instance already has access or if it is in the correct vpc")
-
-
-@app.route('/sap_access/detach_sap_sg_machine', methods=['POST'])
-@login_required
-def detach_sap_sg_machine():
-    machine_id = flask.request.values.get('machine-id')
-    environment = flask.request.values.get('environment')
-    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {machine_id}')
-    machine_id = flask.request.values.get('machine-id')
-    machine = db.get_machine(machine_id, flask.g.email)
-    region = machine.get('region')
-    machine_id = machine.get('id')
-    vpc = machine.get('vpc')
-    account = db.get_one_credential_for_use(machine.get('account_id'))
-    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-    app.logger.info(machine_id)
-    result = aws.remove_sap_sg(region, machine_id, vpc)
-    if result == "Successful":
-        return flask.redirect(flask.url_for('sap_access_detail', environment=environment))
-    else:
-        return flask.render_template('500.html',
-                                     error="Cannot remove SAP Access from this instance. Check if the Access has already been revoked")
-
-
-@app.route('/security-groups')
-@login_required
-def security_groups():
-    flask.g.sg = db.get_security_groups(flask.g.email)
-    return flask.render_template('security-groups.html')
-
-
-@app.route('/security-groups/add-rule', methods=['POST'])
-@login_required
-def security_groups_add_rule():
-    cloud = flask.request.values.get('cloud')
-    region = flask.request.values.get('region')
-    sg_id = flask.request.values.get('security-group-id')
-    ip = flask.request.values.get('new-ip-address')
-    description = flask.request.values.get('description')
-
-    redir = flask.redirect(flask.url_for('security_groups'))
-    if not db.can_modify_security_group(flask.g.email, sg_id):
-        flask.flash('You do not have permission to modify this security group.', 'danger')
-        return redir
-    if '/' in ip:
-        ip = ip.split('/')[0]
-    try:
-        ipaddress.ip_address(ip)
-    except ValueError:
-        flask.flash(f'{ip!r} does not appear to be a valid IP address.', 'danger')
-        return redir
-    if ip.startswith('0.0.0.0'):
-        flask.flash(f'You can\'t add this IP address: {ip}', 'danger')
-        return redir
-    if ip.startswith('10.') or ip.startswith('192.168.'):
-        flask.flash(f'You can\'t add this internal IP address: {ip}', 'danger')
-        return redir
-
-    app.logger.info(f'Adding IP address {ip} to {sg_id}')
-    db.add_log_entry(flask.g.email, f'Add IP address {ip} to {sg_id}')
-    sg = db.get_security_group(sg_id)
-    account = db.get_one_credential_for_use(sg.get('account_id'))
-    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-    result = aws.add_security_group_rule(region, sg_id, ip, description)
-    if result == 'successful':
-        flask.flash(f'Successfully added {ip} to {sg_id}', 'success')
-        params = {
-            'sg_id': sg_id,
-            'ip_range': f'{ip}/32',
-            'cloud': cloud,
-            'description': description
-        }
-        db.add_security_group_rule(params)
-    else:
-        flask.flash(f'Error adding {ip}: {result}', 'danger')
-
-    return redir
-
-
-@app.route('/security-groups/delete-rule', methods=['POST'])
-@login_required
-def security_groups_delete_rule():
-    redir = flask.redirect(flask.url_for('security_groups'))
-    group_id = flask.request.values.get('security-group-id')
-    ip_range = flask.request.values.get('ip-range')
-    region = flask.request.values.get('region')
-    if not db.can_modify_security_group(flask.g.email, group_id):
-        flask.flash('You do not have permission to modify this security group.', 'danger')
-        return redir
-
-    app.logger.debug(f'Removing IP address range {ip_range} from {group_id}')
-    security_group = db.get_security_group(group_id)
-    account = db.get_one_credential_for_use(security_group.get('account_id'))
-    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-    aws.delete_security_group_rule(region, group_id, ip_range)
-    db.delete_security_group_rule(group_id, ip_range)
-    return redir
-
-
-@app.route('/wscreator')
-@login_required
-def wscreator():
-    return flask.render_template('ws_creator.html')
-
-
-@app.route('/workshop-tools')
-@login_required
-def workshop_tools():
-    return flask.render_template('workshop_tools.html')
-
-
-@app.route('/ws_postdep', methods=['GET', 'POST'])
-@login_required
-def ws_postdep():
-    return flask.render_template('postdep.html')
-
-
-@app.route('/ws_postdep_filter', methods=['GET', 'POST'])
-@login_required
-def ws_postdep_filter():
-    env_group = flask.request.values.get("env_group_name")
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        instance_list = aws.get_instance_of_envgrp(env_group)
-        instances_list2 = []
-        for i in instance_list:
-            result = aws.get_single_instance('us-west-2', i)
-            instances_list2.append(result)
-        return flask.render_template('postdep.html', idlist=str(instance_list), instance=instances_list2)
-
-
-@app.route('/wsimage', methods=['GET', 'POST'])
-@login_required
-def wsimage():
-    ws = flask.request.values.get("ws")
-    app.logger.info(ws)
-    if (ws != 'CDW-AZ' and ws != 'CDW104-AZ'):
-        for account in db.get_all_credentials_for_use('aws'):
-            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            result = aws.workshop_images(ws)
-            wslist = []
-            wsidlist = []
-            for i in result:
-                wslist.append(i)
-                wsidlist.append(i['id'])
-        return flask.render_template('ws_creator.html', ws2=ws, ws=wslist, id=wsidlist)
-    else:
-        app.logger.info("entered in ops-web")
-        app.logger.info(ws)
-        return flask.render_template('ws_creator.html', ws2=ws, ws=['ami1'])
-
-
-@app.route('/elasticip', methods=['GET', 'POST'])
-@login_required
-def elasticip():
-    idlist_str = flask.request.values.get('instance')
-    region = 'us-west-2'
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        aws.allocate_elasticip(idlist_str)
-        instances_list = []
-        idlist = aws.convert_instanceidstr_list(idlist_str)
-        for i in idlist:
-            result = aws.get_single_instance(region, i)
-            instances_list.append(result)
-    return flask.render_template('postdep.html', idlist=idlist_str, instance=instances_list)
-
-
-@app.route('/synchosts', methods=['GET', 'POST'])
-@login_required
-def synchosts():
-    idliststr = flask.request.values.get('instance')
-    region = 'us-west-2'
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        result = aws.sync_hosts(idliststr)
-        idlist = aws.convert_instanceidstr_list(idliststr)
-        instanceslist = []
-        for i in idlist:
-            instance = aws.get_single_instance(region, i)
-            instanceslist.append(instance)
-        if result is None:
-            return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
-        else:
-            return flask.render_template('500.html', error=result)
-
-
-@app.route('/synchosts_az', methods=['GET', 'POST'])
-@login_required
-def synchosts_az():
-    app.logger.info("entered in for updating hosts")
-    idliststr = flask.request.values.get('instance')
-    instance_info = flask.request.values.get('instance_info')
-    id_list = idliststr
-    id_list2 = id_list[1:]
-    id_list3 = id_list2[:-1]
-    id_list4 = id_list3[1:]
-    id_list5 = id_list4[:-1]
-    id_list6 = id_list5.replace("\'", "")
-    id_list8 = id_list6.replace(' ', '')
-    id_list7 = id_list8.split(',')
-    app.logger.info(instance_info)
-    instance_info2 = []
-    for account in db.get_all_credentials_for_use('az'):
-        az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
-                                 account.get('azure_tenant_id'))
-        app.logger.info(idliststr)
-        if '104' in idliststr:
-            app.logger.info("found new cdw image")
-            result = az.sync_hosts_104(idliststr)
-        else:
-            result = az.sync_hosts(idliststr)
-        for i in id_list7:
-            i = "'" + i + "'"
-            instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
-
-        return flask.render_template('postdep_az.html', instance=instance_info2, idlist=id_list7)
-
-
 @app.route('/launch', methods=['GET', 'POST'])
 @login_required
 def launch():
@@ -935,75 +741,6 @@ def launch():
                     break
             db.add_machine(result)
         return flask.render_template('postdep.html', instance=instanceslist, idlist=instanceidlist)
-
-
-@app.route('/az_launch', methods=['POST'])
-@login_required
-def az_launch():
-    cdwversion = flask.request.values.get("cdwversion")
-    app.logger.info(cdwversion)
-    quantity = flask.request.values.get('count')
-    name = flask.request.values.get('name')
-    owner = flask.request.values.get('owner').lower()
-    q = int(quantity)
-    idlist = []
-    instance_info = []
-    for account in db.get_all_credentials_for_use('az'):
-        for i in range(q):
-            az_idlist = []
-            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
-                                     account.get('azure_tenant_id'))
-            if cdwversion == 'CDW104-AZ':
-                vmbase = name + str("104") + "-" + str(i)
-                infa_result = az.launch_infa104(account.get('username'), account.get('password'),
-                                                account.get('azure_tenant_id'), vmbase, owner)
-                windows_result = az.launch_windows104(account.get('username'), account.get('password'),
-                                                      account.get('azure_tenant_id'), vmbase, owner)
-
-            else:
-                vmbase = name + "-" + str(i)
-
-                cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
-                                                    account.get('azure_tenant_id'), vmbase, owner)
-
-                windows_result = az.launch_windows(account.get('username'), account.get('password'),
-                                                   account.get('azure_tenant_id'), vmbase, owner)
-                infa_result = az.launch_infa(account.get('username'), account.get('password'),
-                                             account.get('azure_tenant_id'), vmbase, owner)
-                az_idlist.append(cdh_result)
-
-            az_idlist.append(windows_result)
-            az_idlist.append(infa_result)
-            app.logger.info(az_idlist)
-            for i in az_idlist:
-                virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
-                instance_info.append(virtualmachine_info)
-                idlist.append(virtualmachine_info['id'])
-                virtualmachine_info['account_id'] = account.get('id')
-                db.add_machine(virtualmachine_info)
-            app.logger.info(idlist)
-            app.logger.info(instance_info)
-        return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
-
-
-@app.route('/machines/create/launchmachine_default_specs', methods=['POST', 'GET'])
-@login_required
-def launchmachine_default_specs():
-    image_id = flask.request.values.get('image_id')
-    app.logger.info(image_id)
-    owner = flask.request.values.get('owner').lower()
-    name = flask.request.values.get('name')
-    region = flask.request.values.get('region')
-    environment = flask.request.values.get('environment')
-
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'default')
-        app.logger.info(response[0])
-        instance = aws.get_single_instance(region, response[0].id)
-        instance['account_id'] = account.get('id')
-        db.add_machine(instance)
-        return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/machines/create', methods=['POST'])
@@ -1083,6 +820,26 @@ def machine_create():
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
         return flask.redirect(flask.url_for('images'))
+
+
+@app.route('/machines/create/launchmachine_default_specs', methods=['POST', 'GET'])
+@login_required
+def launchmachine_default_specs():
+    image_id = flask.request.values.get('image_id')
+    app.logger.info(image_id)
+    owner = flask.request.values.get('owner').lower()
+    name = flask.request.values.get('name')
+    region = flask.request.values.get('region')
+    environment = flask.request.values.get('environment')
+
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'default')
+        app.logger.info(response[0])
+        instance = aws.get_single_instance(region, response[0].id)
+        instance['account_id'] = account.get('id')
+        db.add_machine(instance)
+        return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/machines/delete', methods=['POST'])
@@ -1287,6 +1044,113 @@ def rep_sc_pairs_xlsx_redirect():
     return flask.redirect(flask.url_for('sc_assignments_sales_reps_xlsx'))
 
 
+@app.route('/sap_access', methods=['GET', 'POST'])
+@login_required
+def sap_access():
+    flask.g.environments = ops_web.util.human_time.add_running_time_human(db.get_own_environments(flask.g.email))
+    return flask.render_template('sap-access.html')
+
+
+@app.route('/sap_access/<environment>')
+@login_required
+def sap_access_detail(environment):
+    app.logger.debug(f'Getting information for environment {environment!r}')
+    flask.g.environment = environment
+    _machines = db.get_machines_for_env(flask.g.email, environment)
+    flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
+    flask.g.environments = db.get_env_list()
+    flask.g.today = datetime.date.today()
+    return flask.render_template('sap_access_detail.html')
+
+
+@app.route('/sap_access/<environment>/attach_sap_sg', methods=['GET', 'POST'])
+@login_required
+def attach_sap_sg(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
+    machines = db.get_machines_for_env(flask.g.email, environment)
+    final_result = []
+    for machine in machines:
+        app.logger.info(machine.get('id'))
+        region = machine.get('region')
+        machine_id = machine.get('id')
+        vpc = machine.get('vpc')
+        account = db.get_one_credential_for_use(machine.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        app.logger.info(machine_id)
+        result = aws.add_sap_sg(region, machine_id, vpc)
+        final_result.append(result)
+    if all(c == 'Successful' for c in final_result):
+        return flask.redirect(flask.url_for('sap_access'))
+    else:
+        _error = ("Cannot give SAP Access to this environment. "
+                  "Check if the instances already have access or if they are in the correct VPC.")
+        return flask.render_template('500.html', error=_error)
+
+
+@app.route('/sap_access/<environment>/detach_sap_sg', methods=['GET', 'POST'])
+@login_required
+def detach_sap_sg(environment):
+    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
+    machines = db.get_machines_for_env(flask.g.email, environment)
+    final_result = []
+    for machine in machines:
+        region = machine.get('region')
+        machine_id = machine.get('id')
+        vpc = machine.get('vpc')
+        account = db.get_one_credential_for_use(machine.get('account_id'))
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        app.logger.info(machine_id)
+        result = aws.remove_sap_sg(region, machine_id, vpc)
+        final_result.append(result)
+    if all(c == 'Successful' for c in final_result):
+        return flask.redirect(flask.url_for('sap_access'))
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot remove SAP Access from this environment. Check if the Access has "
+                                           "already been revoked")
+
+
+@app.route('/sap_access/attach_sap_sg_machine', methods=['POST'])
+@login_required
+def attach_sap_sg_machine():
+    machine_id = flask.request.values.get('machine-id')
+    environment = flask.request.values.get('environment')
+    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {machine_id}')
+    machine = db.get_machine(machine_id, flask.g.email)
+    region = machine.get('region')
+    vpc = machine.get('vpc')
+    account = db.get_one_credential_for_use(machine.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    result = aws.add_sap_sg(region, machine_id, vpc)
+    if result == "Successful":
+        return flask.redirect(flask.url_for('sap_access_detail', environment=environment))
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot give SAP Access to this instance. Check if the instance already has access or if it is in the correct vpc")
+
+
+@app.route('/sap_access/detach_sap_sg_machine', methods=['POST'])
+@login_required
+def detach_sap_sg_machine():
+    machine_id = flask.request.values.get('machine-id')
+    environment = flask.request.values.get('environment')
+    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {machine_id}')
+    machine_id = flask.request.values.get('machine-id')
+    machine = db.get_machine(machine_id, flask.g.email)
+    region = machine.get('region')
+    machine_id = machine.get('id')
+    vpc = machine.get('vpc')
+    account = db.get_one_credential_for_use(machine.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    app.logger.info(machine_id)
+    result = aws.remove_sap_sg(region, machine_id, vpc)
+    if result == "Successful":
+        return flask.redirect(flask.url_for('sap_access_detail', environment=environment))
+    else:
+        return flask.render_template('500.html',
+                                     error="Cannot remove SAP Access from this instance. Check if the Access has already been revoked")
+
+
 @app.route('/sc-assignments/regional-advisors')
 @login_required
 def sc_assignments_regional_advisors():
@@ -1359,47 +1223,79 @@ def sc_assignments_sales_reps_xlsx():
     return response
 
 
-@app.route('/excel_sheet', methods=['GET', 'POST'])
+@app.route('/security-groups')
 @login_required
-def excel_sheet():
-    idlist = flask.request.values.get('instance')
-    app.logger.info(idlist)
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        idlist2 = aws.convert_instanceidstr_list(idlist)
-        app.logger.info(idlist2)
-        instance_list = []
-        valdir = {}
-        for i in idlist2:
+def security_groups():
+    flask.g.sg = db.get_security_groups(flask.g.email)
+    return flask.render_template('security-groups.html')
 
-            instance_info = aws.get_single_instance('us-west-2', i)
-            instance_name = instance_info['name']
-            instance_ip = instance_info['public_ip']
 
-            app.logger.info(instance_name)
-            if "Windows" in instance_name:
-                valdir[instance_name] = instance_ip
-                instance_list.append(valdir)
-            app.logger.info(valdir)
-        output = io.BytesIO()
-        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-        worksheet = workbook.add_worksheet()
+@app.route('/security-groups/add-rule', methods=['POST'])
+@login_required
+def security_groups_add_rule():
+    cloud = flask.request.values.get('cloud')
+    region = flask.request.values.get('region')
+    sg_id = flask.request.values.get('security-group-id')
+    ip = flask.request.values.get('new-ip-address')
+    description = flask.request.values.get('description')
 
-        headers = ['Instance name', 'Public IP']
-        worksheet.write_row(0, 0, headers)
-        row = 0
-        col = 0
+    redir = flask.redirect(flask.url_for('security_groups'))
+    if not db.can_modify_security_group(flask.g.email, sg_id):
+        flask.flash('You do not have permission to modify this security group.', 'danger')
+        return redir
+    if '/' in ip:
+        ip = ip.split('/')[0]
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        flask.flash(f'{ip!r} does not appear to be a valid IP address.', 'danger')
+        return redir
+    if ip.startswith('0.0.0.0'):
+        flask.flash(f'You can\'t add this IP address: {ip}', 'danger')
+        return redir
+    if ip.startswith('10.') or ip.startswith('192.168.'):
+        flask.flash(f'You can\'t add this internal IP address: {ip}', 'danger')
+        return redir
 
-        for key in valdir.keys():
-            row = row + 1
-            worksheet.write(row, col, key)
-            worksheet.write(row, col + 1, valdir[key])
+    app.logger.info(f'Adding IP address {ip} to {sg_id}')
+    db.add_log_entry(flask.g.email, f'Add IP address {ip} to {sg_id}')
+    sg = db.get_security_group(sg_id)
+    account = db.get_one_credential_for_use(sg.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    result = aws.add_security_group_rule(region, sg_id, ip, description)
+    if result == 'successful':
+        flask.flash(f'Successfully added {ip} to {sg_id}', 'success')
+        params = {
+            'sg_id': sg_id,
+            'ip_range': f'{ip}/32',
+            'cloud': cloud,
+            'description': description
+        }
+        db.add_security_group_rule(params)
+    else:
+        flask.flash(f'Error adding {ip}: {result}', 'danger')
 
-        workbook.close()
-        response = flask.make_response(output.getvalue())
-        response.headers['Content-Disposition'] = 'attachment; filename="workshop_CDW.csv"'
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        return response
+    return redir
+
+
+@app.route('/security-groups/delete-rule', methods=['POST'])
+@login_required
+def security_groups_delete_rule():
+    redir = flask.redirect(flask.url_for('security_groups'))
+    group_id = flask.request.values.get('security-group-id')
+    ip_range = flask.request.values.get('ip-range')
+    region = flask.request.values.get('region')
+    if not db.can_modify_security_group(flask.g.email, group_id):
+        flask.flash('You do not have permission to modify this security group.', 'danger')
+        return redir
+
+    app.logger.debug(f'Removing IP address range {ip_range} from {group_id}')
+    security_group = db.get_security_group(group_id)
+    account = db.get_one_credential_for_use(security_group.get('account_id'))
+    aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+    aws.delete_security_group_rule(region, group_id, ip_range)
+    db.delete_security_group_rule(group_id, ip_range)
+    return redir
 
 
 @app.route('/sign-in')
@@ -1455,10 +1351,114 @@ def sync_now():
     return flask.redirect(flask.url_for('sync_info'))
 
 
+@app.route('/synchosts', methods=['GET', 'POST'])
+@login_required
+def synchosts():
+    idliststr = flask.request.values.get('instance')
+    region = 'us-west-2'
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        result = aws.sync_hosts(idliststr)
+        idlist = aws.convert_instanceidstr_list(idliststr)
+        instanceslist = []
+        for i in idlist:
+            instance = aws.get_single_instance(region, i)
+            instanceslist.append(instance)
+        if result is None:
+            return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
+        else:
+            return flask.render_template('500.html', error=result)
+
+
+@app.route('/synchosts_az', methods=['GET', 'POST'])
+@login_required
+def synchosts_az():
+    app.logger.info("entered in for updating hosts")
+    idliststr = flask.request.values.get('instance')
+    instance_info = flask.request.values.get('instance_info')
+    id_list = idliststr
+    id_list2 = id_list[1:]
+    id_list3 = id_list2[:-1]
+    id_list4 = id_list3[1:]
+    id_list5 = id_list4[:-1]
+    id_list6 = id_list5.replace("\'", "")
+    id_list8 = id_list6.replace(' ', '')
+    id_list7 = id_list8.split(',')
+    app.logger.info(instance_info)
+    instance_info2 = []
+    for account in db.get_all_credentials_for_use('az'):
+        az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
+                                 account.get('azure_tenant_id'))
+        app.logger.info(idliststr)
+        if '104' in idliststr:
+            app.logger.info("found new cdw image")
+            result = az.sync_hosts_104(idliststr)
+        else:
+            result = az.sync_hosts(idliststr)
+        for i in id_list7:
+            i = "'" + i + "'"
+            instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
+
+        return flask.render_template('postdep_az.html', instance=instance_info2, idlist=id_list7)
+
+
 @app.route('/toolbox')
 @permission_required('admin')
 def toolbox():
     return flask.render_template('toolbox.html')
+
+
+@app.route('/workshop-tools')
+@login_required
+def workshop_tools():
+    return flask.render_template('workshop_tools.html')
+
+
+@app.route('/ws_postdep', methods=['GET', 'POST'])
+@login_required
+def ws_postdep():
+    return flask.render_template('postdep.html')
+
+
+@app.route('/ws_postdep_filter', methods=['GET', 'POST'])
+@login_required
+def ws_postdep_filter():
+    env_group = flask.request.values.get("env_group_name")
+    for account in db.get_all_credentials_for_use('aws'):
+        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+        instance_list = aws.get_instance_of_envgrp(env_group)
+        instances_list2 = []
+        for i in instance_list:
+            result = aws.get_single_instance('us-west-2', i)
+            instances_list2.append(result)
+        return flask.render_template('postdep.html', idlist=str(instance_list), instance=instances_list2)
+
+
+@app.route('/wscreator')
+@login_required
+def wscreator():
+    return flask.render_template('ws_creator.html')
+
+
+@app.route('/wsimage', methods=['GET', 'POST'])
+@login_required
+def wsimage():
+    ws = flask.request.values.get("ws")
+    app.logger.info(ws)
+    if (ws != 'CDW-AZ' and ws != 'CDW104-AZ'):
+        for account in db.get_all_credentials_for_use('aws'):
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            result = aws.workshop_images(ws)
+            wslist = []
+            wsidlist = []
+            for i in result:
+                wslist.append(i)
+                wsidlist.append(i['id'])
+        return flask.render_template('ws_creator.html', ws2=ws, ws=wslist, id=wsidlist)
+    else:
+        app.logger.info("entered in ops-web")
+        app.logger.info(ws)
+        return flask.render_template('ws_creator.html', ws2=ws, ws=['ami1'])
 
 
 def delete_machine(machine_id):
