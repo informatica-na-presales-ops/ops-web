@@ -1046,11 +1046,15 @@ class Database(fort.PostgresDatabase):
 
     # external links
 
-    def add_external_link(self, url: str, description: str):
-        sql = 'insert into external_links (id, url, description) values (%(id)s, %(url)s, %(description)s)'
+    def add_external_link(self, url: str, title: str, description: str):
+        sql = '''
+            insert into external_links (id, url, title, description)
+            values (%(id)s, %(url)s, %(title)s, %(description)s)
+        '''
         params = {
             'id': uuid.uuid4(),
             'url': url,
+            'title': title,
             'description': description
         }
         self.u(sql, params)
@@ -1061,7 +1065,7 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
 
     def get_external_links(self):
-        sql = 'select id, url, description from external_links order by description'
+        sql = 'select id, url, title, description from external_links order by title'
         return self.q(sql)
 
     # settings
@@ -1775,6 +1779,17 @@ class Database(fort.PostgresDatabase):
                 add column is_manager boolean
             ''')
             self.add_schema_version(45)
+        if self.version < 46:
+            self.log.info('Migrating to database schema version 46')
+            self.u('''
+                alter table external_links
+                add column title text
+            ''')
+            self.u('''
+                update external_links
+                set title = description, description = null
+            ''')
+            self.add_schema_version(46)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

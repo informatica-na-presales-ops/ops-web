@@ -452,10 +452,11 @@ def external_links():
 @permission_required('admin')
 def external_links_add():
     url = flask.request.values.get('url')
+    title = flask.request.values.get('title')
     description = flask.request.values.get('description')
-    db.add_external_link(url, description)
-    db.add_log_entry(flask.g.email, f'Added an external link with description {description}')
-    flask.flash(f'Successfully added a new external link, {description!r}', 'success')
+    db.add_external_link(url, title, description)
+    db.add_log_entry(flask.g.email, f'Added an external link with title {title}')
+    flask.flash(f'Successfully added a new external link, {title!r}', 'success')
     return flask.redirect(flask.url_for('external_links'))
 
 

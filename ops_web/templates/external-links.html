@@ -22,14 +22,16 @@
 
     <div class="row pt-3 text-light">
         <div class="col-12">
-            <hr class="border-light">
-            <ul>
             {% for link in g.external_links %}
-                <li>
-                    <p class="lead"><a class="text-light" href="{{ link.url }}" target="_blank">{{ link.description }}</a></p>
-                </li>
+                <div class="card bg-dark border-light mb-2">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ link.title }}</h5>
+                        <a class="card-link stretched-link text-light" href="{{ link.url }}" target="_blank">
+                            {{ link.description if link.description }}
+                        </a>
+                    </div>
+                </div>
             {% endfor %}
-            </ul>
         </div>
     </div>
 
@@ -44,7 +46,11 @@
                     <ul class="list-group pb-3">
                     {% for link in g.external_links %}
                         <li class="list-group-item bg-dark border-light d-flex justify-content-between align-items-center">
-                            <p>{{ link.description }}<br><small class="text-muted">{{ link.url }}</small></p>
+                            <p>
+                                {{ link.title }}<br>
+                                {% if link.description %}<small>{{ link.description }}</small><br>{% endif %}
+                                <small class="text-muted">{{ link.url }}</small>
+                            </p>
                             <form action="{{ url_for('external_links_delete') }}" method="post">
                                 <input type="hidden" name="link-id" value="{{ link.id }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -60,8 +66,12 @@
                             <input type="text" class="form-control" id="add-link-url" name="url" required>
                         </div>
                         <div class="form-group">
+                            <label for="add-link-title">Title</label>
+                            <input type="text" class="form-control" id="add-link-title" name="title" required>
+                        </div>
+                        <div class="form-group">
                             <label for="add-link-description">Description</label>
-                            <input type="text" class="form-control" id="add-link-description" name="description" required>
+                            <input type="text" class="form-control" id="add-link-description" name="description">
                         </div>
                         <button type="submit" class="btn btn-outline-success">
                             <span class="oi oi-plus"></span>
