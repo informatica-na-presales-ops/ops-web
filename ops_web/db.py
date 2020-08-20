@@ -166,6 +166,14 @@ class Database(fort.PostgresDatabase):
     def has_permission(self, email: str, permission: str) -> bool:
         return permission in self.get_permissions(email)
 
+    def is_manager(self, email: str) -> bool:
+        sql = 'select is_manager from employees where employee_email = %(email)s'
+        params = {'email': email}
+        val = self.q_val(sql, params)
+        if val is None:
+            return False
+        return val
+
     # logging
 
     def add_log_entry(self, actor: str, action: str):

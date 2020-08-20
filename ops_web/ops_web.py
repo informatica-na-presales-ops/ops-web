@@ -103,6 +103,7 @@ def load_request_data():
 def index():
     if flask.g.email is None:
         return flask.render_template('sign-in.html')
+    flask.g.is_manager = db.is_manager(flask.g.email)
     return flask.render_template('index.html')
 
 
@@ -204,6 +205,7 @@ def admin_users():
         'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
                   'cloud credentials'),
         'cert-approval': 'receive notifications of and approve new ecosystem certifications',
+        'manager': 'access tools for managers (use this permission if email addresses do not match)',
         'sc-assignments': 'view and manage sales consultant assignments',
         'survey-admin': 'view all opportunity debrief surveys'
     }
@@ -960,6 +962,13 @@ def machine_stop():
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
+
+
+@app.route('/manager-toolbox')
+@login_required
+def manager_toolbox():
+    flask.g.is_manager = db.is_manager(flask.g.email)
+    return flask.render_template('manager-toolbox.html')
 
 
 @app.route('/op-debrief')

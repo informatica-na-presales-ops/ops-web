@@ -1,0 +1,56 @@
+{% extends 'one-up.html' %}
+
+{% block title %}Manager toolbox / {{ super() }}{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <h1>Manager toolbox</h1>
+        </div>
+    </div>
+
+    {% if 'manager' in g.permissions or g.is_manager %}
+
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <div class="card bg-dark border-light mb-2">
+                <div class="card-body">
+                    <h5 class="card-title">Global Presales &mdash; Return to Travel Protocol</h5>
+                    <a class="card-link stretched-link text-light" target="_blank"
+                       href="https://forms.office.com/Pages/ResponsePage.aspx?id=PvQ4Jn33x0-rknt1O3h2_Wk62o_me0ZAoQB0oq415h5UMlg0QlAyTzFaMUJDRTNJM1VXTldKODhaUiQlQCN0PWcu">
+                        Presales managers should use this form to provide details on travel requests during the
+                        global COVID-19 pandemic. All submissions will be reviewed by Presales leaders in your
+                        region and approvals will be granted via email to the Presales manager.
+                    </a>
+                </div>
+            </div>
+            <div class="card bg-dark border-light mb-2">
+                <div class="card-body">
+                    <h5 class="card-title">Global Quarterly Presales Recognition Program Award Nomination Form</h5>
+                    <a class="card-link stretched-link text-light" target="_blank"
+                       href="https://forms.office.com/Pages/ResponsePage.aspx?id=PvQ4Jn33x0-rknt1O3h2_Wk62o_me0ZAoQB0oq415h5UMTQ1Q0YwODRRMVIzNFJERUFWWThaOExYQyQlQCN0PWcu">
+                        Presales managers should use this form to provide details of extraordinary efforts of
+                        Presales representatives for the quarter. Once completed, global Presales leaders will
+                        review the submissions and choose the award recipients.
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <p class="lead">Either you are not a manager, or Ops Web does not recognize your email address.</p>
+            <p>
+                You are signed in as <code>{{ g.email }}</code>. If this does not match your primary email address in
+                Workday, contact
+                <a href="mailto:{{ g.config.support_email }}?subject=Help with {{ request.url }}">{{ g.config.support_email }}</a>
+                to gain access to this page.
+            </p>
+        </div>
+    </div>
+
+    {% endif %}
+{% endblock %}

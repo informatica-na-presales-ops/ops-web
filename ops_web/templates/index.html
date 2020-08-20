@@ -127,6 +127,19 @@
             </div>
         </div>
 
+        {% if 'manager' in g.permissions or g.is_manager %}
+        <div class="col pb-3 filter-candidate collapse show" data-filter-value="manager toolbox">
+            <div class="card h-100 bg-dark border-light">
+                <div class="card-body">
+                    <h5 class="card-title">Manager toolbox</h5>
+                    <a href="{{ url_for('manager_toolbox') }}" class="card-link stretched-link text-light">
+                        Miscellaneous tools specifically for managers.
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% if 'admin' in g.permissions %}
             <div class="col pb-3 filter-candidate collapse show" data-filter-value="toolbox">
                 <div class="card h-100 bg-dark border-light">
