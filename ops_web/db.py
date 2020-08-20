@@ -1766,6 +1766,15 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(44)
+        if self.version < 45:
+            self.log.info('Migrating to database schema version 45')
+            self.u('''
+                alter table employees
+                add column employee_status text,
+                add column region text,
+                add column is_manager boolean
+            ''')
+            self.add_schema_version(45)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
