@@ -693,10 +693,10 @@ class Database(fort.PostgresDatabase):
     def get_rep_sc_pairs(self):
         sql = '''
             select
-                geo, area, sub_area, region, sub_region, territory_name, sales_rep rep_name,
+                r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name, r.sales_rep rep_name,
                 coalesce(e.employee_name, '') sc_name, e.employee_id sc_employee_id,
                 lower(concat_ws(
-                    ' ', geo, area, sub_area, region, sub_region, territory_name, sales_rep,
+                    ' ', r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name, r.sales_rep,
                     coalesce(e.employee_name, '')
                 )) filter_value
             from sales_reps r
@@ -1602,6 +1602,7 @@ class Database(fort.PostgresDatabase):
                     sc_employee_id text
                 )
             ''')
+            # noinspection SqlResolve
             self.u('''
                 insert into sc_rep_assignments
                 select r.territory_name rep_territory, c.employee_id sc_employee_id
@@ -1619,6 +1620,7 @@ class Database(fort.PostgresDatabase):
                 alter table sales_consultants
                 drop constraint sales_consultants_pkey
             ''')
+            # noinspection SqlResolve
             self.u('''
                 alter table sales_consultants
                 add constraint sales_consultants_pkey primary key (employee_id)
@@ -1765,6 +1767,7 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(42)
         if self.version < 43:
             self.log.info('Migrating to database schema version 43')
+            # noinspection SqlResolve
             self.u('''
                 drop table cost_tracking, sales_consultants
             ''')
@@ -1793,6 +1796,7 @@ class Database(fort.PostgresDatabase):
                 alter table external_links
                 add column title text
             ''')
+            # noinspection SqlWithoutWhere
             self.u('''
                 update external_links
                 set title = description, description = null
