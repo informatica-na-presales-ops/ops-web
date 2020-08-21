@@ -105,6 +105,7 @@
             </div>
         </div>
 
+        {% if 'cert-approval' in g.permissions %}
         <div class="col pb-3 filter-candidate collapse show" data-filter-value="ecosystem certification">
             <div class="card h-100 bg-dark border-light">
                 <div class="card-body">
@@ -115,6 +116,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <div class="col pb-3 filter-candidate collapse show" data-filter-value="external links">
             <div class="card h-100 bg-dark border-light">
