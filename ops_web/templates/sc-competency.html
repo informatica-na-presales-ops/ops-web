@@ -1,0 +1,119 @@
+{% extends 'one-up.html' %}
+
+{% block title %}SC competency / {{ super() }}{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <h1>SC competency</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <div class="form-inline">
+                <label for="select-sc" class="sr-only">Choose an SC</label>
+                <select class="custom-select mr-2 mb-2" id="select-sc">
+                    <option hidden disabled selected>-- choose an SC --</option>
+                    <option>John Doe</option>
+                </select>
+                <label for="sc-current-position" class="sr-only">Current position</label>
+                <input type="text" readonly class="form-control mr-2 mb-2" id="sc-current-position">
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-3">
+            <nav class="nav nav-pills flex-column">
+                <a class="nav-link text-light active" data-toggle="pill" href="#technical-acumen">Technical acumen</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#domain-knowledge">Domain knowledge</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#discovery-and-qualification">Discovery and qualification</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#teamwork-and-collaboration">Teamwork and collaboration</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#leadership-skills">Leadership skills</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#communicative">Communicative</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#planning-and-prioritization">Planning and prioritization</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#customer-advocacy">Customer advocacy</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#attitude">Attitude</a>
+                <a class="nav-link text-light" data-toggle="pill" href="#corporate-citizenship">Corporate citizenship</a>
+            </nav>
+        </div>
+        <div class="col">
+            <div class="tab-content">
+                <div class="tab-pane show active" id="technical-acumen">
+                    <h2>Technical acumen</h2>
+                    <p>
+                        Grasp the knowledge, experience, and desire needed to identify, qualify, and evaluate/scope the
+                        technical aspects of an opportunity and proficient in the CDW/DL journey. They are passionate
+                        towards technology, past, present, and future. They drive/influence conversations supporting
+                        technology to provide a solution. Independence and solution depth are primary factors to what
+                        drive this competency.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-2" name="technical-acumen">
+                        <label class="custom-control-label" for="technical-acumen-2">
+                            <strong>SC (2)</strong><br>
+                            Proven delivery presenting the core Informatica platform overview.<br>
+                            Successfully achieves Presales onboarding certification.<br>
+                            Requires SME or peer support in order to deliver solution journey demonstrations.<br>
+                            Can perform most basic day to day tasks of role but may require additional coaching  or
+                            assistance from peers and/or management. Tasks include but are not limited to orchestrating
+                            POCs, support workshops, responding to RFP/RFIs, performing high level discovery of core
+                            integration and cloud solutions.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-3" name="technical-acumen">
+                        <label class="custom-control-label" for="technical-acumen-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Proven demonstration and certification in one Informatica journey area (e.g. Informatica
+                            Cloud DW/DL).<br>
+                            Can independently orchestrate the lifecycle of core platform integration and governance
+                            opportunities, including detailed technical discovery, orchestrating validation events such
+                            as multi-product POCs, leading workshops and knowledgeable on when and which SMEs and
+                            specialists to bring in.<br>
+                            Proven delivery of specific standard product demonstrations around Cloud DI and data
+                            governance.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-4" name="technical-acumen">
+                        <label class="custom-control-label" for="technical-acumen-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Demonstration and certification in at least two Informatica journey areas (e.g. Informatica
+                            Cloud DW/DL & Data Governance).<br>
+                            Effectively whiteboard Informatica platform for multi-product opportunities.<br>
+                            Can successfully demonstrate at least two separate Informatica products with some
+                            customization.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-5" name="technical-acumen">
+                        <label class="custom-control-label" for="technical-acumen-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Deliver Informatica solution architecture and demonstration that can address both an
+                            executive level as well as to an technical level audience that spans multiple products
+                            within the Informatica portfolio.<br>
+                            Proven thought leadership independence and professionalism in all interactions with
+                            customers peers and product management.<br>
+                            Can whiteboard the value of Informatica within the construct of a larger Ecosystem
+                            landscape.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="domain-knowledge"><h2>Domain knowledge</h2></div>
+                <div class="tab-pane" id="discovery-and-qualification"><h2>Discovery and qualification</h2></div>
+                <div class="tab-pane" id="teamwork-and-collaboration"><h2>Teamwork and collaboration</h2></div>
+                <div class="tab-pane" id="leadership-skills"><h2>Leadership skills</h2></div>
+                <div class="tab-pane" id="communicative"><h2>Communicative</h2></div>
+                <div class="tab-pane" id="planning-and-prioritization"><h2>Planning and prioritization</h2></div>
+                <div class="tab-pane" id="customer-advocacy"><h2>Customer advocacy</h2></div>
+                <div class="tab-pane" id="attitude"><h2>Attitude</h2></div>
+                <div class="tab-pane" id="corporate-citizenship"><h2>Corporate citizenship</h2></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

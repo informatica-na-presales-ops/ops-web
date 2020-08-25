@@ -1232,6 +1232,12 @@ def sc_assignments_sales_reps_xlsx():
     return response
 
 
+@app.route('/sc-competency')
+@login_required
+def sc_competency():
+    return flask.render_template('sc-competency.html')
+
+
 @app.route('/security-groups')
 @login_required
 def security_groups():
