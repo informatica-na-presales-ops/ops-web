@@ -971,6 +971,19 @@ def manager_toolbox():
     return flask.render_template('manager-toolbox.html')
 
 
+@app.route('/monolith/request')
+@login_required
+def monolith_request():
+    return flask.render_template('monolith-request.html')
+
+
+@app.route('/monolith/request/submit', methods=['POST'])
+@login_required
+def monolith_request_submit():
+    flask.flash('Thank you for submitting this request', 'success')
+    return flask.redirect(flask.url_for('monolith_request'))
+
+
 @app.route('/op-debrief')
 @login_required
 def op_debrief():

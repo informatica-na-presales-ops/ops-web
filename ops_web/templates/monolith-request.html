@@ -1,0 +1,108 @@
+{% extends 'one-up.html' %}
+
+{% block title %}Monolith request / {{ super() }}{% endblock %}
+
+{% block main_content %}
+
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <h1>Monolith request</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+            <form action="{{ url_for('monolith_request_submit') }}" method="post">
+                <div class="form-group">
+                    <h5>What type of request do you want to make?</h5>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="request-type-system-down"
+                               name="request-type" value="system-down" required>
+                        <label class="custom-control-label" for="request-type-system-down">System down</label>
+                    </div>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="request-type-bug"
+                               name="request-type" value="bug" required>
+                        <label class="custom-control-label" for="request-type-bug">Bug</label>
+                    </div>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="request-type-change-request"
+                               name="request-type" value="change-request" required>
+                        <label class="custom-control-label" for="request-type-change-request">Feature or change request</label>
+                    </div>
+                </div>
+                <div class="collapse" id="envelope-region">
+                    <div class="form-group">
+                        <h5>What region is affected?</h5>
+                        <div class="custom-control custom-radio">
+                            <input class="custom-control-input" type="radio" id="region-americas" name="region" value="americas">
+                            <label class="custom-control-label" for="region-americas">Americas</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            <input class="custom-control-input" type="radio" id="region-apac" name="region" value="apac">
+                            <label class="custom-control-label" for="region-apac">Asia Pacific</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            <input class="custom-control-input" type="radio" id="region-emea" name="region" value="emea">
+                            <label class="custom-control-label" for="region-emea">Europe, Middle East, &amp; Africa</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            <input class="custom-control-input" type="radio" id="region-japan" name="region" value="japan">
+                            <label class="custom-control-label" for="region-japan">Japan</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="collapse" id="envelope-bug">
+                    <div class="form-group">
+                        <h5>What type of bug are you reporting?</h5>
+                        <div class="custom-control custom-radio">
+                            <input class="custom-control-input" type="radio" id="bug-type-demo" name="bug-type" value="demo">
+                            <label class="custom-control-label" for="bug-type-demo">A bug in the demo content</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            <input class="custom-control-input" type="radio" id="bug-type-software" name="bug-type" value="software">
+                            <label class="custom-control-label" for="bug-type-software">A bug in the Informatica software</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <h5><label for="bug-steps-to-reproduce">What steps did you take to trigger the bug?</label></h5>
+                        <textarea class="form-control" id="bug-steps-to-reproduce" name="bug-steps-to-reproduce"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <h5><label for="bug-expectation">What did you expect to happen?</label></h5>
+                        <textarea class="form-control" id="bug-expectation" name="bug-expectation"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <h5><label for="bug-actual">What actually happened?</label></h5>
+                        <textarea class="form-control" id="bug-actual" name="bug-acual"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <h5><label for="bug-when">When did this bug happen?</label></h5>
+                        <input class="form-control" type="text" id="bug-when" name="bug-when">
+                    </div>
+                </div>
+                <div class="collapse" id="envelope-change-request">
+                    <div class="form-group">
+                        <h5><label for="feature-description">What feature or change are you requesting?</label></h5>
+                        <input class="form-control" type="text" id="feature-description" name="feature-description">
+                    </div>
+                    <div class="form-group">
+                        <h5><label for="business-case">What is the business case for this request?</label></h5>
+                        <input class="form-control" type="text" id="business-case" name="business-case">
+                    </div>
+                    <div class="form-group">
+                        <h5><label for="affected-products">What products are affected by this request?</label></h5>
+                        <input class="form-control" type="text" id="affected-products" name="affected-products">
+                    </div>
+                </div>
+                <button class="btn btn-outline-success" type="submit">Submit request</button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='monolith-request.js') }}"></script>
+{% endblock %}
