@@ -90,6 +90,16 @@
                 <div class="card-body collapse" id="zendesk-integration-form">
                     <form action="{{ url_for('admin_settings_zendesk') }}" method="post">
                         <div class="form-group">
+                            <label for="zendesk-company">Zendesk company</label>
+                            <input type="text" class="form-control" id="zendesk-company" name="zendesk-company"
+                                   value="{{ g.settings.zendesk_company }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="zendesk-email-address">Zendesk email address</label>
+                            <input type="text" class="form-control" id="zendesk-email-address" name="zendesk-email-address"
+                                   value="{{ g.settings.zendesk_email_address }}">
+                        </div>
+                        <div class="form-group">
                             <label for="zendesk-api-token">Zendesk API token</label>
                             <input type="text" class="form-control" id="zendesk-api-token" name="zendesk-api-token"
                                    value="{{ g.settings.zendesk_api_token }}">

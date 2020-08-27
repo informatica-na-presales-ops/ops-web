@@ -192,9 +192,12 @@ def admin_settings_display():
 @permission_required('admin')
 def admin_settings_zendesk():
     settings: ops_web.db.Settings = flask.g.settings
-    settings.zendesk_widget_key = flask.request.values.get('zendesk-widget-key', '')
     settings.zendesk_api_token = flask.request.values.get('zendesk-api-token', '')
+    settings.zendesk_company = flask.request.values.get('zendesk-company', '')
+    settings.zendesk_email_address = flask.request.values.get('zendesk-email-address', '')
+    settings.zendesk_widget_key = flask.request.values.get('zendesk-widget-key', '')
     db.add_log_entry(flask.g.email, 'Updated Zendesk integration settings')
+    flask.flash('You successfully updated the Zendesk integration settings', 'success')
     return flask.redirect(flask.url_for('admin_settings'))
 
 

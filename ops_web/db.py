@@ -113,6 +113,24 @@ class Settings(dict):
         self.db.set_setting('zendesk-api-token', value)
 
     @property
+    def zendesk_company(self):
+        return self.get('zendesk-company', '')
+
+    @zendesk_company.setter
+    def zendesk_company(self, value):
+        self.update({'zendesk-company': value})
+        self.db.set_setting('zendesk-company', value)
+
+    @property
+    def zendesk_email_address(self):
+        return self.get('zendesk-email-address', '')
+
+    @zendesk_email_address.setter
+    def zendesk_email_address(self, value):
+        self.update({'zendesk-email-address': value})
+        self.db.set_setting('zendesk-email-address', '')
+
+    @property
     def zendesk_widget_key(self):
         return self.get('zendesk-widget-key', '')
 
