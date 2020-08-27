@@ -90,6 +90,11 @@
                 <div class="card-body collapse" id="zendesk-integration-form">
                     <form action="{{ url_for('admin_settings_zendesk') }}" method="post">
                         <div class="form-group">
+                            <label for="zendesk-api-token">Zendesk API token</label>
+                            <input type="text" class="form-control" id="zendesk-api-token" name="zendesk-api-token"
+                                   value="{{ g.settings.zendesk_api_token }}">
+                        </div>
+                        <div class="form-group">
                             <label for="zendesk-widget-key">Zendesk widget key</label>
                             <input type="text" class="form-control" id="zendesk-widget-key" name="zendesk-widget-key"
                                    value="{{ g.settings.zendesk_widget_key }}">

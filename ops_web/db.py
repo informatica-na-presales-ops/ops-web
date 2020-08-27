@@ -104,6 +104,15 @@ class Settings(dict):
         self.db.set_setting('show-security-groups-link', str_value)
 
     @property
+    def zendesk_api_token(self):
+        return self.get('zendesk-api-token', '')
+
+    @zendesk_api_token.setter
+    def zendesk_api_token(self, value):
+        self.update({'zendesk-api-token': value})
+        self.db.set_setting('zendesk-api-token', value)
+
+    @property
     def zendesk_widget_key(self):
         return self.get('zendesk-widget-key', '')
 
