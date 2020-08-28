@@ -1638,12 +1638,15 @@ def sync_machines():
     gcp_start = datetime.datetime.utcnow()
     if 'gcp' in config.clouds_to_sync:
         db.pre_sync('gcp')
-        for vm in ops_web.gcp.get_all_virtual_machines():
-            vm['account_id'] = None
-            db.add_machine(vm)
-        for image in ops_web.gcp.get_all_images():
-            image['account_id'] = None
-            db.add_image(image)
+        for account in db.get_all_credentials_for_use('gcp'):
+            gcp = ops_web.gcp.GCPClient(config, account.get('username'), account.get('password'))
+            gcp.get_all_instances()
+        # for vm in ops_web.gcp.get_all_virtual_machines():
+        #     vm['account_id'] = None
+        #     db.add_machine(vm)
+        # for image in ops_web.gcp.get_all_images():
+        #     image['account_id'] = None
+        #     db.add_image(image)
         db.post_sync('gcp')
     else:
         app.logger.info(f'Skipping GCP because CLOUDS_TO_SYNC={config.clouds_to_sync}')

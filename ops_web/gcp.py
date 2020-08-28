@@ -1,15 +1,37 @@
 import datetime
 import google.auth.exceptions
+import google.oauth2.service_account
 import googleapiclient.discovery
+import json
 import logging
 import ops_web.config
 import time
 
 log = logging.getLogger(__name__)
 
-config = ops_web.config.Config()
 
-PROJECT_ID = config.gcp_project_id
+class GCPClient:
+    def __init__(self, config: ops_web.config.Config, project_id: str, service_account_info: str):
+        self.config = config
+        self.project_id = project_id
+        self.service_account_info = json.loads(service_account_info)
+        self.cred = google.oauth2.service_account.Credentials.from_service_account_info(self.service_account_info)
+        self.compute = googleapiclient.discovery.build('compute', 'v1', credentials=self.cred, cache_discovery=False)
+
+    def get_all_instances(self):
+        log.info(f'Getting all compute instances for GCP project {self.project_id}')
+        result = self.compute.instances().aggregatedList(project=self.project_id).execute()
+        for zone_name, zone_data in result.get('items', {}).items():
+            if 'instances' in zone_data:
+                for instance in zone_data.get('instances'):
+                    log.debug(instance)
+            else:
+                log.info(f'No compute instances in {zone_name}')
+
+
+c = ops_web.config.Config()
+
+PROJECT_ID = c.gcp_project_id
 
 try:
     compute = googleapiclient.discovery.build('compute', 'v1', cache_discovery=False)

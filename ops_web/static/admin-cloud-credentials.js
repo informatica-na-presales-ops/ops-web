@@ -5,12 +5,16 @@ function set_cloud_credential_labels () {
             document.querySelectorAll('.password-label').forEach(function (pl) {
                 pl.textContent = cr.dataset.passwordLabel;
             });
-            if (cr.id === 'radio-cloud-aws') {
-                document.getElementById('div-azure-tenant-id').classList.remove('show');
-                document.getElementById('cloud-credential-azure-tenant-id').required = false;
-            } else {
-                document.getElementById('div-azure-tenant-id').classList.add('show');
-                document.getElementById('cloud-credential-azure-tenant-id').required = true;
+            switch (cr.id) {
+                case 'radio-cloud-aws':
+                case 'radio-cloud-gcp':
+                    document.getElementById('div-azure-tenant-id').classList.remove('show');
+                    document.getElementById('cloud-credential-azure-tenant-id').required = false;
+                    break;
+                case 'radio-cloud-az':
+                    document.getElementById('div-azure-tenant-id').classList.add('show');
+                    document.getElementById('cloud-credential-azure-tenant-id').required = true;
+                    break;
             }
         }
     });

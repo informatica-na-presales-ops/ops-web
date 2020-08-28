@@ -245,7 +245,7 @@ class Database(fort.PostgresDatabase):
             values (%(id)s, %(cloud)s, %(description)s, %(username)s, %(password)s, %(azure_tenant_id)s)
         '''
         params['id'] = uuid.uuid4()
-        if params.get('cloud') == 'aws':
+        if params.get('cloud') in ('aws', 'gcp'):
             params['azure_tenant_id'] = 'n/a'
         self.u(sql, params)
         return params['id']
