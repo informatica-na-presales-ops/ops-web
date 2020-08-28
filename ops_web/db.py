@@ -64,6 +64,15 @@ class Settings(dict):
         self.db.set_setting('image-name-display-length', str(value))
 
     @property
+    def monolith_support_group_id(self):
+        return int(self.get('monolith-support-group-id', 0))
+
+    @monolith_support_group_id.setter
+    def monolith_support_group_id(self, value):
+        self.update({'monolith-support-group-id': str(value)})
+        self.db.set_setting('monolith-support-group-id', str(value))
+
+    @property
     def show_account_for_images(self) -> bool:
         return self.get('show-account-for-images', 'false') == 'true'
 

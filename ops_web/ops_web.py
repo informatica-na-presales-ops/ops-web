@@ -192,6 +192,7 @@ def admin_settings_display():
 @permission_required('admin')
 def admin_settings_zendesk():
     settings: ops_web.db.Settings = flask.g.settings
+    settings.monolith_support_group_id = int(flask.request.values.get('monolith-support-group-id', 0))
     settings.zendesk_api_token = flask.request.values.get('zendesk-api-token', '')
     settings.zendesk_company = flask.request.values.get('zendesk-company', '')
     settings.zendesk_email_address = flask.request.values.get('zendesk-email-address', '')
