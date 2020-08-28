@@ -128,7 +128,7 @@ class Settings(dict):
     @zendesk_email_address.setter
     def zendesk_email_address(self, value):
         self.update({'zendesk-email-address': value})
-        self.db.set_setting('zendesk-email-address', '')
+        self.db.set_setting('zendesk-email-address', value)
 
     @property
     def zendesk_widget_key(self):
