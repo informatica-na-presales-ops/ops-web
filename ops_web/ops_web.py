@@ -985,6 +985,8 @@ def monolith_request():
 @app.route('/monolith/request/submit', methods=['POST'])
 @login_required
 def monolith_request_submit():
+    tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
+    scheduler.add_job(ops_web.tasks.create_zendesk_ticket, args=[tc, flask.g.email, flask.request.values])
     flask.flash('Thank you for submitting this request', 'success')
     return flask.redirect(flask.url_for('monolith_request'))
 

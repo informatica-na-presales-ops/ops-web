@@ -7,6 +7,7 @@ import ops_web.aws
 import ops_web.config
 import ops_web.db
 import requests
+import requests.auth
 import time
 import urllib.parse
 
@@ -24,6 +25,99 @@ class TaskContext:
         self.apm = apm
         self.config = config
         self.db = db
+
+
+def create_zendesk_ticket(tc: TaskContext, requester, form_data):
+    tc.apm.begin_transaction('task')
+    task_name = 'create-zendesk-ticket'
+    log.info('Creating a Zendesk ticket')
+
+    settings = ops_web.db.Settings(tc.db)
+
+    if not settings.monolith_support_group_id:
+        log.warning('Cannot create a ticket, monolith-support-group-id is not set')
+        tc.apm.end_transaction(task_name)
+        return
+
+    if not settings.zendesk_api_token:
+        log.warning('Cannot create a ticket, zendesk-api-token is not set')
+        tc.apm.end_transaction(task_name)
+        return
+
+    if not settings.zendesk_email_address:
+        log.warning('Cannot create a ticket, zendesk-email-address is not set')
+        tc.apm.end_transaction(task_name)
+        return
+
+    if not settings.zendesk_company:
+        log.warning('Cannot create a ticket, zendesk-company is not set')
+        tc.apm.end_transaction(task_name)
+        return
+
+    ticket_data = {
+        'comment': {
+            'body': 'This is a test.'
+        },
+        'custom_fields': [
+            {'id': 455056, 'value': 'project_monolith'},  # service type
+            {'id': 455040, 'value': 'n/a'},  # sfdc account number
+            {'id': 455041, 'value': 'n/a'},  # sfdc opportunity number
+            {'id': 20655668, 'value': 'na'}  # primary product
+        ],
+        'group_id': settings.monolith_support_group_id
+    }
+
+    auth = requests.auth.HTTPBasicAuth(f'{settings.zendesk_email_address}/token', settings.zendesk_api_token)
+
+    # find this user in zendesk
+    query = {'query': requester}
+    url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users/search.json?{urllib.parse.urlencode(query)}'
+    response = requests.get(url, auth=auth)
+    response.raise_for_status()
+    users = response.json().get('users')
+    if users:
+        ticket_data.update({'requester_id': users[0].get('id')})
+
+    ctx = form_data.to_dict()
+    ctx['requester'] = requester
+
+    with tc.app.app_context():
+        if form_data.get('request-type') == 'system-down':
+            region = form_data.get('region')
+            ticket_data.update({
+                'subject': f'Monolith is down in {region} region',
+                'comment': {
+                    'html_body': f'{requester} reports that Monolith is down in {region} region.'
+                }
+            })
+        elif form_data.get('request-type') == 'bug':
+            region = form_data.get('region')
+            ticket_data.update({
+                'subject': f'Bug report for Monolith in {region} region',
+                'comment': {
+                    'html_body': flask.render_template('zendesk-tickets/monolith-bug.html', ctx=ctx)
+                }
+            })
+        elif form_data.get('request-type') == 'change-request':
+            ticket_data.update({
+                'subject': 'Change request for Monolith',
+                'comment': {
+                    'html_body': flask.render_template('zendesk-tickets/monolith-change-request.html', ctx=ctx)
+                }
+            })
+        else:
+            log.warning('Unknown request type')
+            tc.apm.end_transaction(task_name)
+            return
+
+    url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/tickets.json'
+    json = {'ticket': ticket_data}
+    response = requests.post(url, auth=auth, json=json)
+    response.raise_for_status()
+    ticket_id = response.json().get('ticket', {}).get('id')
+    log.debug(f'Created a Zendesk ticket: {ticket_id}')
+
+    tc.apm.end_transaction(task_name)
 
 
 def get_cost_data(tc: TaskContext):
