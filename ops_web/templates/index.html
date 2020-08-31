@@ -142,6 +142,17 @@
         </div>
         {% endif %}
 
+        <div class="col pb-3 filter-candidate collapse show" data-filter-value="monolith request">
+            <div class="card h-100 bg-dark border-light">
+                <div class="card-body">
+                    <h5 class="card-title">Monolith request</h5>
+                    <a href="{{ url_for('monolith_request') }}" class="card-link stretched-link text-light">
+                        Report a problem with or request a change to the Monolith demo system.
+                    </a>
+                </div>
+            </div>
+        </div>
+
         {% if 'admin' in g.permissions %}
             <div class="col pb-3 filter-candidate collapse show" data-filter-value="toolbox">
                 <div class="card h-100 bg-dark border-light">
