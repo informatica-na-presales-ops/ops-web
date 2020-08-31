@@ -252,7 +252,8 @@ def authorize():
     app.logger.debug(claim)
     state = flask.request.values.get('state')
     if state is None or state != flask.session.get('state'):
-        raise ValueError('State does not match')
+        app.logger.info('Authorization failure due to state mismatch')
+        return flask.redirect(flask.url_for('index'))
     flask.session.pop('state')
 
     email = claim.get('email').lower()
