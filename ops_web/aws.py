@@ -566,7 +566,7 @@ class AWSClient:
                 )
                 return response
             except:
-                return "Unsuccessful"
+                return "launch_error"
 
     def delete_image(self, region: str, image_id: str):
         log.debug(f'Delete image: {image_id}')

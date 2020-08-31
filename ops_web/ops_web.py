@@ -784,6 +784,8 @@ def machine_create():
                         return flask.render_template('Default_launchinstance.html', region=region, image_id=image_id,
                                                      name=name,
                                                      owner=owner, environment=environment, vpc=vpc)
+                    elif response == 'launch_error':
+                        return flask.render_template('500.html', error = "Error while creating the instance")
 
                     else:
                         instance = aws.get_single_instance(region, response[0].id)
