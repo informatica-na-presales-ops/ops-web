@@ -976,6 +976,11 @@ def manager_toolbox():
     return flask.render_template('manager-toolbox.html')
 
 
+@app.route('/monolith')
+def monolith():
+    return flask.redirect(flask.url_for('monolith_request'))
+
+
 @app.route('/monolith/request')
 @login_required
 def monolith_request():
