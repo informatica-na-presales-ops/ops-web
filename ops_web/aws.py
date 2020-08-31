@@ -528,7 +528,10 @@ class AWSClient:
                 security_group_ids = ['sg-ffaf0082', 'sg-4dae0130']
                 SubnetId = 'subnet-c5f77ba3'
             else:
-                SubnetId = instance.subnet_id
+                if(instance.subnet_id == 'subnet-e8db76a0'):
+                    SubnetId = 'subnet-e7aefabc'
+                else:
+                    SubnetId = instance.subnet_id
                 security_group_ids = []
                 security_groups = instance.security_groups
                 for i in security_groups:
