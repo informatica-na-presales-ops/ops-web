@@ -19,17 +19,17 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2.3.2
-      - name: Log in to the GitHub registry
-        run: docker login --password "${{ github.token }}" --username "${{ github.actor }}" docker.pkg.github.com
       - name: Build the container image
-        run: docker image build --file Dockerfile --tag ops-web .
-      - name: Tag and push the latest image
+        uses: docker/build-push-action@v1.1.0
+        with:
+          repository: ops-web
+      - name: Tag and push the image
         if: github.event_name == 'push' || github.event_name == 'release'
-        run: |
-          docker image tag ops-web docker.pkg.github.com/${{ github.repository }}/ops-web:latest
-          docker image push docker.pkg.github.com/${{ github.repository }}/ops-web:latest
-      - name: Tag and push the release image
-        if: github.event_name == 'release'
-        run: |
-          docker image tag ops-web docker.pkg.github.com/${{ github.repository }}/ops-web:${{ github.event.release.tag_name }}
-          docker image push docker.pkg.github.com/${{ github.repository }}/ops-web:${{ github.event.release.tag_name }}
+        uses: docker/build-push-action@v1.1.0
+        with:
+          repository: ${{ github.repository }}/ops-web
+          registry: docker.pkg.github.com
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+          tag_with_ref: true
+          add_git_labels: true
