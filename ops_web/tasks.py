@@ -77,6 +77,20 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
     users = response.json().get('users')
     if users:
         ticket_data.update({'requester_id': users[0].get('id')})
+    else:
+        # create this user in zendesk
+        url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users.json'
+        json = {
+            'user': {
+                'email': requester,
+                'name': requester.split('@')[0],
+                'verified': True
+            }
+        }
+        response = requests.post(url, json=json, auth=auth)
+        response.raise_for_status()
+        user = response.json().get('user')
+        ticket_data.update({'requester_id': user.get('id')})
 
     ctx = form_data.to_dict()
     ctx['requester'] = requester
