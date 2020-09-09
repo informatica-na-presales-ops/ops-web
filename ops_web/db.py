@@ -813,6 +813,51 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
+    # sc competency
+
+    def get_employees_for_manager(self, manager_email: str):
+        sql = '''
+            select
+                e.employee_id, e.employee_name, s.score_timestamp,
+                s.technical_acumen, s.domain_knowledge, s.discovery_and_qualification, s.teamwork_and_collaboration,
+                s.leadership_skills, s.communicative,s.planning_and_prioritization, s.customer_advocacy, s.attitude,
+                s.corporate_citizenship
+            from employees e
+            join employees m on m.employee_name = e.manager_name
+            left join (
+                select sc_employee_id, max(score_timestamp) score_timestamp
+                from sc_competency_scores
+                group by sc_employee_id
+            ) latest_scores on latest_scores.sc_employee_id = e.employee_id
+            left join sc_competency_scores s on s.sc_employee_id = latest_scores.sc_employee_id
+                and s.score_timestamp = latest_scores.score_timestamp
+            where e.is_sc is true
+            and e.visible is true
+            and m.employee_email = %(manager_email)s
+            order by e.employee_name
+        '''
+        params = {'manager_email': manager_email}
+        return self.q(sql, params)
+
+    def add_sc_competency_score(self, params: Dict):
+        sql = '''
+            insert into sc_competency_scores (
+                id, sc_employee_id, score_timestamp, technical_acumen, domain_knowledge, discovery_and_qualification,
+                teamwork_and_collaboration, leadership_skills, communicative, planning_and_prioritization,
+                customer_advocacy, attitude, corporate_citizenship
+            ) values (
+                %(id)s, %(sc_employee_id)s, %(score_timestamp)s, %(technical_acumen)s, %(domain_knowledge)s,
+                %(discovery_and_qualification)s, %(teamwork_and_collaboration)s, %(leadership_skills)s,
+                %(communicative)s, %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s,
+                %(corporate_citizenship)s
+            )
+        '''
+        params.update({
+            'id': uuid.uuid4(),
+            'score_timestamp': datetime.datetime.utcnow()
+        })
+        self.u(sql, params)
+
     # opportunity debrief surveys
 
     def add_survey(self, opportunity_number: str, email: str, role: str) -> uuid.UUID:
@@ -1219,7 +1264,8 @@ class Database(fort.PostgresDatabase):
         for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'ecosystem_certification', 'employees',
                       'environment_usage_events', 'external_links', 'images', 'log_entries', 'op_debrief_roles',
                       'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
-                      'sc_rep_assignments', 'schema_versions', 'security_group', 'settings', 'sf_opportunities',
+                      'sc_competency_scores', 'sc_ra_assignments', 'sc_rep_assignments', 'schema_versions',
+                      'security_group', 'security_group_rules', 'settings', 'sf_opportunities',
                       'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
             self.u(f'drop table if exists {table} cascade ')
 
@@ -1832,6 +1878,26 @@ class Database(fort.PostgresDatabase):
                 set title = description, description = null
             ''')
             self.add_schema_version(46)
+        if self.version < 47:
+            self.log.info('Migrating to database schema version 47')
+            self.u('''
+                create table sc_competency_scores (
+                    id uuid primary key,
+                    sc_employee_id text not null,
+                    score_timestamp timestamp not null,
+                    technical_acumen integer not null,
+                    domain_knowledge integer not null,
+                    discovery_and_qualification integer not null,
+                    teamwork_and_collaboration integer not null,
+                    leadership_skills integer not null,
+                    communicative integer not null,
+                    planning_and_prioritization integer not null,
+                    customer_advocacy integer not null,
+                    attitude integer not null,
+                    corporate_citizenship integer not null
+                )
+            ''')
+            self.add_schema_version(47)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

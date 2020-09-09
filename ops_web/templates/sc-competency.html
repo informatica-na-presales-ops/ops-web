@@ -11,31 +11,74 @@
 
     <div class="row pt-3 text-light">
         <div class="col">
-            <div class="form-inline">
-                <label for="select-sc" class="sr-only">Choose an SC</label>
-                <select class="custom-select mr-2 mb-2" id="select-sc">
-                    <option hidden disabled selected>-- choose an SC --</option>
-                    <option>John Doe</option>
-                </select>
-                <label for="sc-current-position" class="sr-only">Current position</label>
-                <input type="text" readonly class="form-control mr-2 mb-2" id="sc-current-position">
-            </div>
+            <form class="form-inline" id="form" action="{{ url_for('sc_competency_scores_add') }}" method="post">
+                <div class="form-group mb-2 mr-2">
+                    <label for="select-sc" class="sr-only">Choose an SC</label>
+                    <select class="custom-select" id="select-sc" name="sc-employee-id" required>
+                        <option hidden disabled selected>-- choose an SC --</option>
+                        {% for e in g.employees %}
+                            <option value="{{ e.employee_id }}" data-technical-acumen="{{ e.technical_acumen }}"
+                                    data-domain-knowledge="{{ e.domain_knowledge }}"
+                                    data-discovery-and-qualification="{{ e.discovery_and_qualification }}"
+                                    data-teamwork-and-collaboration="{{ e.teamwork_and_collaboration }}"
+                                    data-leadership-skills="{{ e.leadership_skills }}"
+                                    data-communicative="{{ e.communicative }}"
+                                    data-planning-and-prioritization="{{ e.planning_and_prioritization }}"
+                                    data-customer-advocacy="{{ e.customer_advocacy }}" data-attitude="{{ e.attitude }}"
+                                    data-corporate-citizenship="{{ e.corporate_citizenship }}">
+                                {{ e.employee_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-outline-success mb-2 mr-2">Add score</button>
+            </form>
         </div>
     </div>
 
     <div class="row pt-3 text-light">
-        <div class="col-3">
+        <div class="col-4 col-xl-3">
             <nav class="nav nav-pills flex-column">
-                <a class="nav-link text-light active" data-toggle="pill" href="#technical-acumen">Technical acumen</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#domain-knowledge">Domain knowledge</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#discovery-and-qualification">Discovery and qualification</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#teamwork-and-collaboration">Teamwork and collaboration</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#leadership-skills">Leadership skills</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#communicative">Communicative</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#planning-and-prioritization">Planning and prioritization</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#customer-advocacy">Customer advocacy</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#attitude">Attitude</a>
-                <a class="nav-link text-light" data-toggle="pill" href="#corporate-citizenship">Corporate citizenship</a>
+                <a class="nav-link text-light active d-flex justify-content-between align-items-center" data-toggle="pill" href="#technical-acumen">
+                    Technical acumen
+                    <span class="badge badge-light" id="badge-technical-acumen"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#domain-knowledge">
+                    Domain knowledge
+                    <span class="badge badge-light" id="badge-domain-knowledge"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#discovery-and-qualification">
+                    Discovery and qualification
+                    <span class="badge badge-light" id="badge-discovery-and-qualification"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#teamwork-and-collaboration">
+                    Teamwork and collaboration
+                    <span class="badge badge-light" id="badge-teamwork-and-collaboration"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#leadership-skills">
+                    Leadership skills
+                    <span class="badge badge-light" id="badge-leadership-skills"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#communicative">
+                    Communicative
+                    <span class="badge badge-light" id="badge-communicative"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#planning-and-prioritization">
+                    Planning and prioritization
+                    <span class="badge badge-light" id="badge-planning-and-prioritization"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#customer-advocacy">
+                    Customer advocacy
+                    <span class="badge badge-light" id="badge-customer-advocacy"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#attitude">
+                    Attitude
+                    <span class="badge badge-light" id="badge-attitude"></span>
+                </a>
+                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#corporate-citizenship">
+                    Corporate citizenship
+                    <span class="badge badge-light" id="badge-corporate-citizenship"></span>
+                </a>
             </nav>
         </div>
         <div class="col">
@@ -50,7 +93,7 @@
                         drive this competency.
                     </p>
                     <div class="custom-control custom-radio">
-                        <input class="custom-control-input" type="radio" id="technical-acumen-2" name="technical-acumen">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-2" name="technical-acumen" value="2" form="form" required>
                         <label class="custom-control-label" for="technical-acumen-2">
                             <strong>SC (2)</strong><br>
                             Proven delivery presenting the core Informatica platform overview.<br>
@@ -64,7 +107,7 @@
                     </div>
                     <hr class="border-light">
                     <div class="custom-control custom-radio">
-                        <input class="custom-control-input" type="radio" id="technical-acumen-3" name="technical-acumen">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-3" name="technical-acumen" value="3" form="form">
                         <label class="custom-control-label" for="technical-acumen-3">
                             <strong>Senior SC (3)</strong><br>
                             Proven demonstration and certification in one Informatica journey area (e.g. Informatica
@@ -79,7 +122,7 @@
                     </div>
                     <hr class="border-light">
                     <div class="custom-control custom-radio">
-                        <input class="custom-control-input" type="radio" id="technical-acumen-4" name="technical-acumen">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-4" name="technical-acumen" value="4" form="form">
                         <label class="custom-control-label" for="technical-acumen-4">
                             <strong>Principal SC (4)</strong><br>
                             Demonstration and certification in at least two Informatica journey areas (e.g. Informatica
@@ -91,7 +134,7 @@
                     </div>
                     <hr class="border-light">
                     <div class="custom-control custom-radio">
-                        <input class="custom-control-input" type="radio" id="technical-acumen-5" name="technical-acumen">
+                        <input class="custom-control-input" type="radio" id="technical-acumen-5" name="technical-acumen" value="5" form="form">
                         <label class="custom-control-label" for="technical-acumen-5">
                             <strong>Senior Principal SC (5)</strong><br>
                             Deliver Informatica solution architecture and demonstration that can address both an
@@ -104,16 +147,515 @@
                         </label>
                     </div>
                 </div>
-                <div class="tab-pane" id="domain-knowledge"><h2>Domain knowledge</h2></div>
-                <div class="tab-pane" id="discovery-and-qualification"><h2>Discovery and qualification</h2></div>
-                <div class="tab-pane" id="teamwork-and-collaboration"><h2>Teamwork and collaboration</h2></div>
-                <div class="tab-pane" id="leadership-skills"><h2>Leadership skills</h2></div>
-                <div class="tab-pane" id="communicative"><h2>Communicative</h2></div>
-                <div class="tab-pane" id="planning-and-prioritization"><h2>Planning and prioritization</h2></div>
-                <div class="tab-pane" id="customer-advocacy"><h2>Customer advocacy</h2></div>
-                <div class="tab-pane" id="attitude"><h2>Attitude</h2></div>
-                <div class="tab-pane" id="corporate-citizenship"><h2>Corporate citizenship</h2></div>
+                <div class="tab-pane" id="domain-knowledge">
+                    <h2>Domain knowledge</h2>
+                    <p>
+                        They have knowledge and experience in the role and understand the sales cycle and methodologies
+                        used. They have knowledge and experience in the Data Management and cloud Ecosystem space, both
+                        from a historical and future direction perspective. This is not about specific technology, it is
+                        about what drives the specific technology to be used. Understands ability and information that
+                        applies sales consulting as it pertains to the data management space.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="domain-knowledge-2" name="domain-knowledge" value="2" form="form" required>
+                        <label class="custom-control-label" for="domain-knowledge-2">
+                            <strong>SC (2)</strong><br>
+                            Understands and can articulate the value and principles of Enterprise Data Management.<br>
+                            Is familiar with and can articulate cloud data warehouse concepts either on premises and/or
+                            as part of a cloud first or hybrid-cloud approach.<br>
+                            May still need assistance from peers and/or coaching from management in the following areas.
+                            Developing trusted advisory status with clients, leveraging an effective strategy for
+                            developing rapport, proper use of sales methodology and building credibility with clients.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="domain-knowledge-3" name="domain-knowledge" value="3" form="form">
+                        <label class="custom-control-label" for="domain-knowledge-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Leverages industry knowledge coupled with an understanding of a customer&#x02bc;s
+                            decision-making process, goals, strategies, and business objectives to achieve a high degree
+                            of technical win outcomes.<br>
+                            Technical advice and approach is considered consultative and sought by peers within their
+                            immediate sales region.<br>
+                            Follows sales best practices and demonstrates a clear strategy for gaining trusted
+                            advisorship with their clients.<br>
+                            Can understand and communicate the pros and cons of multiple architectural approaches to
+                            data management problems.<br>
+                            Achieves a single cloud ecosystem certification along with achieving Informatica&#x02bc;s
+                            301 and 401 cloud certification.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="domain-knowledge-4" name="domain-knowledge" value="4" form="form">
+                        <label class="custom-control-label" for="domain-knowledge-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Technical advice considered strategic and sought by others across different sales
+                            organizations.<br>
+                            Strong understanding of competitive landscape and can comfortably identify differentiation
+                            of our solutions and value in broader technical landscapes beyond Informatica.<br>
+                            Has achieved certification in at least two cloud ecosystems.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="domain-knowledge-5" name="domain-knowledge" value="5" form="form">
+                        <label class="custom-control-label" for="domain-knowledge-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Brings practitioner level advice on data management principles and best practices regularly
+                            sought by multiple organizations within Informatica.<br>
+                            Mentoring and education on creative and new areas key for helping the sales organization
+                            drive pipeline and awareness.<br>
+                            Strong understanding of adjacent technology to the data management space including 3rd party
+                            on premises and cloud platforms, open source software, etc.<br>
+                            Certification in three or more cloud ecosystems.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="discovery-and-qualification">
+                    <h2>Discovery and qualification</h2>
+                    <p>
+                        Asks questions that promote trust and dialogue with the field and customers; encourages customer
+                        interaction through active listening to learn about the customer&#x02bc;s problems before
+                        proposing product; communicates a customized solution using phrasing that expresses empathy and
+                        understanding of the customer&#x02bc;s goals and needs.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="discovery-and-qualification-2" name="discovery-and-qualification" value="2" form="form" required>
+                        <label class="custom-control-label" for="discovery-and-qualification-2">
+                            <strong>SC (2)</strong><br>
+                            Conducts first level discovery of customer need for the identification of technical pains
+                            and outcomes.<br>
+                            Scope and depth of conversations are tactical and limited to basic use cases around one or
+                            two product areas.<br>
+                            Develops coherent technical requirements documentation.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="discovery-and-qualification-3" name="discovery-and-qualification" value="3" form="form">
+                        <label class="custom-control-label" for="discovery-and-qualification-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Demonstrates solid listening skills and follow-up in customer engagements.<br>
+                            Prepared prior to customer visits and is able to shape communication strategy.<br>
+                            Coaches extended team on information learned.<br>
+                            Demonstrate agility to probe and drills-down to provide greater customer insight.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="discovery-and-qualification-4" name="discovery-and-qualification" value="4" form="form">
+                        <label class="custom-control-label" for="discovery-and-qualification-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Uses phrases and terms from the customer&#x02bc;s technical and business domain.<br>
+                            Uses paraphrasing and active listening to communicate empathy and awareness of customer
+                            concerns and needs.<br>
+                            Quickly develops rapport and trust with the customer.<br>
+                            Provides concise and detailed documentation to insure all stakeholders are in sync over the
+                            opportunity lifecycle.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="discovery-and-qualification-5" name="discovery-and-qualification" value="5" form="form">
+                        <label class="custom-control-label" for="discovery-and-qualification-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Active listener, empathetic and motivational, articulates value tailored to audience.<br>
+                            Expert delivery of ROI, TCO mapped to customer pain.<br>
+                            Leverages sales processes, tools, and templates to gain insight into customer&#x02bc;s
+                            world.<br>
+                            Can frame solution in the context of the customer&#x02bc;s industry.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="teamwork-and-collaboration">
+                    <h2>Teamwork and collaboration</h2>
+                    <p>
+                        We work cooperatively across departments and geographies to achieve the best possible results
+                        for our customers, employees and shareholders. We understand the company goals and align our own
+                        goals and actions accordingly. This is a team sport. In order for us to be successful we each
+                        have to make the effort to ensure Informatica is a culture of &ldquo;one team&rdquo; with the
+                        competition being outside our walls, not within.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="teamwork-and-collaboration-2" name="teamwork-and-collaboration" value="2" form="form" required>
+                        <label class="custom-control-label" for="teamwork-and-collaboration-2">
+                            <strong>SC (2)</strong><br>
+                            Responds to tasks and input when asked and offers feedback or advice when asked.<br>
+                            Actions and communications are limited to the immediate need therefore may miss the bigger
+                            strategy or longer term goal.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="teamwork-and-collaboration-3" name="teamwork-and-collaboration" value="3" form="form">
+                        <label class="custom-control-label" for="teamwork-and-collaboration-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Inclusive; strong communication skills within and beyond immediate team.<br>
+                            Respects cultural and technical diversity.<br>
+                            Influences stakeholders of varying spheres of authority.<br>
+                            Recognized across various departments as trusted team player.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="teamwork-and-collaboration-4" name="teamwork-and-collaboration" value="4" form="form">
+                        <label class="custom-control-label" for="teamwork-and-collaboration-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Mentors/influences others around them with their inclusive leadership style.<br>
+                            Proactively searches for opportunities to add value to the team&#x02bc;s success.<br>
+                            Places company and team interests above personal interests.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="teamwork-and-collaboration-5" name="teamwork-and-collaboration" value="5" form="form">
+                        <label class="custom-control-label" for="teamwork-and-collaboration-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Influences and/or mentors key stakeholders internally and externally at every touch point
+                            across the Informatica customer life cycle (customer touch points include: customer
+                            awareness of business problem, selection of best solution, order and contracts,
+                            implementation, training, support, and expansion).<br>
+                            Can mesh effortlessly into any team within or outside of their organization.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="leadership-skills">
+                    <h2>Leadership skills</h2>
+                    <p>
+                        Leads by teaching others. Leads by example. Communicative often and sets high standards for
+                        oneself.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="leadership-skills-2" name="leadership-skills" value="2" form="form" required>
+                        <label class="custom-control-label" for="leadership-skills-2">
+                            <strong>SC (2)</strong><br>
+                            Demonstrated circle of influence tends to be limited to immediate sales team.<br>
+                            Influence skills are not yet fully developed and will offer input typically only when
+                            asked.<br>
+                            Focus is on immediate task and is not thinking of the needs of the broader team.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="leadership-skills-3" name="leadership-skills" value="3" form="form">
+                        <label class="custom-control-label" for="leadership-skills-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Demonstrated growth in sphere of influence beyond immediate sales team.<br>
+                            Proactively participates in team projects within their assigned sales area.<br>
+                            Shows initiative by proactively suggesting ideas to improve effectiveness of broader team.<br>
+                            Proactively owns their franchise and understands their business and opportunities.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="leadership-skills-4" name="leadership-skills" value="4" form="form">
+                        <label class="custom-control-label" for="leadership-skills-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Advice frequently sought for several areas of the Informatica platform and proactively seeks
+                            opportunities to lead independent projects for the broader SC community.<br>
+                            Has been able to effectively lead at least one team based project per year.<br>
+                            Is assigned as a mentor frequently for new hires within and/or outside their assigned
+                            region/area.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="leadership-skills-5" name="leadership-skills" value="5" form="form">
+                        <label class="custom-control-label" for="leadership-skills-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Is considered a model of behavior and actions for the Presales team.<br>
+                            Their advice and counsel are inspirational and creative and sought for on opportunities and
+                            situations across other sales teams.<br>
+                            They conduct their actions ethically and with humility.<br>
+                            Is expected to independently manage multiple small Presales teams for short term projects
+                            within a given year.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="communicative">
+                    <h2>Communicative</h2>
+                    <p>
+                        Ability to achieve desired change in audience behavior, attitudes, or perceptions through
+                        influential communication style as demonstrated in presentations, written communication
+                        (reports, emails, whitepapers, etc.), dialogue, conversations, meetings; negotiation skills.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="communicative-2" name="communicative" value="2" form="form" required>
+                        <label class="custom-control-label" for="communicative-2">
+                            <strong>SC (2)</strong><br>
+                            Is capable of communicating Informatica solutions at technical/functional level.<br>
+                            Both written and communication skills are clear but generally informational vs. influential.<br>
+                            Participates during internal planning discussions but may require prompting.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="communicative-3" name="communicative" value="3" form="form">
+                        <label class="custom-control-label" for="communicative-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Leverages sales strategies and a more mature communication style to gather information
+                            leading to differing messages and value to their clients.<br>
+                            Operates more independently through proactive outreach and developing credibility with key
+                            technical stakeholders in their accounts.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="communicative-4" name="communicative" value="4" form="form">
+                        <label class="custom-control-label" for="communicative-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Displays empathy to influence and articulate value to audience through active listening.<br>
+                            Can adjust message and style depending on audience while effectively handling objections.<br>
+                            Operates independently through proactive outreach and developing relationships with both
+                            business and technical stakeholders in their accounts.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="communicative-5" name="communicative" value="5" form="form">
+                        <label class="custom-control-label" for="communicative-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Communication style viewed as expert level leading to gaining immediate credibility and long
+                            term relationships with both business and technical stakeholders.<br>
+                            Advises team on competitive stance and creates counter strategies to threats in accounts.<br>
+                            Can formulate overall technical account strategy e.g. SWOT analysis – strengths, weaknesses,
+                            opportunities, and threats.<br>
+                            Publish at least 2 whitepapers or related capstone projects per year and keep public
+                            communications updated regularly (e.g. social media, blog posts etc.).
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="planning-and-prioritization">
+                    <h2>Planning and prioritization</h2>
+                    <p>
+                        The individual ensures timely administrative tasks are completed. Executes at a high degree of
+                        time management. Focuses on critical and impactful workloads that contribute to the business.
+                        Assist in account and opportunity planning.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="planning-and-prioritization-2" name="planning-and-prioritization" value="2" form="form" required>
+                        <label class="custom-control-label" for="planning-and-prioritization-2">
+                            <strong>SC (2)</strong><br>
+                            Meets the minimum level of output on administrative tasks and opportunity management.
+                            More complex tasks such as orchestration of POCs may require some peer and management
+                            oversight.<br>
+                            Planning in general is sufficient but may lack details around unanticipated challenges or
+                            outcomes that may come up later.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="planning-and-prioritization-3" name="planning-and-prioritization" value="3" form="form">
+                        <label class="custom-control-label" for="planning-and-prioritization-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Consistently maintains administrative tasks on time while providing more depth to expected
+                            outcomes (e.g. technical risk notes of current status and next steps).<br>
+                            Understands the impact and value of specific milestones of client engagements and can
+                            re-prioritize actions across multiple client opportunities.<br>
+                            Is capable of identifying blockers and can pivot to realign priorities with a focus on the
+                            end game of the specific customer engagement or project.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="planning-and-prioritization-4" name="planning-and-prioritization" value="4" form="form">
+                        <label class="custom-control-label" for="planning-and-prioritization-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Efforts are guided by the end game in focus but also keenly aware of differences between
+                            tactical vs. strategic company goals.<br>
+                            Not willing to sacrifice a relationship over a short term gain if that is not the right
+                            solution for the customer.<br>
+                            Effective communicator of milestones and objectives for a variety of customer engagements
+                            (e.g. POCs).
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="planning-and-prioritization-5" name="planning-and-prioritization" value="5" form="form">
+                        <label class="custom-control-label" for="planning-and-prioritization-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Consistently achieves above average technical win due to their attention to detail on
+                            customer validation/POC events.<br>
+                            Views events, actions and impacts of decisions both internally and externally with a
+                            strategic lens.<br>
+                            Exceptional at orchestrating events supported by all key stakeholders both technical and
+                            business.<br>
+                            Consistently has a plan to anticipate challenges that may occur down the line.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="customer-advocacy">
+                    <h2>Customer advocacy</h2>
+                    <p>
+                        Build and maintain trusted relationships within our customer base. Collect customer experiences
+                        which can be used to drive our engagement and affect product roadmap. Act as an escalation point
+                        for customers.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="customer-advocacy-2" name="customer-advocacy" value="2" form="form" required>
+                        <label class="custom-control-label" for="customer-advocacy-2">
+                            <strong>SC (2)</strong><br>
+                            Understands the importance of customer adoption of Informatica solutions but actions are
+                            more passive than proactive in nature.<br>
+                            Can perform basic follow up on any active support cases but will have limited influence on
+                            acceleration of resolution.<br>
+                            Has willingness to engage with CSM team.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="customer-advocacy-3" name="customer-advocacy" value="3" form="form">
+                        <label class="custom-control-label" for="customer-advocacy-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Performs outreach to accounts on a regular cadence to insure adoption of Informatica
+                            solution by the customer.<br>
+                            Assigned customers in their territory are frequently achieving at or above the targeted
+                            adoption rate prescribed by the CSM organization and corporate leadership.<br>
+                            Collaborates with CSM team in handling proper hand offs at the end of a sales cycle.<br>
+                            Is able to identify and communicate customer issues and escalations with their immediate
+                            supervisor in a timely manner.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="customer-advocacy-4" name="customer-advocacy" value="4" form="form">
+                        <label class="custom-control-label" for="customer-advocacy-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Highly consultative and views the customer&#x02bc;s journey from a project point of view
+                            understanding the various gates they must achieve.<br>
+                            Introduces best practices to the discussion to help provide post sales adoption advice in
+                            conjunction with other Informatica SMEs.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="customer-advocacy-5" name="customer-advocacy" value="5" form="form">
+                        <label class="custom-control-label" for="customer-advocacy-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Exceptional approach to insuring customer is able to meet key milestones for their adoption
+                            journey.<br>
+                            Is forward thinking in heading off potential customer challenges by analyzing their current
+                            approach.<br>
+                            Assigned customers in their territory are consistently achieving adoption targets excepting
+                            those situations that are beyond the control of the individual.<br>
+                            Proactively shares and communicates with product management on potential capabilities
+                            required by the customer and works to come up with a solution that has the customer&#x02bc;s
+                            goals in mind.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="attitude">
+                    <h2>Attitude</h2>
+                    <p>
+                        We encourage original thinking in all areas of our work. We set the highest standards and
+                        expectations for ourselves and strive to exceed them. This is not just about innovation or
+                        technical excellence. The idea that we create things we&#x02bc;re passionate about &mdash;
+                        products, deployments, partnerships, this entire company &mdash; goes beyond any one single
+                        accomplishment. Having the right attitude goes to the core of everything that we do. It is an
+                        expression of how we feel about what we do and who we are when we&#x02bc;re doing it.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="attitude-2" name="attitude" value="2" form="form" required>
+                        <label class="custom-control-label" for="attitude-2">
+                            <strong>SC (2)</strong><br>
+                            Performs basic tasks at minimum level of acceptance but are not considered innovative.<br>
+                            Enthusiastic about Informatica culture.<br>
+                            Engages others with an optimistic outcome.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="attitude-3" name="attitude" value="3" form="form">
+                        <label class="custom-control-label" for="attitude-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Leans into situations without having to be prompted.<br>
+                            Willing to initiate actions without getting too far afield of goals and objectives as agreed
+                            upon by their manager.<br>
+                            Demonstrates curiosity for delving deeper into tasks and outcomes for continuous improvement
+                            of delivery and expertise.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="attitude-4" name="attitude" value="4" form="form">
+                        <label class="custom-control-label" for="attitude-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Motivating in their behaviors and actions of themselves and in influencing their peers and
+                            colleagues.<br>
+                            Takes initiative on advanced technical solutions.<br>
+                            Learns from mistakes to avoid repeating behavior and shares outcomes with others.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="attitude-5" name="attitude" value="5" form="form">
+                        <label class="custom-control-label" for="attitude-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Aggressively seeks knowledge on emerging trends and technology.<br>
+                            Proactively seeks higher learning and relevant data management disciplines and industry
+                            trends.
+                        </label>
+                    </div>
+                </div>
+                <div class="tab-pane" id="corporate-citizenship">
+                    <h2>Corporate citizenship</h2>
+                    <p>
+                        Develops and supports broader initiatives beyond individuals&#x02bc; goals. Supports
+                        company-wide decisions and executes. Develops material and collateral that benefits multiple
+                        facets of the business.
+                    </p>
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="corporate-citizenship-2" name="corporate-citizenship" value="2" form="form" required>
+                        <label class="custom-control-label" for="corporate-citizenship-2">
+                            <strong>SC (2)</strong><br>
+                            Engages with immediate team but may require prompts for feedback.<br>
+                            Focus is on immediate requirements of opportunities and within the scope of their assigned
+                            territory.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="corporate-citizenship-3" name="corporate-citizenship" value="3" form="form">
+                        <label class="custom-control-label" for="corporate-citizenship-3">
+                            <strong>Senior SC (3)</strong><br>
+                            Engages proactively with assigned teams and freely offers input and recommendations.<br>
+                            Understands the value to other teams with respect to lessons learned and customer successes
+                            and is willing to develop those and share when asked.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="corporate-citizenship-4" name="corporate-citizenship" value="4" form="form">
+                        <label class="custom-control-label" for="corporate-citizenship-4">
+                            <strong>Principal SC (4)</strong><br>
+                            Frequently shares lessons learned and customer experiences outside of their immediate
+                            assigned territory.<br>
+                            Regularly is seen developing content for and helping on delivery to support field or
+                            corporate marketing initiatives.
+                        </label>
+                    </div>
+                    <hr class="border-light">
+                    <div class="custom-control custom-radio">
+                        <input class="custom-control-input" type="radio" id="corporate-citizenship-5" name="corporate-citizenship" value="5" form="form">
+                        <label class="custom-control-label" for="corporate-citizenship-5">
+                            <strong>Senior Principal SC (5)</strong><br>
+                            Regularly shares lessons learned, best practices and solution ideas to multiple sales
+                            teams.<br>
+                            Consistently engages with broader teams across Informatica to build and deliver
+                            differentiated material and content in support of strategic corporate initiatives.<br>
+                            Viewed by the corporation as a reliable subject matter expert supporting corporate
+                            initiatives regularly putting high levels of trust in their advice and delivery.
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='sc-competency.js') }}"></script>
 {% endblock %}

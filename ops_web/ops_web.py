@@ -1263,7 +1263,36 @@ def sc_assignments_sales_reps_xlsx():
 @app.route('/sc-competency')
 @login_required
 def sc_competency():
+    flask.g.employees = db.get_employees_for_manager(flask.g.email)
     return flask.render_template('sc-competency.html')
+
+
+@app.route('/sc-competency/scores/add', methods=['POST'])
+@login_required
+def sc_competency_scores_add():
+    for name, value in flask.request.values.lists():
+        app.logger.debug(f'{name}: {value}')
+    if 'sc-employee-id' in flask.request.values:
+        sc_employee_id = flask.request.values.get('sc-employee-id')
+        params = {
+            'sc_employee_id': sc_employee_id,
+            'technical_acumen': int(flask.request.values.get('technical-acumen')),
+            'domain_knowledge': int(flask.request.values.get('domain-knowledge')),
+            'discovery_and_qualification': int(flask.request.values.get('discovery-and-qualification')),
+            'teamwork_and_collaboration': int(flask.request.values.get('teamwork-and-collaboration')),
+            'leadership_skills': int(flask.request.values.get('leadership-skills')),
+            'communicative': int(flask.request.values.get('communicative')),
+            'planning_and_prioritization': int(flask.request.values.get('planning-and-prioritization')),
+            'customer_advocacy': int(flask.request.values.get('customer-advocacy')),
+            'attitude': int(flask.request.values.get('attitude')),
+            'corporate_citizenship': int(flask.request.values.get('corporate-citizenship'))
+        }
+        db.add_sc_competency_score(params)
+        db.add_log_entry(flask.g.email, f'Add SC competency score for {sc_employee_id}')
+        flask.flash('SC competency score added successfully.', 'success')
+    else:
+        flask.flash('Please choose an SC.', 'danger')
+    return flask.redirect(flask.url_for('sc_competency'))
 
 
 @app.route('/security-groups')
