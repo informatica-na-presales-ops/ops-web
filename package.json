@@ -1,0 +1,9 @@
+{
+  "name": "ops-web",
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "bootstrap": "4.5.2"
+  }
+}
