@@ -1,10 +1,10 @@
 document.querySelectorAll('input[type=radio]').forEach(function (el) {
-    el.addEventListener('change', function (e) {
-        document.getElementById(`badge-${e.target.name}`).textContent = e.target.value;
+    el.addEventListener('change', function () {
+        document.getElementById(`badge-${this.name}`).textContent = this.value;
     });
 });
 
-document.getElementById('select-sc').addEventListener('change', function (e) {
+document.getElementById('select-sc').addEventListener('change', function () {
     // clear badge content
     document.querySelectorAll('.badge').forEach(function (el) {
         el.textContent = '';
@@ -16,7 +16,7 @@ document.getElementById('select-sc').addEventListener('change', function (e) {
     });
 
     // select current scores
-    const selected_option = e.target.options[e.target.selectedIndex];
+    const selected_option = this.options[this.selectedIndex];
     const ids = [
         `technical-acumen-${selected_option.dataset.technicalAcumen}`,
         `domain-knowledge-${selected_option.dataset.domainKnowledge}`,
