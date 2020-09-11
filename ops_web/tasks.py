@@ -2,6 +2,7 @@ import concurrent.futures
 import datetime
 import elasticapm
 import flask
+import json
 import logging
 import ops_web.aws
 import ops_web.config
@@ -68,11 +69,13 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
     }
 
     auth = requests.auth.HTTPBasicAuth(f'{settings.zendesk_email_address}/token', settings.zendesk_api_token)
+    session = requests.Session()
+    session.auth = auth
 
     # find this user in zendesk
     query = {'query': requester}
     url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users/search.json?{urllib.parse.urlencode(query)}'
-    response = requests.get(url, auth=auth)
+    response = session.get(url)
     response.raise_for_status()
     users = response.json().get('users')
     if users:
@@ -80,14 +83,14 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
     else:
         # create this user in zendesk
         url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users.json'
-        json = {
+        json_data = {
             'user': {
                 'email': requester,
                 'name': requester.split('@')[0],
                 'verified': True
             }
         }
-        response = requests.post(url, json=json, auth=auth)
+        response = session.post(url, json=json_data)
         response.raise_for_status()
         user = response.json().get('user')
         ticket_data.update({'requester_id': user.get('id')})
@@ -110,23 +113,39 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
                 'subject': f'Bug report for Monolith in {region} region',
                 'comment': {
                     'html_body': flask.render_template('zendesk-tickets/monolith-bug.html', ctx=ctx)
-                }
+                },
+                'external_id': 'monolith-jira-candidate'
             })
         elif form_data.get('request-type') == 'change-request':
             ticket_data.update({
                 'subject': 'Change request for Monolith',
                 'comment': {
                     'html_body': flask.render_template('zendesk-tickets/monolith-change-request.html', ctx=ctx)
-                }
+                },
+                'external_id': 'monolith-jira-candidate'
             })
         else:
             log.warning('Unknown request type')
             tc.apm.end_transaction(task_name)
             return
 
+    # upload a json representation of the request
+    query = {
+        'filename': 'monolith-request.json'
+    }
+    url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/uploads.json?{urllib.parse.urlencode(query)}'
+    data = json.dumps(ctx, sort_keys=True, indent=1)
+    response = session.post(url, headers={'Content-Type': 'application/json'}, data=data)
+    response.raise_for_status()
+    upload_token = response.json().get('upload', {}).get('token')
+    ticket_comment = ticket_data.get('comment')
+    ticket_comment.update({'uploads': [upload_token]})
+    ticket_data.update({'comment': ticket_comment})
+
+    # create the ticket
     url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/tickets.json'
-    json = {'ticket': ticket_data}
-    response = requests.post(url, auth=auth, json=json)
+    json_data = {'ticket': ticket_data}
+    response = session.post(url, json=json_data)
     response.raise_for_status()
     ticket_id = response.json().get('ticket', {}).get('id')
     log.debug(f'Created a Zendesk ticket: {ticket_id}')
