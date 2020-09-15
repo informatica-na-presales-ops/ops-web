@@ -24,6 +24,53 @@ VM_STATE_MAP = {
 }
 
 
+def az_cli_create_nic(rg_name, nic_name, subnet_id, nsg_name, ip_address, location):
+    cmd = ['az', 'network', 'nic', 'create', '--resource-group', rg_name, '--name', nic_name, '--subnet', subnet_id,
+           '--network-security-group', nsg_name, '--public-ip-address', ip_address, '-l', location]
+    subprocess.check_output(cmd, shell=True)
+
+
+def az_cli_create_public_ip(rg_name, public_ip_name, allocation='Dynamic'):
+    cmd = ['az', 'network', 'public-ip', 'create', '--name', public_ip_name, '--resource-group', rg_name,
+           '--allocation-method', allocation]
+    subprocess.check_output(cmd, shell=True)
+
+
+def az_cli_create_vm(vm_name, rg_name, os_disk_name, os_type, nic_name, data_disk_name, vm_size, tags):
+    cmd = ['az', 'vm', 'create', '--name', vm_name, '--resource-group', rg_name, '--attach-os-disk', os_disk_name,
+           '--os-type', os_type, '--nics', nic_name, '--attach-data-disks', data_disk_name, '--size', vm_size, '--tags',
+           tags]
+    output = subprocess.check_output(cmd, shell=True)
+    return output.decode('utf-8')
+
+
+def az_cli_create_vm_from_image(image_name, vm_name, rg_name, nic_name, vm_size, admin_password):
+    cmd = ['az', 'vm', 'create', '--image', image_name, '--name', vm_name, '--resource-group', rg_name, '--nics',
+           nic_name, '--size', vm_size, '--authentication-type', 'all', '--admin-username', 'az-user',
+           '--admin-password']
+
+
+def az_cli_get_snapshot_id(snapshot_name, rg_name):
+    cmd = ['az', 'snapshot', 'show', '--name', snapshot_name, '--resource-group', rg_name, '--query', '[id]', '-o',
+           'tsv']
+    output = subprocess.check_output(cmd, shell=True)
+    return output.decode('utf-8')
+
+
+def az_cli_get_subnet_id(vnet_name, rg_name):
+    cmd = ['az', 'network', 'vnet', 'show', '--name', vnet_name, '--resource-group', rg_name, '--query',
+           'subnets[0].id', '-o', 'tsv']
+    output = subprocess.check_output(cmd, shell=True)
+    output = output.decode('utf-8')
+    output = output.replace('\n', '')
+    return f"'{output}'"
+
+
+def az_cli_login(user, password, tenant):
+    cmd = ['az', 'login', '--service-principal', '-u', user, '-p', password, '--tenant', tenant]
+    subprocess.check_output(cmd, shell=True)
+
+
 class AZClient:
     def __init__(self, config: ops_web.config.Config, client_id: str, secret: str, tenant: str):
         self.config = config
@@ -400,51 +447,31 @@ class AZClient:
         k = vmbase.rfind('-')
         virtual_machine_name = vmbase[:k] + "-cdh-" + vmbase[k + 1:]
         log.info(virtual_machine_name)
-        owner = owner
-        subscriptionId = '950a5f1a-97b6-4c9c-b79b-e32d951b5e66'
-        resourceGroupName = 'rg-cdw-workshops-201904'
-        virtualNetworkName = 'vnet-cdw-workshops-201904'
-        snapshotName_os = 'cdwinfa_master_os'
-        snapshotName_data = 'cdwinfa_master_data'
-        osDiskName = virtual_machine_name + '_os'
-        DiskName_data = virtual_machine_name + '_data'
+        subscription_id = '950a5f1a-97b6-4c9c-b79b-e32d951b5e66'
+        rg_name = 'rg-cdw-workshops-201904'
+        vnet_name = 'vnet-cdw-workshops-201904'
+        os_snapshot_name = 'cdwinfa_master_os'
+        data_snapshot_name = 'cdwinfa_master_data'
+        os_disk_name = virtual_machine_name + '_os'
+        data_disk_name = virtual_machine_name + '_data'
         tags = "APPLICATIONENV=PROD APPLICATIONROLE=APPSVR BUSINESSUNIT=NA-Presales OWNEREMAIL=" + owner + " RUNNINGSCHEDULE=00:03:20:00:1-7 NAME=" + virtual_machine_name + " machine__environment_group=" + vmbase
-        nicName = virtual_machine_name + "_nic"
-        storageType = 'Standard_LRS'
-        osType = 'Linux'
+        nic_name = virtual_machine_name + "_nic"
+        storage_type = 'Standard_LRS'
+        os_type = 'Linux'
 
-        compute_client = self.get_compute_client(subscriptionId)
+        compute_client = self.get_compute_client(subscription_id)
         network_client = azure.mgmt.network.NetworkManagementClient(
-            credentials=self.credentials, subscription_id=subscriptionId
+            credentials=self.credentials, subscription_id=subscription_id
         )
-        subprocess.check_output(
-            ["az login --service-principal -u {0} -p {1} --tenant {2}".format(user, password, tenantid)], shell=True)
+        az_cli_login(user, password, tenantid)
         mypublic_ip = virtual_machine_name + '_public_ip'
-        subprocess.check_output(["az network public-ip create -g {0} -n {1} --allocation-method Static".format(
-            resourceGroupName, mypublic_ip)], shell=True)
-        subnet_id = subprocess.check_output([
-            "az network vnet show --name {0} --resource-group {1} --query subnets[0].id -o tsv".format(
-                virtualNetworkName, resourceGroupName)], shell=True)
-        subnet_id = subnet_id.decode("utf-8")
-        subnetid2 = subnet_id.replace('\n', '')
-        subnet_id2 = "'{0}'".format(subnetid2)
-        nsgName = 'nsg-cdw-workshops-201904'
-        subnetName = subprocess.check_output([
-            "az network vnet show --name {0} --resource-group {1}  --query subnets[0].name -o tsv".format(
-                virtualNetworkName, resourceGroupName)], shell=True)
-        subprocess.check_output([
-            "az network nic create  --resource-group {0} --name {1} --subnet {2} --network-security-group {3} --public-ip-address {4} -l {5}".format(
-                resourceGroupName, nicName, subnet_id2, nsgName, mypublic_ip, 'westus')],
-            shell=True)
-        snapshotId_os = subprocess.check_output([
-            "az snapshot show --name {0} --resource-group {1} --query [id] -o tsv".format(
-                snapshotName_os, resourceGroupName)], shell=True)
-        s3 = snapshotId_os.decode("utf-8")
-        snapshotId_data = subprocess.check_output([
-            "az snapshot show --name {0} --resource-group {1} --query [id] -o tsv".format(
-                snapshotName_data, resourceGroupName)], shell=True)
-        l3 = snapshotId_data.decode("utf-8")
-        compute_client.disks.create_or_update(resourceGroupName, osDiskName, {
+        az_cli_create_public_ip(rg_name, mypublic_ip)
+        subnet_id = az_cli_get_subnet_id(vnet_name, rg_name)
+        nsg_name = 'nsg-cdw-workshops-201904'
+        az_cli_create_nic(rg_name, nic_name, subnet_id, nsg_name, mypublic_ip, 'westus')
+        s3 = az_cli_get_snapshot_id(os_snapshot_name, rg_name)
+        l3 = az_cli_get_snapshot_id(data_snapshot_name, rg_name)
+        compute_client.disks.create_or_update(rg_name, os_disk_name, {
             'location': 'westus',
             'storage_profile': {
                 'os_disk': {
@@ -452,7 +479,7 @@ class AZClient:
                 }
             },
             'sku': {
-                'name': storageType,
+                'name': storage_type,
 
             },
             'creation_data': {
@@ -461,7 +488,7 @@ class AZClient:
             }
         })
 
-        compute_client.disks.create_or_update(resourceGroupName, DiskName_data, {
+        compute_client.disks.create_or_update(rg_name, data_disk_name, {
             'location': 'westus',
             'storage_profile': {
                 'os_disk': {
@@ -469,7 +496,7 @@ class AZClient:
                 }
             },
             'sku': {
-                'name': storageType,
+                'name': storage_type,
 
             },
             'creation_data': {
@@ -478,12 +505,9 @@ class AZClient:
             }
         })
 
-        virtualMachineSize = 'Standard_B16ms'
-        result = subprocess.check_output([
-            "az vm create --name {0} --resource-group {1} --attach-os-disk {2} --os-type {3} --nics {4} --attach-data-disks {5} --size {6} --tags {7}".format(
-                virtual_machine_name, resourceGroupName, osDiskName, osType, nicName,
-                DiskName_data, virtualMachineSize, tags)], shell=True)
-        result = result.decode("utf-8")
+        vm_size = 'Standard_B16ms'
+        result = az_cli_create_vm(virtual_machine_name, rg_name, os_disk_name, os_type, nic_name, data_disk_name,
+                                  vm_size, tags)
         result_split = result.split(',')[1]
         result_dict = result_split.split(":")
         instance_id = result_dict[1]
@@ -572,27 +596,12 @@ class AZClient:
         osType = 'linux'
         nicName = virtual_machine_name + "_nic"
         myPublicIP = virtual_machine_name + '_public_ip'
-        subprocess.check_output(["az network public-ip create -g {0} -n {1} --allocation-method Static".format(
-            resourceGroupName, myPublicIP)], shell=True)
-        SubnetId = subprocess.check_output([
-            "az network vnet show --name {0} --resource-group {1} --query subnets[0].id -o tsv".format(
-                virtualNetworkName, resourceGroupName)], shell=True)
-        subnet_id = SubnetId.decode("utf-8")
-        subnetid2 = subnet_id.replace('\n', '')
-        subnet_id2 = "'{0}'".format(subnetid2)
+        az_cli_create_public_ip(resourceGroupName, myPublicIP, allocation='Static')
+        subnet_id = az_cli_get_subnet_id(virtualNetworkName, resourceGroupName)
         nsgName = "nsg-cdw-workshops-201904"
-        subprocess.check_output([
-            "az network nic create  --resource-group {0} --name {1} --subnet {2} --network-security-group {3} --public-ip-address {4} -l {5}".format(
-                resourceGroupName, nicName, subnet_id2, nsgName, myPublicIP, 'westus')],
-            shell=True)
-        snapshotId_os = subprocess.check_output(
-            ["az snapshot show --name {0} --resource-group {1} --query [id] -o tsv".format(
-                snapshotName_os, resourceGroupName)], shell=True)
-        s3 = snapshotId_os.decode("utf-8")
-        snapshotId_data = subprocess.check_output([
-            "az snapshot show --name {0} --resource-group {1} --query [id] -o tsv".format(
-                snapshotName_data, resourceGroupName)], shell=True)
-        l3 = snapshotId_data.decode("utf-8")
+        az_cli_create_nic(resourceGroupName, nicName, subnet_id, nsgName, myPublicIP, 'westus')
+        s3 = az_cli_get_snapshot_id(snapshotName_os, resourceGroupName)
+        l3 = az_cli_get_snapshot_id(snapshotName_data, resourceGroupName)
         compute_client.disks.create_or_update(resourceGroupName, osDiskName, {
             'location': 'westus',
             'storage_profile': {
@@ -626,13 +635,8 @@ class AZClient:
             }
         })
         virtualMachineSize = 'Standard_D4_v2'
-        result = subprocess.check_output([
-            "az vm create --name {0}  --resource-group {1} --attach-os-disk {2} --os-type {3} --nics {4} --attach-data-disks {5} --size {6} --tags {7}".format(
-                virtual_machine_name,
-                resourceGroupName, osDiskName, osType, nicName, DiskName_data,
-                virtualMachineSize,
-                tags)], shell=True)
-        result = result.decode("utf-8")
+        result = az_cli_create_vm(virtual_machine_name, resourceGroupName, osDiskName, osType, nicName, DiskName_data,
+                                  virtualMachineSize, tags)
         result_split = result.split(',')[1]
         result_dict = result_split.split(":")
         instance_id = result_dict[1]
@@ -759,8 +763,7 @@ class AZClient:
             log.info(result2)
         nicId = network_client.network_interfaces.get(resourceGroupName, nicName).id
         log.info(nicId)
-        subprocess.check_output(
-            ["az login --service-principal -u {0} -p {1} --tenant {2}".format(user, password, tenantid)], shell=True)
+        az_cli_login(user, password, tenantid)
         result = subprocess.check_output([
             "az vm create --image {0} --name {1} --resource-group {2} --nics {3} --size {4} --authentication-type "
             "all --admin-username az-user --admin-password {5} --ssh-key-values {6} --tags {7}".format(
