@@ -4,20 +4,17 @@
 
 {% block main_content %}
     <div class="row pt-3 text-light">
-        <div class="col">
-            <h1>SC Competency</h1>
-        </div>
-    </div>
+        <div class="col-4 col-xl-3">
+            <h1 class="mb-4">SC Competency</h1>
 
-    <div class="row pt-3 text-light">
-        <div class="col">
-            <form class="form-inline" id="form" action="{{ url_for('sc_competency_scores_add') }}" method="post">
+            <form class="form-inline mb-3" id="form" action="{{ url_for('sc_competency_scores_add') }}" method="post">
                 <div class="form-group mb-2 mr-2">
                     <label for="select-sc" class="sr-only">Choose an SC</label>
                     <select class="custom-select" id="select-sc" name="sc-employee-id" required>
                         <option hidden disabled selected>-- choose an SC --</option>
                         {% for e in g.employees %}
-                            <option value="{{ e.employee_id }}" data-technical-acumen="{{ e.technical_acumen }}"
+                            <option value="{{ e.employee_id }}" data-score-timestamp="{{ e.score_timestamp.date() if e.score_timestamp }}"
+                                    data-technical-acumen="{{ e.technical_acumen }}"
                                     data-domain-knowledge="{{ e.domain_knowledge }}"
                                     data-discovery-and-qualification="{{ e.discovery_and_qualification }}"
                                     data-teamwork-and-collaboration="{{ e.teamwork_and_collaboration }}"
@@ -33,54 +30,40 @@
                 </div>
                 <button type="submit" class="btn btn-outline-success mb-2 mr-2">Add score</button>
             </form>
-        </div>
-    </div>
 
-    <div class="row pt-3 text-light">
-        <div class="col-4 col-xl-3">
+            <div id="last-score" class="collapse">
+                <p><em>Last scored <span id="last-score-span"></span>.</em></p>
+            </div>
+
             <nav class="nav nav-pills flex-column">
-                <a class="nav-link text-light active d-flex justify-content-between align-items-center" data-toggle="pill" href="#technical-acumen">
-                    Technical Acumen
-                    <span class="badge badge-light" id="badge-technical-acumen"></span>
+                {% set tab_titles = [
+                    ('technical-acumen', 'Technical Acumen'),
+                    ('domain-knowledge', 'Domain Knowledge'),
+                    ('discovery-and-qualification', 'Discovery and Qualification'),
+                    ('teamwork-and-collaboration', 'Teamwork and Collaboration'),
+                    ('leadership-skills', 'Leadership Skills'),
+                    ('communication', 'Communication'),
+                    ('planning-and-prioritization', 'Planning and Prioritization'),
+                    ('customer-advocacy', 'Customer Advocacy'),
+                    ('attitude', 'Attitude'),
+                    ('corporate-citizenship', 'Corporate Citizenship')
+                ] %}
+                {% for tab_id, tab_title in tab_titles %}
+                <a class="nav-link text-light d-flex justify-content-between align-items-center {{ 'active' if tab_id == 'technical-acumen' }}"
+                   data-toggle="pill" href="#{{ tab_id }}">
+                    {{ tab_title }}
+                    <div>
+                        <span class="badge badge-light current-score" id="badge-{{ tab_id }}-current"></span>
+                        <span class="badge new-score collapse" id="badge-{{ tab_id }}-new">
+                            <span class="collapse oi" id="{{ tab_id }}-delta"></span>
+                            <span id="{{ tab_id }}-score"></span>
+                        </span>
+                    </div>
                 </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#domain-knowledge">
-                    Domain Knowledge
-                    <span class="badge badge-light" id="badge-domain-knowledge"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#discovery-and-qualification">
-                    Discovery and Qualification
-                    <span class="badge badge-light" id="badge-discovery-and-qualification"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#teamwork-and-collaboration">
-                    Teamwork and Collaboration
-                    <span class="badge badge-light" id="badge-teamwork-and-collaboration"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#leadership-skills">
-                    Leadership Skills
-                    <span class="badge badge-light" id="badge-leadership-skills"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#communication">
-                    Communication
-                    <span class="badge badge-light" id="badge-communication"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#planning-and-prioritization">
-                    Planning and Prioritization
-                    <span class="badge badge-light" id="badge-planning-and-prioritization"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#customer-advocacy">
-                    Customer Advocacy
-                    <span class="badge badge-light" id="badge-customer-advocacy"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#attitude">
-                    Attitude
-                    <span class="badge badge-light" id="badge-attitude"></span>
-                </a>
-                <a class="nav-link text-light d-flex justify-content-between align-items-center" data-toggle="pill" href="#corporate-citizenship">
-                    Corporate Citizenship
-                    <span class="badge badge-light" id="badge-corporate-citizenship"></span>
-                </a>
+                {% endfor %}
             </nav>
         </div>
+
         <div class="col">
             <div class="tab-content">
                 <div class="tab-pane show active" id="technical-acumen">
