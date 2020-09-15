@@ -1281,7 +1281,7 @@ def sc_competency_scores_add():
             'discovery_and_qualification': int(flask.request.values.get('discovery-and-qualification')),
             'teamwork_and_collaboration': int(flask.request.values.get('teamwork-and-collaboration')),
             'leadership_skills': int(flask.request.values.get('leadership-skills')),
-            'communicative': int(flask.request.values.get('communicative')),
+            'communication': int(flask.request.values.get('communication')),
             'planning_and_prioritization': int(flask.request.values.get('planning-and-prioritization')),
             'customer_advocacy': int(flask.request.values.get('customer-advocacy')),
             'attitude': int(flask.request.values.get('attitude')),

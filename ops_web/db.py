@@ -820,7 +820,7 @@ class Database(fort.PostgresDatabase):
             select
                 e.employee_id, e.employee_name, s.score_timestamp,
                 s.technical_acumen, s.domain_knowledge, s.discovery_and_qualification, s.teamwork_and_collaboration,
-                s.leadership_skills, s.communicative,s.planning_and_prioritization, s.customer_advocacy, s.attitude,
+                s.leadership_skills, s.communication, s.planning_and_prioritization, s.customer_advocacy, s.attitude,
                 s.corporate_citizenship
             from employees e
             join employees m on m.employee_name = e.manager_name
@@ -843,12 +843,12 @@ class Database(fort.PostgresDatabase):
         sql = '''
             insert into sc_competency_scores (
                 id, sc_employee_id, score_timestamp, technical_acumen, domain_knowledge, discovery_and_qualification,
-                teamwork_and_collaboration, leadership_skills, communicative, planning_and_prioritization,
+                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
                 customer_advocacy, attitude, corporate_citizenship
             ) values (
                 %(id)s, %(sc_employee_id)s, %(score_timestamp)s, %(technical_acumen)s, %(domain_knowledge)s,
                 %(discovery_and_qualification)s, %(teamwork_and_collaboration)s, %(leadership_skills)s,
-                %(communicative)s, %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s,
+                %(communication)s, %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s,
                 %(corporate_citizenship)s
             )
         '''
@@ -1898,6 +1898,13 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(47)
+        if self.version < 48:
+            self.log.info('Migrating to database schema version 48')
+            self.u('''
+                alter table sc_competency_scores
+                rename column communicative to communication
+            ''')
+            self.add_schema_version(48)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
