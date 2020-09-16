@@ -27,6 +27,8 @@
                                     data-corporate-citizenship="{{ e.corporate_citizenship }}">
                                 {{ e.employee_name }}
                             </option>
+                        {% else %}
+                            <option disabled>-- you do not manage any SCs --</option>
                         {% endfor %}
                     </select>
                 </div>
