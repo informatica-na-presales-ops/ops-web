@@ -62,10 +62,10 @@ document.getElementById('select-sc').addEventListener('change', function () {
 
     // set expected scores
     document.querySelectorAll('.score-selection').forEach(function (el) {
-        el.classList.remove('sc-competency-expected-score');
+        el.classList.remove('bg-secondary');
     });
     document.querySelectorAll(`.score-${selected_option.dataset.expectedScore}`).forEach(function (el) {
-        el.classList.add('sc-competency-expected-score');
+        el.classList.add('bg-secondary');
     });
 
     window.setting_current_scores = true;
