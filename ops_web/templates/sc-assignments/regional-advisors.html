@@ -16,27 +16,27 @@
 
     <div class="row pt-3 text-light">
         <div class="col-12">
-            <div class="list-group list-group-flush">
-                <div class="list-group-item bg-dark border-light">
-                    <div class="row">
-                        <div class="col"><strong>Sales consultant</strong></div>
-                        <div class="col"><strong>Manager</strong></div>
-                        <div class="col"><strong>Regional advisor</strong></div>
-                    </div>
-                </div>
-            {% for a in g.assignments %}
-                <a class="list-group-item list-group-item-action bg-dark border-light text-light filter-candidate collapse show"
-                    type="button" data-toggle="modal" data-target="#modal-edit" data-filter-value="{{ a.filter_value }}"
-                    data-sc-employee-name="{{ a.sc_employee_name }}" data-sc-employee-id="{{ a.sc_employee_id }}"
-                    data-ra-employee-id="{{ a.ra_employee_id }}">
-                    <div class="row">
-                        <div class="col">{{ a.sc_employee_name }}</div>
-                        <div class="col">{{ a.sc_manager_name }}</div>
-                        <div class="col">{{ a.ra_employee_name if a.ra_employee_id }}</div>
-                    </div>
-                </a>
-            {% endfor %}
-            </div>
+            <table class="table table-dark table-striped table-hover table-sm d-block">
+                <thead>
+                <tr>
+                    <th>Sales consultant</th>
+                    <th>Manager</th>
+                    <th>Regional advisor</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for a in g.assignments %}
+                    <tr class="filter-candidate collapse show" data-filter-value="{{ a.filter_value }}"
+                        {% if 'sc-assignments' in g.permissions %}role="button" data-toggle="modal"{% endif %}
+                        data-target="#modal-edit" data-sc-employee-name="{{ a.sc_employee_name }}"
+                        data-sc-employee-id="{{ a.sc_employee_id }}" data-ra-employee-id="{{ a.ra_employee_id }}">
+                        <td>{{ a.sc_employee_name }}</td>
+                        <td>{{ a.sc_manager_name }}</td>
+                        <td>{{ a.ra_employee_name if a.ra_employee_id }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
