@@ -54,7 +54,7 @@
                     ('corporate-citizenship', 'Corporate Citizenship')
                 ] %}
                 {% for tab_id, tab_title in tab_titles %}
-                <a class="nav-link text-light d-flex justify-content-between align-items-center {{ 'active' if tab_id == 'technical-acumen' }}"
+                <a class="nav-link text-light d-flex justify-content-between align-items-center {{ 'active' if loop.first }}"
                    data-toggle="pill" href="#{{ tab_id }}">
                     {{ tab_title }}
                     <div>
