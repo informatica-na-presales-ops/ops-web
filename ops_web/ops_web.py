@@ -182,8 +182,9 @@ def admin_settings_display():
     settings.image_name_display_length = int(flask.request.values.get('image-name-display-length'))
     settings.show_account_for_images = flask.request.values.get('show-account-for-images') == 'on'
     settings.show_op_debrief_survey_link = flask.request.values.get('show-op-debrief-survey-link') == 'on'
-    settings.show_security_groups_link = flask.request.values.get('show-security-groups-link') == 'on'
     settings.show_sap_access_link = flask.request.values.get('show-sap-access-link') == 'on'
+    settings.show_sc_competency_link = flask.request.values.get('show-sc-competency-link') == 'on'
+    settings.show_security_groups_link = flask.request.values.get('show-security-groups-link') == 'on'
     db.add_log_entry(flask.g.email, 'Updated display settings')
     return flask.redirect(flask.url_for('admin_settings'))
 

@@ -103,6 +103,16 @@ class Settings(dict):
         self.db.set_setting('show-sap-access-link', str_value)
 
     @property
+    def show_sc_competency_link(self) -> bool:
+        return self.get('show-sc-competency-link', 'false') == 'true'
+
+    @show_sc_competency_link.setter
+    def show_sc_competency_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-sc-competency-link': str_value})
+        self.db.set_setting('show-sc-competency-link', str_value)
+
+    @property
     def show_security_groups_link(self) -> bool:
         return self.get('show-security-groups-link', 'false') == 'true'
 

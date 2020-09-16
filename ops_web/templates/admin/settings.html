@@ -63,6 +63,11 @@
                         </div>
                         <div class="form-group">
                             <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-sc-competency-link"
+                                       name="show-sc-competency-link" {{ 'checked' if g.settings.show_sc_competency_link }}>
+                                <label class="custom-control-label" for="show-sc-competency-link">Show SC competency tool on the home page</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-op-debrief-survey-link"
                                        name="show-op-debrief-survey-link" {{ 'checked' if g.settings.show_op_debrief_survey_link }}>
                                 <label class="custom-control-label" for="show-op-debrief-survey-link">Show op debrief survey tool on the home page</label>
