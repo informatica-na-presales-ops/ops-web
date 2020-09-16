@@ -3,3 +3,7 @@
 .max-width-600px { max-width: 600px; }
 .min-width-115px { min-width: 115px; }
 .text-all-small-caps { font-variant-caps: all-small-caps; }
+
+.sc-competency-expected-score {
+    background-color: #bf3900;
+}

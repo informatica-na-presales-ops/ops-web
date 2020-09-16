@@ -818,7 +818,15 @@ class Database(fort.PostgresDatabase):
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
-                e.employee_id, e.employee_name, s.score_timestamp,
+                e.employee_id, e.employee_name, e.job_code, e.job_title,
+                case e.job_code
+                    when 'S412' then 2
+                    when 'S413' then 3
+                    when 'S414' then 4
+                    when 'S2416' then 4
+                    when 'S415' then 5
+                end expected_score,
+                s.score_timestamp,
                 s.technical_acumen, s.domain_knowledge, s.discovery_and_qualification, s.teamwork_and_collaboration,
                 s.leadership_skills, s.communication, s.planning_and_prioritization, s.customer_advocacy, s.attitude,
                 s.corporate_citizenship
@@ -1905,6 +1913,15 @@ class Database(fort.PostgresDatabase):
                 rename column communicative to communication
             ''')
             self.add_schema_version(48)
+        if self.version < 49:
+            self.log.info('Migrating to database schema version 49')
+            self.u('''
+                alter table employees
+                add column business_title text,
+                add column job_code text,
+                add column job_title text
+            ''')
+            self.add_schema_version(49)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

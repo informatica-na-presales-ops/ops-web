@@ -42,6 +42,8 @@ document.querySelectorAll('input[type=radio]').forEach(function (el) {
 });
 
 document.getElementById('select-sc').addEventListener('change', function () {
+    const selected_option = this.options[this.selectedIndex];
+
     // clear current score content
     document.querySelectorAll('.current-score').forEach(function (el) {
         el.textContent = '';
@@ -58,10 +60,17 @@ document.getElementById('select-sc').addEventListener('change', function () {
         el.checked = false;
     });
 
+    // set expected scores
+    document.querySelectorAll('.score-selection').forEach(function (el) {
+        el.classList.remove('sc-competency-expected-score');
+    });
+    document.querySelectorAll(`.score-${selected_option.dataset.expectedScore}`).forEach(function (el) {
+        el.classList.add('sc-competency-expected-score');
+    });
+
     window.setting_current_scores = true;
 
     // select current scores
-    const selected_option = this.options[this.selectedIndex];
     const ids = [
         `technical-acumen-${selected_option.dataset.technicalAcumen}`,
         `domain-knowledge-${selected_option.dataset.domainKnowledge}`,
@@ -82,6 +91,10 @@ document.getElementById('select-sc').addEventListener('change', function () {
     }
 
     window.setting_current_scores = false;
+
+    // show job title
+    document.getElementById('job-title-span').textContent = selected_option.dataset.jobTitle;
+    document.getElementById('job-title').classList.add('show');
 
     // show last score timestamp block
     if (selected_option.dataset.scoreTimestamp) {
