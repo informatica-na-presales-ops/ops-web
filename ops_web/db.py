@@ -848,7 +848,7 @@ class Database(fort.PostgresDatabase):
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
-                e.employee_id, e.employee_name, e.job_code, e.job_title,
+                e.employee_id, e.employee_name, e.employee_email, e.is_manager, e.job_code, e.job_title,
                 case e.job_code
                     when 'S412' then 2
                     when 'S413' then 3
@@ -875,7 +875,13 @@ class Database(fort.PostgresDatabase):
             order by e.employee_name
         '''
         params = {'manager_email': manager_email}
-        return self.q(sql, params)
+        result = list(self.q(sql, params))
+        more = []
+        for e in result:
+            if e.get('is_manager'):
+                more.extend(self.get_employees_for_manager(e.get('employee_email')))
+        result.extend(more)
+        return result
 
     def add_sc_competency_score(self, params: Dict):
         sql = '''

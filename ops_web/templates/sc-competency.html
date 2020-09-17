@@ -12,7 +12,7 @@
                     <label for="select-sc" class="sr-only">Choose an SC</label>
                     <select class="custom-select" id="select-sc" name="sc-employee-id" required>
                         <option hidden disabled selected>-- choose an SC --</option>
-                        {% for e in g.employees %}
+                        {% for e in g.employees | sort(attribute='employee_name') | rejectattr('is_manager') %}
                             <option value="{{ e.employee_id }}" data-job-title="{{ e.job_title }}"
                                     data-expected-score="{{ e.expected_score }}"
                                     data-score-timestamp="{{ e.score_timestamp.date() if e.score_timestamp }}"
