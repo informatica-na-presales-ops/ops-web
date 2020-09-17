@@ -62,25 +62,36 @@
                             <small class="form-text text-muted">Each choice must be on a separate line</small>
                         </div>
                         <div class="form-group">
+                            <label>Show the following tools on the home page</label>
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="show-sc-competency-link"
-                                       name="show-sc-competency-link" {{ 'checked' if g.settings.show_sc_competency_link }}>
-                                <label class="custom-control-label" for="show-sc-competency-link">Show SC competency tool on the home page</label>
+                                <input type="checkbox" class="custom-control-input" id="show-monolith-request-link"
+                                       name="show-monolith-request-link" {{ 'checked' if g.settings.show_monolith_request_link }}>
+                                <label class="custom-control-label" for="show-monolith-request-link">Monolith request</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-op-debrief-survey-link"
                                        name="show-op-debrief-survey-link" {{ 'checked' if g.settings.show_op_debrief_survey_link }}>
-                                <label class="custom-control-label" for="show-op-debrief-survey-link">Show op debrief survey tool on the home page</label>
+                                <label class="custom-control-label" for="show-op-debrief-survey-link">Opportunity debrief surveys</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-sc-assignments-link"
+                                       name="show-sc-assignments-link" {{ 'checked' if g.settings.show_sc_assignments_link }}>
+                                <label class="custom-control-label" for="show-sc-assignments-link">Sales Consultant assignments</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-sap-access-link"
                                        name="show-sap-access-link" {{ 'checked' if g.settings.show_sap_access_link }}>
-                                <label class="custom-control-label" for="show-sap-access-link">Show SAP access tool on the home page</label>
+                                <label class="custom-control-label" for="show-sap-access-link">SAP access</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-sc-competency-link"
+                                       name="show-sc-competency-link" {{ 'checked' if g.settings.show_sc_competency_link }}>
+                                <label class="custom-control-label" for="show-sc-competency-link">SC Competency</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-security-groups-link"
                                        name="show-security-groups-link" {{ 'checked' if g.settings.show_security_groups_link }}>
-                                <label class="custom-control-label" for="show-security-groups-link">Show security groups tool on the home page</label>
+                                <label class="custom-control-label" for="show-security-groups-link">Security groups</label>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-outline-success">Save</button>

@@ -83,6 +83,16 @@ class Settings(dict):
         self.db.set_setting('show-account-for-images', str_value)
 
     @property
+    def show_monolith_request_link(self) -> bool:
+        return self.get('show-monolith-request-link', 'false') == 'true'
+
+    @show_monolith_request_link.setter
+    def show_monolith_request_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-monolith-request-link': str_value})
+        self.db.set_setting('show-monolith-request-link', str_value)
+
+    @property
     def show_op_debrief_survey_link(self) -> bool:
         return self.get('show-op-debrief-survey-link', 'false') == 'true'
 
@@ -101,6 +111,16 @@ class Settings(dict):
         str_value = 'true' if value else 'false'
         self.update({'show-sap-access-link': str_value})
         self.db.set_setting('show-sap-access-link', str_value)
+
+    @property
+    def show_sc_assignments_link(self) -> bool:
+        return self.get('show-sc-assignments-link', 'false') == 'true'
+
+    @show_sc_assignments_link.setter
+    def show_sc_assignments_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-sc-assignments-link': str_value})
+        self.db.set_setting('show-sc-assignments-link', str_value)
 
     @property
     def show_sc_competency_link(self) -> bool:
