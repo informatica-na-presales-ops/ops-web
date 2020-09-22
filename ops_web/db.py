@@ -853,7 +853,7 @@ class Database(fort.PostgresDatabase):
                     when 'S412' then 2
                     when 'S413' then 3
                     when 'S414' then 4
-                    when 'S2416' then 4
+                    when 'S2416' then 5
                     when 'S415' then 5
                 end expected_score,
                 s.score_timestamp,
