@@ -43,19 +43,19 @@
             </div>
 
             <nav class="nav nav-pills flex-column sticky-top pt-3">
-                {% set tab_titles = [
-                    ('technical-acumen', 'Technical Acumen'),
-                    ('domain-knowledge', 'Domain Knowledge'),
-                    ('discovery-and-qualification', 'Discovery and Qualification'),
-                    ('teamwork-and-collaboration', 'Teamwork and Collaboration'),
-                    ('leadership-skills', 'Leadership Skills'),
-                    ('communication', 'Communication'),
-                    ('planning-and-prioritization', 'Planning and Prioritization'),
-                    ('customer-advocacy', 'Customer Advocacy'),
-                    ('attitude', 'Attitude'),
-                    ('corporate-citizenship', 'Corporate Citizenship')
-                ] %}
-                {% for tab_id, tab_title in tab_titles %}
+            {% set tab_titles = [
+                ('technical-acumen', 'Technical Acumen'),
+                ('domain-knowledge', 'Domain Knowledge'),
+                ('discovery-and-qualification', 'Discovery and Qualification'),
+                ('teamwork-and-collaboration', 'Teamwork and Collaboration'),
+                ('leadership-skills', 'Leadership Skills'),
+                ('communication', 'Communication'),
+                ('planning-and-prioritization', 'Planning and Prioritization'),
+                ('customer-advocacy', 'Customer Advocacy'),
+                ('attitude', 'Attitude'),
+                ('corporate-citizenship', 'Corporate Citizenship')
+            ] %}
+            {% for tab_id, tab_title in tab_titles %}
                 <a class="nav-link text-light d-flex justify-content-between align-items-center {{ 'active' if loop.first }}"
                    data-toggle="pill" href="#{{ tab_id }}">
                     {{ tab_title }}
@@ -67,7 +67,7 @@
                         </span>
                     </div>
                 </a>
-                {% endfor %}
+            {% endfor %}
             </nav>
         </div>
 
@@ -365,7 +365,8 @@
                                 <li>Prepared prior to customer visits and is able to shape communication strategy.</li>
                                 <li>Coaches extended team on information learned.</li>
                                 <li>Demonstrate agility to probe and drills-down to provide greater customer
-                                    insight.</li>
+                                    insight.
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -379,12 +380,15 @@
                             </label>
                             <ul class="ml-n4">
                                 <li>Uses phrases and terms from the customer&#x02bc;s technical and business
-                                    domain.</li>
+                                    domain.
+                                </li>
                                 <li>Uses paraphrasing and active listening to communicate empathy and awareness of
-                                    customer concerns and needs.</li>
+                                    customer concerns and needs.
+                                </li>
                                 <li>Quickly develops rapport and trust with the customer.</li>
                                 <li>Provides concise and detailed documentation to insure all stakeholders are in sync
-                                    over the opportunity lifecycle.</li>
+                                    over the opportunity lifecycle.
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -398,10 +402,12 @@
                             </label>
                             <ul class="ml-n4">
                                 <li>Active listener, empathetic and motivational, articulates value tailored to
-                                    audience.</li>
+                                    audience.
+                                </li>
                                 <li>Expert delivery of ROI, TCO mapped to customer pain.</li>
                                 <li>Leverages sales processes, tools, and templates to gain insight into
-                                    customer&#x02bc;s world.</li>
+                                    customer&#x02bc;s world.
+                                </li>
                                 <li>Can frame solution in the context of the customer&#x02bc;s industry.</li>
                             </ul>
                         </div>
@@ -441,9 +447,11 @@
                             </label>
                             <ul class="ml-n4">
                                 <li>Responds to tasks and input when asked and offers feedback or advice when
-                                    asked.</li>
+                                    asked.
+                                </li>
                                 <li>Actions and communications are limited to the immediate need therefore may miss the
-                                    bigger strategy or longer term goal.</li>
+                                    bigger strategy or longer term goal.
+                                </li>
                             </ul>
                         </div>
                     </div>
