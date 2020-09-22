@@ -9,9 +9,9 @@
 
             <form class="form-inline mb-3" id="form" action="{{ url_for('sc_competency_scores_add') }}" method="post">
                 <div class="form-group mb-2 mr-2">
-                    <label for="select-sc" class="sr-only">Choose an SC</label>
+                    <label for="select-sc" class="sr-only">Choose an employee</label>
                     <select class="custom-select" id="select-sc" name="sc-employee-id" required>
-                        <option hidden disabled selected>-- choose an SC --</option>
+                        <option hidden disabled selected>-- choose an employee --</option>
                         {% for e in g.employees | sort(attribute='employee_name') | rejectattr('is_manager') %}
                             <option value="{{ e.employee_id }}" data-job-title="{{ e.job_title }}"
                                     data-expected-score="{{ e.expected_score }}"
@@ -28,7 +28,7 @@
                                 {{ e.employee_name }}
                             </option>
                         {% else %}
-                            <option disabled>-- you do not manage any SCs --</option>
+                            <option disabled>-- you do not manage any candidates --</option>
                         {% endfor %}
                     </select>
                 </div>
