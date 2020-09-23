@@ -708,6 +708,22 @@ def images_edit():
     return flask.redirect(flask.url_for('images'))
 
 
+@app.route('/images/request-delete', methods=['POST'])
+@login_required
+def images_request_delete():
+    image_id = flask.request.values.get('image-id')
+    app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
+    image = db.get_image(image_id)
+    image_name = image.get('name')
+    if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
+        db.add_log_entry(flask.g.email, f'Request deletion of image {image_id}')
+        db.set_image_delete_requested(image_id)
+        flask.flash(f'Your request to delete the image {image_name} was successful', 'success')
+    else:
+        flask.flash(f'You do not have permission to request deletion of the image {image_name}', 'warning')
+    return flask.redirect(flask.url_for('images'))
+
+
 @app.route('/launch', methods=['GET', 'POST'])
 @login_required
 def launch():

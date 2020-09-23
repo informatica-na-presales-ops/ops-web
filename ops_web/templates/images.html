@@ -41,7 +41,8 @@
                 </thead>
                 <tbody>
                 {% for i in g.images %}
-                    <tr class="filter-candidate collapse show" data-filter-value="{{ i.filter_value }}">
+                    <tr class="filter-candidate collapse show {{ 'text-decoration-line-through' if i.delete_requested }}"
+                        data-filter-value="{{ i.filter_value }}">
                         <td>{{ i.cloud }}</td>
                         {% if g.settings.show_account_for_images %}
                             <td>{{ i.description }}</td>
@@ -53,7 +54,7 @@
                                   data-content="ID: {{ i.id }}<br>Name: {{ i.name }}<br>Account: {{ i.description }}">
                                 <span class="oi oi-info"></span>
                             </span>
-                            {{ i.truncated_name }}
+                            <span class="">{{ i.truncated_name }}</span>
                         </td>
                         <td>{{ i.owner }}</td>
                         <td>{{ i.created.date() if i.created }}</td>
@@ -71,9 +72,12 @@
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-edit" title="Edit image" {{ 'disabled' if not i.can_modify }} data-image-id="{{ i.id }}" data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}" data-image-public="{{ 'true' if i.public }}">
                                     <span class="oi oi-pencil"></span>
                                 </button>
-                                <a class="btn btn-sm btn-outline-light {{ 'disabled' if not i.can_modify }}" href="mailto:{{ g.config.support_email }}?subject=Delete image request&body=Please delete image {{ i.id }}" title="Delete image">
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                        data-target="#modal-image-delete" title="Delete image"
+                                        data-image-id="{{ i.id }}"
+                                        data-image-name="{{ i.name }}" {{ 'disabled' if not i.can_modify }}>
                                     <span class="oi oi-trash"></span>
-                                </a>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -107,10 +111,12 @@
                             <span class="oi oi-pencil"></span>
                             Edit image
                         </button>
-                        <a class="btn btn-outline-light mb-2 {{ 'disabled' if not i.can_modify }}" href="mailto:{{ g.config.support_email }}?subject=Delete image request&body=Please delete image {{ i.id }}">
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal"
+                                data-target="#modal-image-delete" data-image-id="{{ i.id }}"
+                                data-image-name="{{ i.name }}" {{ 'disabled' if not i.can_modify }}>
                             <span class="oi oi-trash"></span>
                             Delete image
-                        </a>
+                        </button>
                     </div>
                 </div>
             {% endfor %}
@@ -188,6 +194,28 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-outline-success" form="form-image-edit">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-image-delete">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete image</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the image
+                        <strong><span id="modal-image-delete-image-name"></span></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <form id="form-image-delete" action="{{ url_for('images_request_delete') }}" method="post">
+                        <input type="hidden" name="image-id" id="form-image-delete-image-id">
+                        <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                    </form>
                 </div>
             </div>
         </div>

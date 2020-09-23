@@ -588,6 +588,18 @@ class Database(fort.PostgresDatabase):
 
     # images
 
+    def get_image(self, image_id: str) -> Dict:
+        sql = '''
+            select id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id, cost
+            from images
+            where id = %(id)s
+        '''
+        return self.q_one(sql, {'id': image_id})
+
+    def get_image_name_max_length(self) -> int:
+        sql = 'select coalesce(max(length(name)), 0) from images where visible is true'
+        return self.q_val(sql)
+
     def get_images(self, email: str) -> List[Dict]:
         name_limit = Settings(self).image_name_display_length
         if self.has_permission(email, 'admin'):
@@ -623,26 +635,26 @@ class Database(fort.PostgresDatabase):
         params = {'email': email, 'name_limit': name_limit}
         return self.q(sql, params)
 
-    def get_image_name_max_length(self) -> int:
-        sql = 'select coalesce(max(length(name)), 0) from images where visible is true'
-        return self.q_val(sql)
-
-    def get_image(self, image_id: str) -> Dict:
+    def set_image_delete_requested(self, image_id: str, delete_requested: bool = True):
         sql = '''
-            select id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id, cost
-            from images
+            update images
+            set delete_requested = %(delete_requested)s
             where id = %(id)s
         '''
-        return self.q_one(sql, {'id': image_id})
-
-    def set_image_tags(self, image_id: str, name: str, owner: str, public: bool):
-        sql = 'update images set name = %(name)s, owner = %(owner)s, public = %(public)s where id = %(id)s'
-        params = {'id': image_id, 'name': name, 'owner': owner, 'public': public}
+        params = {
+            'id': image_id,
+            'delete_requested': delete_requested
+        }
         self.u(sql, params)
 
     def set_image_state(self, image_id: str, state: str):
         sql = 'update images set state = %(state)s where id = %(id)s'
         params = {'id': image_id, 'state': state}
+        self.u(sql, params)
+
+    def set_image_tags(self, image_id: str, name: str, owner: str, public: bool):
+        sql = 'update images set name = %(name)s, owner = %(owner)s, public = %(public)s where id = %(id)s'
+        params = {'id': image_id, 'name': name, 'owner': owner, 'public': public}
         self.u(sql, params)
 
     # syncing

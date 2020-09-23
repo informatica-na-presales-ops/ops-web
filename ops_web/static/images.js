@@ -1,3 +1,9 @@
+$('#modal-image-delete').on('show.bs.modal', function (e) {
+    const button = e.relatedTarget;
+    document.getElementById('modal-image-delete-image-name').textContent = button.dataset.imageName;
+    document.getElementById('form-image-delete-image-id').value = button.dataset.imageId;
+});
+
 $('#modal-image-edit').on('show.bs.modal', function (e) {
     let button = $(e.relatedTarget);
     let image_id = button.attr('data-image-id');
