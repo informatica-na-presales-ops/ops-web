@@ -1,7 +1,12 @@
+window.found_invalid = false;
 window.setting_current_scores = false;
 
 document.querySelectorAll('input[type=radio]').forEach(function (el) {
     el.addEventListener('change', function () {
+        // reset the invalid input search
+        window.found_invalid = false;
+
+        // set current score directly and return if this is happening during an employee selection change
         if (window.setting_current_scores) {
             document.getElementById(`badge-${this.name}-current`).textContent = this.value;
             return;
@@ -38,6 +43,15 @@ document.querySelectorAll('input[type=radio]').forEach(function (el) {
         }
 
         document.getElementById(`${this.name}-score`).textContent = new_score;
+    });
+    el.addEventListener('invalid', function () {
+        // find the first hidden invalid input and show the tab for it
+        if (window.found_invalid) {
+            return;
+        }
+        const pill = document.querySelector(`a[href='#${el.name}']`);
+        pill.click();
+        window.found_invalid = true;
     });
 });
 
