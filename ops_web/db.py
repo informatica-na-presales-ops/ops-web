@@ -597,8 +597,8 @@ class Database(fort.PostgresDatabase):
                     true can_modify, state = 'available' and (i.cloud = 'aws' or i.cloud ='gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
-                    coalesce(instanceid, '') instanceid,
-                    lower(i.cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value 
+                    coalesce(instanceid, '') instanceid, delete_requested,
+                    lower(concat_ws(' ', i.cloud, cc.description, name, owner)) filter_value 
                 from images i
                 join cloud_credentials cc on i.account_id = cc.id
                 where visible is true
@@ -612,12 +612,13 @@ class Database(fort.PostgresDatabase):
                     state = 'available' and (i.cloud = 'aws' or i.cloud ='gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
-                    coalesce(instanceid, '') instanceid,
-                    lower(i.cloud || ' ' || coalesce(name, '') || ' ' || coalesce(owner, '')) filter_value
+                    coalesce(instanceid, '') instanceid, delete_requested,
+                    lower(concat_ws(' ', i.cloud, cc.description, name, owner)) filter_value 
                 from images i
                 join cloud_credentials cc on cc.id = i.account_id
                 where visible is true
                 and (owner = %(email)s or public is true)
+                and delete_requested is false
             '''
         params = {'email': email, 'name_limit': name_limit}
         return self.q(sql, params)
@@ -1958,6 +1959,13 @@ class Database(fort.PostgresDatabase):
                 add column job_title text
             ''')
             self.add_schema_version(49)
+        if self.version < 50:
+            self.log.info('Migrating to database schema version 50')
+            self.u('''
+                alter table images
+                add column delete_requested boolean default false
+            ''')
+            self.add_schema_version(50)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
