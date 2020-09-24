@@ -635,6 +635,14 @@ class Database(fort.PostgresDatabase):
         params = {'email': email, 'name_limit': name_limit}
         return self.q(sql, params)
 
+    def get_images_to_delete(self) -> List[Dict]:
+        sql = '''
+            select id, cloud, region, name, owner, state, created, visible, synced, public, account_id, cost
+            from images
+            where visible is true and delete_requested is true
+        '''
+        return self.q(sql)
+
     def set_image_delete_requested(self, image_id: str, delete_requested: bool = True):
         sql = '''
             update images

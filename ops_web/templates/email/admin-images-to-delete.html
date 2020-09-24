@@ -1,0 +1,7 @@
+<p>The following images have been requested to be deleted in Ops Web.</p>
+
+<ul>
+{% for image in ctx.images %}
+    <li>{{ image.region }} / {{ image.id }} / {{ image.name }} / {{ image.owner }}</li>
+{% endfor %}
+</ul>

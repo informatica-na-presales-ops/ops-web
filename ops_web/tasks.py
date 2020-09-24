@@ -7,6 +7,7 @@ import logging
 import ops_web.aws
 import ops_web.config
 import ops_web.db
+import ops_web.send_email
 import requests
 import requests.auth
 import time
@@ -247,5 +248,11 @@ def update_termination_protection(tc: TaskContext):
 
 def check_for_images_to_delete(tc: TaskContext):
     tc.apm.begin_transaction('task')
+    images = tc.db.get_images_to_delete()
+    if images:
+        ctx = {'images': images}
+        with tc.app.app_context():
+            body = flask.render_template('email/admin-images-to-delete.html', ctx=ctx)
+            ops_web.send_email.send_email(tc.config, tc.config.support_email, 'Ops Web image deletion request', body)
     tc.db.update_scheduled_task_last_run('check-for-images-to-delete')
     tc.apm.end_transaction('check-for-images-to-delete')
