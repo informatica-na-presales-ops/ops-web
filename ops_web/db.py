@@ -1302,6 +1302,72 @@ class Database(fort.PostgresDatabase):
         params = {'user_login': user_login}
         return self.q(sql, params)
 
+    # scheduled tasks
+
+    def add_scheduled_task(self, task_name: str, task_interval: datetime.timedelta, task_active: bool = False):
+        sql = '''
+            insert into scheduled_tasks (task_id, task_name, task_interval, task_active)
+            values (%(task_id)s, %(task_name)s, %(task_interval)s, %(task_active)s)
+        '''
+        params = {
+            'task_id': uuid.uuid4(),
+            'task_name': task_name,
+            'task_interval': task_interval,
+            'task_active': task_active
+        }
+        self.u(sql, params)
+
+    def get_scheduled_task_with_name(self, task_name: str) -> Optional[Dict]:
+        sql = '''
+            select task_id, task_name, task_interval, task_last_run, task_active
+            from scheduled_tasks
+            where task_name = %(task_name)s
+        '''
+        params = {
+            'task_name': task_name
+        }
+        return self.q_one(sql, params)
+
+    def get_scheduled_tasks(self):
+        sql = '''
+            select task_id, task_name, task_interval, task_last_run, task_active
+            from scheduled_tasks
+            order by task_name
+        '''
+        return self.q(sql)
+
+    def get_scheduled_tasks_to_run(self):
+        sql = '''
+            select task_id, task_name
+            from scheduled_tasks
+            where task_active is true
+            and (task_last_run is null or task_last_run + task_interval < current_timestamp)
+        '''
+        return self.q(sql)
+
+    def set_scheduled_task_active(self, task_name: str, task_active: bool):
+        sql = '''
+            update scheduled_tasks
+            set task_active = %(task_active)s
+            where task_name = %(task_name)s
+        '''
+        params = {
+            'task_name': task_name,
+            'task_active': task_active
+        }
+        self.u(sql, params)
+
+    def update_scheduled_task_last_run(self, task_name: str):
+        sql = '''
+            update scheduled_tasks
+            set task_last_run = current_timestamp
+            where task_name = %(task_name)s
+        '''
+        params = {
+            'task_name': task_name
+        }
+        self.u(sql, params)
+
     # migrations and metadata
 
     def add_schema_version(self, schema_version: int):
@@ -1321,8 +1387,8 @@ class Database(fort.PostgresDatabase):
         for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'ecosystem_certification', 'employees',
                       'environment_usage_events', 'external_links', 'images', 'log_entries', 'op_debrief_roles',
                       'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
-                      'sc_competency_scores', 'sc_ra_assignments', 'sc_rep_assignments', 'schema_versions',
-                      'security_group', 'security_group_rules', 'settings', 'sf_opportunities',
+                      'sc_competency_scores', 'sc_ra_assignments', 'sc_rep_assignments', 'scheduled_tasks',
+                      'schema_versions', 'security_group', 'security_group_rules', 'settings', 'sf_opportunities',
                       'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
             self.u(f'drop table if exists {table} cascade ')
 
@@ -1978,6 +2044,18 @@ class Database(fort.PostgresDatabase):
                 add column delete_requested boolean default false
             ''')
             self.add_schema_version(50)
+        if self.version < 51:
+            self.log.info('Migrating to database schema version 51')
+            self.u('''
+                create table scheduled_tasks (
+                    task_id uuid primary key,
+                    task_name text,
+                    task_interval interval,
+                    task_last_run timestamp,
+                    task_active boolean
+                )
+            ''')
+            self.add_schema_version(51)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

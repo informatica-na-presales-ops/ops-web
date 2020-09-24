@@ -150,6 +150,7 @@ def admin_cloud_credentials_edit():
 @permission_required('admin')
 def admin_settings():
     flask.g.current_image_name_max_length = db.get_image_name_max_length()
+    flask.g.tasks = db.get_scheduled_tasks()
     return flask.render_template('admin/settings.html')
 
 
@@ -188,6 +189,19 @@ def admin_settings_display():
     settings.show_sc_competency_link = flask.request.values.get('show-sc-competency-link') == 'on'
     settings.show_security_groups_link = flask.request.values.get('show-security-groups-link') == 'on'
     db.add_log_entry(flask.g.email, 'Updated display settings')
+    return flask.redirect(flask.url_for('admin_settings'))
+
+
+@app.route('/admin/settings/tasks', methods=['POST'])
+@permission_required('admin')
+def admin_settings_tasks():
+    active_tasks = list(flask.request.values)
+    db_tasks = db.get_scheduled_tasks()
+    for task in db_tasks:
+        task_name = task.get('task_name')
+        db.set_scheduled_task_active(task_name, task_name in active_tasks)
+    db.add_log_entry(flask.g.email, 'Update list of active scheduled tasks')
+    flask.flash('Active scheduled tasks updated.', 'success')
     return flask.redirect(flask.url_for('admin_settings'))
 
 
@@ -1715,6 +1729,47 @@ def sync_machines():
     apm.client.end_transaction('sync-machines')
 
 
+def run_tasks():
+    app.logger.debug('Checking for tasks to run...')
+
+    tasks = {
+        'check-for-images-to-delete': {
+            'default-active': True,
+            'function': ops_web.tasks.check_for_images_to_delete,
+            'interval': datetime.timedelta(days=1)
+        },
+        'get-cost-data': {
+            'default-active': False,
+            'function': ops_web.tasks.get_cost_data,
+            'interval': datetime.timedelta(days=1)
+        },
+        'op-debrief-surveys-generate': {
+            'default-active': False,
+            'function': ops_web.op_debrief_surveys.generate,
+            'interval': datetime.timedelta(hours=6)
+        },
+        'op-debrief-surveys-remind': {
+            'default-active': False,
+            'function': ops_web.op_debrief_surveys.remind,
+            'interval': datetime.timedelta(days=1)
+        }
+    }
+
+    db_tasks = [t.get('task_name') for t in db.get_scheduled_tasks()]
+
+    for task_name in tasks:
+        if task_name not in db_tasks:
+            task_interval = tasks.get(task_name).get('interval')
+            task_active = tasks.get(task_name).get('default-active')
+            db.add_scheduled_task(task_name, task_interval, task_active)
+
+    tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
+    for task in db.get_scheduled_tasks_to_run():
+        task_name = task.get('task_name')
+        if task_name in tasks:
+            scheduler.add_job(tasks.get(task_name).get('function'), args=[tc], id=task_name)
+
+
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)
     app.logger.debug(f'ops-web {config.version}')
@@ -1748,16 +1803,6 @@ def main():
             scheduler.add_job(sync_machines)
             scheduler.add_job(check_sync, 'interval', minutes=1)
 
-        tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
-
-        # cost data synchronization
-        scheduler.add_job(ops_web.tasks.get_cost_data, args=[tc])
-        scheduler.add_job(ops_web.tasks.get_cost_data, 'interval', hours=24, args=[tc])
-
-        # op debrief survey jobs
-        if 'op-debrief' in config.feature_flags:
-            scheduler.add_job(ops_web.op_debrief_surveys.generate, args=[tc])
-            scheduler.add_job(ops_web.op_debrief_surveys.generate, 'interval', hours=6, args=[tc])
-            scheduler.add_job(ops_web.op_debrief_surveys.remind, 'interval', hours=24, args=[tc])
+        scheduler.add_job(run_tasks, 'interval', minutes=1)
 
     waitress.serve(app, ident=None, threads=config.web_server_threads)

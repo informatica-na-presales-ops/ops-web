@@ -101,6 +101,27 @@
 
             <div class="card bg-dark border-light mb-3">
                 <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#scheduled-tasks-form" data-toggle="collapse">Scheduled tasks</a>
+                </h5>
+                <div class="card-body collapse" id="scheduled-tasks-form">
+                    <form action="{{ url_for('admin_settings_tasks') }}" method="post">
+                        <div class="form-group">
+                            <label>Activate the following scheduled tasks</label>
+                        {% for task in g.tasks %}
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="{{ task.task_name }}"
+                                       name="{{ task.task_name }}" {{ 'checked' if task.task_active }}>
+                                <label class="custom-control-label" for="{{ task.task_name }}">{{ task.task_name }}</label>
+                            </div>
+                        {% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">Save</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-light mb-3">
+                <h5 class="card-header">
                     <a class="text-decoration-none text-light" href="#zendesk-integration-form" data-toggle="collapse">Zendesk integration</a>
                 </h5>
                 <div class="card-body collapse" id="zendesk-integration-form">
