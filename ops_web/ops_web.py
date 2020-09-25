@@ -682,12 +682,17 @@ def images_delete():
     db.add_log_entry(flask.g.email, f'Delete image {image_id}')
     db.set_image_state(image_id, 'deleting')
     image = db.get_image(image_id)
-    account = db.get_one_credential_for_use(image.get('account_id'))
-    cloud = image.get('cloud')
-    if cloud == 'aws':
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        region = image.get('region')
-        aws.delete_image(region, image_id)
+    if image is None:
+        flask.flash(f'Could not find image with id {image_id}', 'warning')
+    else:
+        account = db.get_one_credential_for_use(image.get('account_id'))
+        cloud = image.get('cloud')
+        if cloud == 'aws':
+            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+            region = image.get('region')
+            aws.delete_image(region, image_id)
+            image_name = image.get('name')
+            flask.flash(f'Successfully deleted image {image_name}', 'success')
     return flask.redirect(flask.url_for(next_view))
 
 
