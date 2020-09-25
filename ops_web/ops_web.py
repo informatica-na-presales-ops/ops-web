@@ -677,6 +677,7 @@ def images_create():
 @permission_required('admin')
 def images_delete():
     image_id = flask.request.values.get('image-id')
+    next_view = flask.request.values.get('next-view')
     app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
     db.add_log_entry(flask.g.email, f'Delete image {image_id}')
     db.set_image_state(image_id, 'deleting')
@@ -687,7 +688,7 @@ def images_delete():
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         region = image.get('region')
         aws.delete_image(region, image_id)
-    return flask.redirect(flask.url_for('toolbox'))
+    return flask.redirect(flask.url_for(next_view))
 
 
 @app.route('/images/edit', methods=['POST'])
