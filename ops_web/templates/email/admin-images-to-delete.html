@@ -5,3 +5,5 @@
     <li>{{ image.region }} / {{ image.id }} / {{ image.name }} / {{ image.owner }}</li>
 {% endfor %}
 </ul>
+
+<p><a href="{{ url_for('images_trash') }}">View and delete these images.</a></p>
