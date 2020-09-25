@@ -83,6 +83,16 @@ class Settings(dict):
         self.db.set_setting('show-account-for-images', str_value)
 
     @property
+    def show_all_images(self) -> bool:
+        return self.get('show-all-images', 'false') == 'true'
+
+    @show_all_images.setter
+    def show_all_images(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-account-for-images': str_value})
+        self.db.set_setting('show-all-images', str_value)
+
+    @property
     def show_monolith_request_link(self) -> bool:
         return self.get('show-monolith-request-link', 'false') == 'true'
 
@@ -601,7 +611,7 @@ class Database(fort.PostgresDatabase):
         return self.q_val(sql)
 
     def get_images(self, email: str) -> List[Dict]:
-        name_limit = Settings(self).image_name_display_length
+        settings = Settings(self)
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
@@ -629,10 +639,11 @@ class Database(fort.PostgresDatabase):
                 from images i
                 join cloud_credentials cc on cc.id = i.account_id
                 where visible is true
-                and (owner = %(email)s or public is true)
                 and delete_requested is false
             '''
-        params = {'email': email, 'name_limit': name_limit}
+            if not settings.show_all_images:
+                sql = f'{sql} and (owner = %(email)s or public is true)'
+        params = {'email': email, 'name_limit': settings.image_name_display_length}
         return self.q(sql, params)
 
     def get_images_to_delete(self) -> List[Dict]:

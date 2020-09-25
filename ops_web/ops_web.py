@@ -182,13 +182,15 @@ def admin_settings_display():
     settings.app_env_values = flask.request.values.get('app-env-values', '').splitlines()
     settings.image_name_display_length = int(flask.request.values.get('image-name-display-length'))
     settings.show_account_for_images = flask.request.values.get('show-account-for-images') == 'on'
+    settings.show_all_images = flask.request.values.get('show-all-images') == 'on'
     settings.show_monolith_request_link = flask.request.values.get('show-monolith-request-link') == 'on'
     settings.show_op_debrief_survey_link = flask.request.values.get('show-op-debrief-survey-link') == 'on'
     settings.show_sap_access_link = flask.request.values.get('show-sap-access-link') == 'on'
     settings.show_sc_assignments_link = flask.request.values.get('show-sc-assignments-link') == 'on'
     settings.show_sc_competency_link = flask.request.values.get('show-sc-competency-link') == 'on'
     settings.show_security_groups_link = flask.request.values.get('show-security-groups-link') == 'on'
-    db.add_log_entry(flask.g.email, 'Updated display settings')
+    db.add_log_entry(flask.g.email, 'Update display settings')
+    flask.flash('Successfully updated display settings', 'success')
     return flask.redirect(flask.url_for('admin_settings'))
 
 

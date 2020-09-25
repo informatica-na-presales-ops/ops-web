@@ -46,6 +46,13 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-all-images"
+                                       name="show-all-images" {{ 'checked' if g.settings.show_all_images }}>
+                                <label class="custom-control-label" for="show-all-images">Allow all users to see all images</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label for="image-name-display-length">Maximum number of characters to display in image names</label>
                             <input type="number" class="form-control" id="image-name-display-length" name="image-name-display-length"
                                    min="10" max="255" step="1" required value="{{ g.settings.image_name_display_length }}">
