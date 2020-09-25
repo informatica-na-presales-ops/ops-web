@@ -636,12 +636,21 @@ class Database(fort.PostgresDatabase):
         return self.q(sql, params)
 
     def get_images_to_delete(self) -> List[Dict]:
+        name_limit = Settings(self).image_name_display_length
         sql = '''
-            select id, cloud, region, name, owner, state, created, visible, synced, public, account_id, cost
-            from images
+            select
+                cc.description, i.id, i.cloud, region, name, owner, state, created,
+                left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
+                as truncated_name
+            from images i
+            join cloud_credentials cc on cc.id = i.account_id
             where visible is true and delete_requested is true
+            order by name
         '''
-        return self.q(sql)
+        params = {
+            'name_limit': name_limit
+        }
+        return self.q(sql, params)
 
     def set_image_delete_requested(self, image_id: str, delete_requested: bool = True):
         sql = '''

@@ -1,0 +1,80 @@
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('images') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Images</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <h2>Images to delete</h2>
+            <p>The following images have been requested to be deleted</p>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-12">
+            <table class="table table-dark table-responsive table-striped">
+                <thead>
+                <tr>
+                    <th>Cloud</th>
+                    {% if g.settings.show_account_for_images %}
+                        <th>Account</th>
+                    {% endif %}
+                    <th>Region</th>
+                    <th class="max-width-600px">Image name</th>
+                    <th>Owner</th>
+                    <th class="min-width-115px">Created</th>
+                    <th>State</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for i in g.images %}
+                    <tr>
+                        <td>{{ i.cloud }}</td>
+                        {% if g.settings.show_account_for_images %}
+                            <td>{{ i.description }}</td>
+                        {% endif %}
+                        <td>{{ i.region }}</td>
+                        <td>
+                            <span class="badge badge-secondary" role="button" data-toggle="popover" data-html="true"
+                                  data-container="body" data-placement="bottom"
+                                  data-content="ID: {{ i.id }}<br>Name: {{ i.name }}<br>Account: {{ i.description }}">
+                                <span class="oi oi-info"></span>
+                            </span>
+                            {{ i.truncated_name }}
+                        </td>
+                        <td>{{ i.owner }}</td>
+                        <td>{{ i.created.date() if i.created }}</td>
+                        <td>{{ i.state }}</td>
+                        <td class="text-center">
+                            <form method="post">
+                                <input type="hidden" name="image-id" value="{{ i.id }}">
+                                <input type="hidden" name="image-name" value="{{ i.name }}">
+                                <input type="hidden" name="next-view" value="images_trash">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="submit" class="btn btn-sm btn-outline-light" title="Delete" formaction="{{ url_for('images_delete') }}">
+                                        <span class="oi oi-trash"></span>
+                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-outline-light" title="Restore" formaction="{{ url_for('images_restore') }}">
+                                        <span class="oi oi-action-undo"></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='enable-popover.js') }}"></script>
+{% endblock %}

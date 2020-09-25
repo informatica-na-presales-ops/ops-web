@@ -739,6 +739,25 @@ def images_request_delete():
     return flask.redirect(flask.url_for('images'))
 
 
+@app.route('/images/restore', methods=['POST'])
+@permission_required('admin')
+def images_restore():
+    image_id = flask.request.values.get('image-id')
+    image_name = flask.request.values.get('image-name')
+    next_view = flask.request.values.get('next-view')
+    db.add_log_entry(flask.g.email, f'Restore image {image_id}')
+    db.set_image_delete_requested(image_id, False)
+    flask.flash(f'Image {image_name} as been restored', 'success')
+    return flask.redirect(flask.url_for(next_view))
+
+
+@app.route('/images/trash')
+@permission_required('admin')
+def images_trash():
+    flask.g.images = db.get_images_to_delete()
+    return flask.render_template('images/trash.html')
+
+
 @app.route('/launch', methods=['GET', 'POST'])
 @login_required
 def launch():

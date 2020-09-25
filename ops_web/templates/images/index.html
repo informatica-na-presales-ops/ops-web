@@ -7,8 +7,15 @@
         <div class="col-12">
             <h1 class="text-light">Images</h1>
             <div class="form-inline">
-                <label class="sr-only" for="filter-input"></label>
-                <input class="form-control" placeholder="Filter images..." id="filter-input" autofocus>
+                <div class="form-group mr-2">
+                    <label class="sr-only" for="filter-input"></label>
+                    <input class="form-control" placeholder="Filter images..." id="filter-input" autofocus>
+                </div>
+                {% if 'admin' in g.permissions %}
+                    <div class="form-group">
+                        <a class="btn btn-outline-light" href="{{ url_for('images_trash') }}">View trash</a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -54,7 +61,7 @@
                                   data-content="ID: {{ i.id }}<br>Name: {{ i.name }}<br>Account: {{ i.description }}">
                                 <span class="oi oi-info"></span>
                             </span>
-                            <span class="">{{ i.truncated_name }}</span>
+                            {{ i.truncated_name }}
                         </td>
                         <td>{{ i.owner }}</td>
                         <td>{{ i.created.date() if i.created }}</td>
