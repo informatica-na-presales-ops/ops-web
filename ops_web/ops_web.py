@@ -1759,7 +1759,7 @@ def run_tasks():
             'interval': datetime.timedelta(days=1)
         },
         'get-cost-data': {
-            'default-active': False,
+            'default-active': True,
             'function': ops_web.tasks.get_cost_data,
             'interval': datetime.timedelta(days=1)
         },
