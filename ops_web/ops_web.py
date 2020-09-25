@@ -610,7 +610,7 @@ def images():
     flask.g.environments = db.get_env_list()
     username = flask.g.email.split('@')[0]
     flask.g.default_environment = f'{username}-{datetime.datetime.utcnow():%Y%m%d-%H%M%S}'
-    return flask.render_template('images.html')
+    return flask.render_template('images/index.html')
 
 
 @app.route('/images/create', methods=['POST'])
