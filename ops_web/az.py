@@ -132,7 +132,7 @@ class AZClient:
                     'id': vm.id,
                     'cloud': 'az',
                     'region': vm.location,
-                    'environment': vm.tags.get('machine__environment_group', 'default-environment'),
+                    'environment': vm.tags.get('machine__environment_group'),
                     'name': vm.tags.get('NAME', vm.name),
                     'owner': vm.tags.get('OWNEREMAIL', '').lower(),
                     'contributors': vm.tags.get('CONTRIBUTORS', ''),

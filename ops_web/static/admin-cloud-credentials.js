@@ -25,10 +25,11 @@ document.querySelectorAll('.cloud-radio').forEach(function (el) {
 });
 
 $('#modal-cloud-credentials').on('show.bs.modal', function (e) {
-    let button = e.relatedTarget;
-    let id = button.dataset.id;
+    const button = e.relatedTarget;
+    const id = button.dataset.id;
     document.getElementById('cloud-credentials-id').value = id;
     document.getElementById('cloud-credential-description').value = button.dataset.description;
+    document.getElementById('cloud-credential-default-environment-name').value = button.dataset.defaultEnvironmentName;
     document.getElementById('cloud-credential-username').value = button.dataset.username;
     document.getElementById('cloud-credential-password').value = '';
     document.getElementById('cloud-credential-azure-tenant-id').value = button.dataset.azureTenantId;

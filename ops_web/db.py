@@ -281,8 +281,12 @@ class Database(fort.PostgresDatabase):
 
     def add_cloud_credentials(self, params: Dict) -> uuid.UUID:
         sql = '''
-            insert into cloud_credentials (id, cloud, description, username, password, azure_tenant_id)
-            values (%(id)s, %(cloud)s, %(description)s, %(username)s, %(password)s, %(azure_tenant_id)s)
+            insert into cloud_credentials (
+                id, cloud, description, username, password, azure_tenant_id, default_environment_name
+            ) values (
+                %(id)s, %(cloud)s, %(description)s, %(username)s, %(password)s, %(azure_tenant_id)s,
+                %(default_environment_name)s
+            )
         '''
         params['id'] = uuid.uuid4()
         if params.get('cloud') in ('aws', 'gcp'):
@@ -300,7 +304,7 @@ class Database(fort.PostgresDatabase):
 
     def get_cloud_credentials(self):
         sql = '''
-            select id, cloud, description, username, azure_tenant_id
+            select id, cloud, description, username, azure_tenant_id, default_environment_name
             from cloud_credentials
             order by cloud, description
         '''
@@ -308,7 +312,7 @@ class Database(fort.PostgresDatabase):
 
     def get_all_credentials_for_use(self, cloud: str) -> List[Dict]:
         sql = '''
-            select id, username, password, azure_tenant_id
+            select id, username, password, azure_tenant_id, default_environment_name
             from cloud_credentials
             where cloud = %(cloud)s
         '''
@@ -317,7 +321,7 @@ class Database(fort.PostgresDatabase):
 
     def get_one_credential_for_use(self, account_id: uuid.UUID) -> Dict:
         sql = '''
-            select id, username, password, azure_tenant_id
+            select id, username, password, azure_tenant_id, default_environment_name
             from cloud_credentials
             where id = %(id)s
         '''
@@ -329,14 +333,14 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 update cloud_credentials
                 set cloud = %(cloud)s, description = %(description)s, username = %(username)s, password = %(password)s,
-                    azure_tenant_id = %(azure_tenant_id)s
+                    azure_tenant_id = %(azure_tenant_id)s, default_environment_name = %(default_environment_name)s
                 where id = %(id)s
             '''
         else:
             sql = '''
                 update cloud_credentials
                 set cloud = %(cloud)s, description = %(description)s, username = %(username)s,
-                    azure_tenant_id = %(azure_tenant_id)s
+                    azure_tenant_id = %(azure_tenant_id)s, default_environment_name = %(default_environment_name)s
                 where id = %(id)s
             '''
         self.u(sql, params)
@@ -2084,6 +2088,13 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(51)
+        if self.version < 52:
+            self.log.info('Migrating to database schema version 52')
+            self.u('''
+                alter table cloud_credentials
+                add column default_environment_name text default 'default-environment'
+            ''')
+            self.add_schema_version(52)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

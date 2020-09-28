@@ -692,7 +692,7 @@ class AWSClient:
             'id': instance.id,
             'cloud': 'aws',
             'region': region,
-            'environment': tags.get('machine__environment_group', ''),
+            'environment': tags.get('machine__environment_group'),
             'name': tags.get('NAME', ''),
             'owner': tags.get('OWNEREMAIL', '').lower(),
             'private_ip': instance.private_ip_address,
@@ -709,8 +709,6 @@ class AWSClient:
             'whitelist': self.get_whitelist_for_instance(instance),
             'vpc': instance.vpc_id
         }
-        if params['environment'] == '':
-            params['environment'] = 'default-environment'
         if params['dns_names'] == '':
             params['dns_names'] = params.get('name')
         if instance.state_transition_reason.endswith('GMT)'):

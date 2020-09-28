@@ -1701,6 +1701,8 @@ def sync_machines():
                     db.add_security_group(security_group)
                 for instance in aws.get_all_instances():
                     instance['account_id'] = account.get('id')
+                    if instance.get('environment') is None:
+                        instance.update({'environment': account.get('default_environment_name')})
                     db.add_machine(instance)
                 for image in aws.get_all_images():
                     image['account_id'] = account.get('id')
@@ -1723,6 +1725,8 @@ def sync_machines():
                                      account.get('azure_tenant_id'))
             for vm in az.get_all_virtual_machines():
                 vm['account_id'] = account.get('id')
+                if vm.get('environment') is None:
+                    vm.update({'environment': account.get('default_environment_name')})
                 db.add_machine(vm)
             for image in az.get_all_images():
                 image['account_id'] = account.get('id')
