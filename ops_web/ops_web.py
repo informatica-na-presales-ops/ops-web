@@ -1454,7 +1454,7 @@ def sign_in():
 
 @app.route('/sign-out')
 def sign_out():
-    flask.session.pop('email')
+    flask.session.pop('email', None)
     return flask.redirect(flask.url_for('index'))
 
 
