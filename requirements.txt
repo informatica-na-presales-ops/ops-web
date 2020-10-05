@@ -8,7 +8,7 @@ azure-cli==2.12.1
 azure-mgmt-compute==13.1.0
 azure-mgmt-network==12.0.0
 azure-mgmt-subscription==0.6.0
-boto3==1.15.10
+boto3==1.15.11
 botocore==1.18.11
 elastic-apm[flask]==5.9.0
 fort==1.0.1
