@@ -33,9 +33,9 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'release'
         uses: docker/build-push-action@v1.1.1
         with:
-          repository: ${{ github.repository }}/ops-web
-          registry: docker.pkg.github.com
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+          repository: ${{ github.repository_owner }}/ops-web
+          registry: ghcr.io
+          username: ${{ secrets.ghcr_username }}
+          password: ${{ secrets.ghcr_token }}
           tag_with_ref: true
           add_git_labels: true
