@@ -630,7 +630,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     cc.description, i.id, i.cloud, region, name, owner, public, state, created, account_id, cost,
-                    true can_modify, state = 'available' and (i.cloud = 'aws' or i.cloud ='gcp') can_launch,
+                    state = 'available' can_modify, state = 'available' and i.cloud in ('aws', 'gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
                     coalesce(instanceid, '') instanceid, delete_requested,
@@ -644,8 +644,8 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     cc.description, i.id, i.cloud, region, name, owner, public, state, created, account_id, cost,
-                    owner = %(email)s can_modify,
-                    state = 'available' and (i.cloud = 'aws' or i.cloud ='gcp') can_launch,
+                    state = 'available' and owner = %(email)s can_modify,
+                    state = 'available' and i.cloud in ('aws', 'gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
                     coalesce(instanceid, '') instanceid, delete_requested,

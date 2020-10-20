@@ -72,17 +72,22 @@
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
-                                        data-target="#modal-image-launch" title="Launch image" data-image-id="{{ i.id }}"
-                                        data-name="{{ i.name }}" {{ 'disabled' if not i.can_launch }}>
+                                        data-target="#modal-image-launch" data-image-id="{{ i.id }}"
+                                        data-name="{{ i.name }}" title="Launch image"
+                                        {{ 'disabled' if not i.can_launch }}>
                                     <span class="oi oi-media-play"></span>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal" data-target="#modal-image-edit" title="Edit image" {{ 'disabled' if not i.can_modify }} data-image-id="{{ i.id }}" data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}" data-image-public="{{ 'true' if i.public }}">
+                                <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
+                                        data-target="#modal-image-edit" data-image-id="{{ i.id }}"
+                                        data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}"
+                                        data-image-public="{{ 'true' if i.public }}" title="Edit image"
+                                        {{ 'disabled' if not i.can_modify }}>
                                     <span class="oi oi-pencil"></span>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
-                                        data-target="#modal-image-delete" title="Delete image"
-                                        data-image-id="{{ i.id }}"
-                                        data-image-name="{{ i.name }}" {{ 'disabled' if not i.can_modify }}>
+                                        data-target="#modal-image-delete" data-image-id="{{ i.id }}"
+                                        data-image-name="{{ i.name }}" title="Delete image"
+                                        {{ 'disabled' if not i.can_modify }}>
                                     <span class="oi oi-trash"></span>
                                 </button>
                             </div>
@@ -110,11 +115,16 @@
                             <span class="badge badge-light">State: {{ i.state }}</span>
                             <span class="badge badge-light">Source machine ID: {{ i.instanceid if i.instanceid.startswith('i-') }}</span>
                         </p>
-                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-image-launch" {{ 'disabled' if not i.can_launch }} data-image-id="{{ i.id }}" data-name="{{ i.name }}">
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal"
+                                data-target="#modal-image-launch" data-image-id="{{ i.id }}" data-name="{{ i.name }}"
+                                {{ 'disabled' if not i.can_launch }}>
                             <span class="oi oi-media-play"></span>
                             Launch image
                         </button>
-                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal" data-target="#modal-image-edit" {{ 'disabled' if not i.can_modify }} data-image-id="{{ i.id }}" data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}" data-image-public="{{ 'true' if i.public }}">
+                        <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal"
+                                data-target="#modal-image-edit" data-image-id="{{ i.id }}"
+                                data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}"
+                                data-image-public="{{ 'true' if i.public }}" {{ 'disabled' if not i.can_modify }}>
                             <span class="oi oi-pencil"></span>
                             Edit image
                         </button>
