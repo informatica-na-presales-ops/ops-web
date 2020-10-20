@@ -444,7 +444,9 @@ class Database(fort.PostgresDatabase):
                     cc.description, vm.id, vm.cloud, region, env_group, name, owner, contributors, state, private_ip,
                     public_ip, type, running_schedule, application_env, application_role, business_unit, dns_names,
                     whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
-                    case when state = 'running' then now() - created end running_time, true can_control, true can_modify
+                    lower(concat_ws(' ', vm.id, name, owner)) filter_value,
+                    case when state = 'running' then now() - created end running_time,
+                    true can_control, true can_modify
                 from virtual_machines vm
                 join cloud_credentials cc on vm.account_id = cc.id
                 where visible is true

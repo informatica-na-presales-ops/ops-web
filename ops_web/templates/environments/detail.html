@@ -16,29 +16,35 @@
 
     <div class="row pt-3">
         <div class="col-12">
-            <form class="form-inline" method="post" id="form-power-control"></form>
-            <button type="submit" class="btn btn-outline-success" form="form-power-control"
-                    formaction="{{ url_for('environment_start', environment=g.environment) }}"
-                    title="Start all machines in this environment">
-                <span class="oi oi-media-play"></span>
-                Start
-            </button>
-            <button type="submit" class="btn btn-outline-warning" form="form-power-control"
-                    formaction="{{ url_for('environment_stop', environment=g.environment) }}"
-                    title="Stop all machines in this environment">
-                <span class="oi oi-media-stop"></span>
-                Stop
-            </button>
-            <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-delete-env"
-                    title="Delete all machines in this environment">
-                <span class="oi oi-trash"></span>
-                Delete
-            </button>
-            <button type="button" class="btn btn-outline-light" data-toggle="modal" data-target="#modal-hosts-file"
-                    title="Generate hosts file entries for this environment">
-                <span class="oi oi-document"></span>
-                Hosts
-            </button>
+            <form class="form-inline" method="post" id="form-power-control">
+                <label class="sr-only" for="filter-input">Filter machines</label>
+                <input type="text" class="form-control mb-2 mr-2" placeholder="Filter machines..." id="filter-input"
+                       autofocus>
+                <button type="submit" class="btn btn-outline-success mb-2 mr-2"
+                        formaction="{{ url_for('environment_start', environment=g.environment) }}"
+                        title="Start all machines in this environment">
+                    <span class="oi oi-media-play"></span>
+                    Start
+                </button>
+                <button type="submit" class="btn btn-outline-warning mb-2 mr-2"
+                        formaction="{{ url_for('environment_stop', environment=g.environment) }}"
+                        title="Stop all machines in this environment">
+                    <span class="oi oi-media-stop"></span>
+                    Stop
+                </button>
+                <button type="button" class="btn btn-outline-danger mb-2 mr-2" data-toggle="modal"
+                        data-target="#modal-delete-env"
+                        title="Delete all machines in this environment">
+                    <span class="oi oi-trash"></span>
+                    Delete
+                </button>
+                <button type="button" class="btn btn-outline-light mb-2 mr-2" data-toggle="modal"
+                        data-target="#modal-hosts-file"
+                        title="Generate hosts file entries for this environment">
+                    <span class="oi oi-document"></span>
+                    Hosts
+                </button>
+            </form>
         </div>
     </div>
 
@@ -70,7 +76,7 @@
                 </thead>
                 <tbody>
                 {% for m in g.machines %}
-                    <tr>
+                    <tr class="filter-candidate collapse show" data-filter-value="{{ m.filter_value }}">
                         <td>
                             <span class="oi oi-lock-{{ 'un' if not m.termination_protection }}locked {{ g.machine_state_class_map[m.state] }}"
                                   title="This machine can{{ 'not' if m.termination_protection }} be deleted">
@@ -147,7 +153,8 @@
 
             <div class="d-block d-md-none">
             {% for m in g.machines %}
-                <div class="card text-light bg-dark border-light mb-2">
+                <div class="card text-light bg-dark border-light mb-2 filter-candidate collapse show"
+                     data-filter-value="{{ m.filter_value }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ m.name }}</h5>
                         <p class="card-text">
