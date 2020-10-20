@@ -218,8 +218,9 @@
                         <strong><span id="modal-image-delete-image-name"></span></strong>?</p>
                 </div>
                 <div class="modal-footer">
-                    <form id="form-image-delete" action="{{ url_for('images_request_delete') }}" method="post">
+                    <form id="form-image-delete" action="{{ url_for('images_delete') }}" method="post">
                         <input type="hidden" name="image-id" id="form-image-delete-image-id">
+                        <input type="hidden" name="next-view" value="images">
                         <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-outline-danger">Delete</button>
                     </form>

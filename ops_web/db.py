@@ -14,6 +14,16 @@ class Settings(dict):
         self.update(self.db.get_all_settings())
 
     @property
+    def allow_users_to_delete_images(self) -> bool:
+        return self.get('allow-users-to-delete-images', 'false') == 'true'
+
+    @allow_users_to_delete_images.setter
+    def allow_users_to_delete_images(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'allow-users-to-delete-images': str_value})
+        self.db.set_setting('allow-users-to-delete-images', str_value)
+
+    @property
     def app_env_values(self) -> List:
         default = (
             'DEMO',
@@ -2055,6 +2065,7 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(47)
         if self.version < 48:
             self.log.info('Migrating to database schema version 48')
+            # noinspection SqlResolve
             self.u('''
                 alter table sc_competency_scores
                 rename column communicative to communication

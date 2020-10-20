@@ -108,6 +108,24 @@
 
             <div class="card bg-dark border-light mb-3">
                 <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#global-permissions-form" data-toggle="collapse">Global permissions</a>
+                </h5>
+                <div class="card-body collapse" id="global-permissions-form">
+                    <form action="{{ url_for('admin_settings_global_permissions') }}" method="post">
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="allow-users-to-delete-images"
+                                       name="allow-users-to-delete-images" {{ 'checked' if g.settings.allow_users_to_delete_images }}>
+                                <label class="custom-control-label" for="allow-users-to-delete-images">Allow users to delete images directly</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">Save</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-light mb-3">
+                <h5 class="card-header">
                     <a class="text-decoration-none text-light" href="#scheduled-tasks-form" data-toggle="collapse">Scheduled tasks</a>
                 </h5>
                 <div class="card-body collapse" id="scheduled-tasks-form">

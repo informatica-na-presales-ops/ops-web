@@ -194,6 +194,16 @@ def admin_settings_display():
     return flask.redirect(flask.url_for('admin_settings'))
 
 
+@app.route('/admin/settings/global-permissions', methods=['POST'])
+@permission_required('admin')
+def admin_settings_global_permissions():
+    settings: ops_web.db.Settings = flask.g.settings
+    settings.allow_users_to_delete_images = flask.request.values.get('allow-users-to-delete-images') == 'on'
+    db.add_log_entry(flask.g.email, 'Update global permission settings')
+    flask.flash('Successfully updated global permission settings', 'success')
+    return flask.redirect(flask.url_for('admin_settings'))
+
+
 @app.route('/admin/settings/tasks', methods=['POST'])
 @permission_required('admin')
 def admin_settings_tasks():
@@ -676,25 +686,40 @@ def images_create():
 
 
 @app.route('/images/delete', methods=['POST'])
-@permission_required('admin')
+@login_required
 def images_delete():
+    settings: ops_web.db.Settings = flask.g.settings
     image_id = flask.request.values.get('image-id')
     next_view = flask.request.values.get('next-view')
     app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
-    db.add_log_entry(flask.g.email, f'Delete image {image_id}')
-    db.set_image_state(image_id, 'deleting')
+
     image = db.get_image(image_id)
     if image is None:
         flask.flash(f'Could not find image with id {image_id}', 'warning')
+        return flask.redirect(flask.url_for(next_view))
+
+    image_name = image.get('name')
+    owner = image.get('owner')
+
+    if 'admin' in flask.g.permissions or (settings.allow_users_to_delete_images and owner == flask.g.email):
+        db.add_log_entry(flask.g.email, f'Delete image {image_id}')
+        db.set_image_state(image_id, 'deleting')
+        if image is None:
+            flask.flash(f'Could not find image with id {image_id}', 'warning')
+        else:
+            account = db.get_one_credential_for_use(image.get('account_id'))
+            cloud = image.get('cloud')
+            if cloud == 'aws':
+                aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
+                region = image.get('region')
+                aws.delete_image(region, image_id)
+                flask.flash(f'Successfully deleted image {image_name}', 'success')
+    elif owner == flask.g.email:
+        db.add_log_entry(flask.g.email, f'Request deletion of image {image_id}')
+        db.set_image_delete_requested(image_id)
+        flask.flash(f'Your request to delete the image {image_name} was successful', 'success')
     else:
-        account = db.get_one_credential_for_use(image.get('account_id'))
-        cloud = image.get('cloud')
-        if cloud == 'aws':
-            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            region = image.get('region')
-            aws.delete_image(region, image_id)
-            image_name = image.get('name')
-            flask.flash(f'Successfully deleted image {image_name}', 'success')
+        flask.flash(f'You do not have permission to request deletion of the image {image_name}', 'warning')
     return flask.redirect(flask.url_for(next_view))
 
 
@@ -727,22 +752,6 @@ def images_edit():
             az.update_image_tags(image_id, tags)
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit {image_id}')
-    return flask.redirect(flask.url_for('images'))
-
-
-@app.route('/images/request-delete', methods=['POST'])
-@login_required
-def images_request_delete():
-    image_id = flask.request.values.get('image-id')
-    app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
-    image = db.get_image(image_id)
-    image_name = image.get('name')
-    if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
-        db.add_log_entry(flask.g.email, f'Request deletion of image {image_id}')
-        db.set_image_delete_requested(image_id)
-        flask.flash(f'Your request to delete the image {image_name} was successful', 'success')
-    else:
-        flask.flash(f'You do not have permission to request deletion of the image {image_name}', 'warning')
     return flask.redirect(flask.url_for('images'))
 
 
