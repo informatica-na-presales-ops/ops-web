@@ -40,7 +40,7 @@
                             <span class="oi oi-info"></span>
                         </span>
                     </th>
-                    <th>Public</th>
+                    {% if not g.settings.show_all_images %}<th>Public</th>{% endif %}
                     <th>State</th>
                     <th>Source machine ID</th>
                     <th class="text-center">Actions</th>
@@ -66,7 +66,9 @@
                         <td>{{ i.owner }}</td>
                         <td>{{ i.created.date() if i.created }}</td>
                         <td class="text-right">{{ i.cost }}</td>
-                        <td class="text-center">{% if i.public %}<span class="oi oi-check"></span>{% endif %}</td>
+                        {% if not g.settings.show_all_images %}
+                            <td class="text-center">{% if i.public %}<span class="oi oi-check"></span>{% endif %}</td>
+                        {% endif %}
                         <td>{{ i.state }}</td>
                         <td class="text-truncate">{{ i.instanceid if i.instanceid.startswith('i-') }}</td>
                         <td class="text-center">
@@ -202,7 +204,7 @@
                             <label for="form-image-edit-owner" class="text-light">Owner</label>
                             <input type="text" class="form-control" id="form-image-edit-owner" name="owner" required>
                         </div>
-                        <div class="form-group form-check">
+                        <div class="form-group form-check {{ 'collapse' if g.settings.show_all_images }}">
                             <input type="checkbox" class="form-check-input" id="form-image-edit-public" name="public">
                             <label for="form-image-edit-public" class="form-check-label text-light">Allow any user to launch a machine from this image</label>
                         </div>
