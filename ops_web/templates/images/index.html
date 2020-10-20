@@ -82,7 +82,10 @@
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
                                         data-target="#modal-image-edit" data-image-id="{{ i.id }}"
                                         data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}"
-                                        data-image-public="{{ 'true' if i.public }}" title="Edit image"
+                                        data-image-public="{{ 'true' if i.public }}"
+                                        data-application-env="{{ i.application_env if i.application_env }}"
+                                        data-application-role="{{ i.application_role if i.application_role }}"
+                                        data-business-unit="{{ i.business_unit if i.business_unit }}" title="Edit image"
                                         {{ 'disabled' if not i.can_modify }}>
                                     <span class="oi oi-pencil"></span>
                                 </button>
@@ -126,7 +129,11 @@
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal"
                                 data-target="#modal-image-edit" data-image-id="{{ i.id }}"
                                 data-image-name="{{ i.name }}" data-image-owner="{{ i.owner }}"
-                                data-image-public="{{ 'true' if i.public }}" {{ 'disabled' if not i.can_modify }}>
+                                data-image-public="{{ 'true' if i.public }}"
+                                data-application-env="{{ i.application_env if i.application_env }}"
+                                data-application-role="{{ i.application_role if i.application_role }}"
+                                data-business-unit="{{ i.business_unit if i.business_unit }}"
+                                {{ 'disabled' if not i.can_modify }}>
                             <span class="oi oi-pencil"></span>
                             Edit image
                         </button>
@@ -186,27 +193,50 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-image-edit">
+    <div class="modal text-light" id="modal-image-edit">
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Edit image</h5>
+                    <h5 class="modal-title">Edit image</h5>
                     <button type="button" class="close text-light" data-dismiss="modal" >&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="form-image-edit" action="{{ url_for('images_edit')}}" method="post">
                         <input type="hidden" name="image-id" id="form-image-edit-image-id">
                         <div class="form-group">
-                            <label for="form-image-edit-name" class="text-light">Image name</label>
+                            <label for="form-image-edit-name">Image name</label>
                             <input type="text" class="form-control" id="form-image-edit-name" name="image-name" required>
                         </div>
                         <div class="form-group">
-                            <label for="form-image-edit-owner" class="text-light">Owner</label>
+                            <label for="form-image-edit-owner">Owner</label>
                             <input type="text" class="form-control" id="form-image-edit-owner" name="owner" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-image-edit-application-env">Application environment</label>
+                            <select class="form-control" id="form-image-edit-application-env" name="application-env">
+                                <option hidden disabled value selected id="form-image-edit-application-env-default">
+                                    -- select an option --
+                                </option>
+                            {% for option in g.settings.app_env_values %}
+                                <option>{{ option }}</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-image-edit-application-role">Application role</label>
+                            <input type="text" class="form-control" id="form-image-edit-application-role"
+                                   name="application-role">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-image-edit-business-unit">Business unit</label>
+                            <input type="text" class="form-control" id="form-image-edit-business-unit"
+                                   name="business-unit">
                         </div>
                         <div class="form-group form-check {{ 'collapse' if g.settings.show_all_images }}">
                             <input type="checkbox" class="form-check-input" id="form-image-edit-public" name="public">
-                            <label for="form-image-edit-public" class="form-check-label text-light">Allow any user to launch a machine from this image</label>
+                            <label for="form-image-edit-public" class="form-check-label">
+                                Allow any user to launch a machine from this image
+                            </label>
                         </div>
                     </form>
                 </div>

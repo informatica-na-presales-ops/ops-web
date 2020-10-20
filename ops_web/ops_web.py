@@ -733,11 +733,26 @@ def images_edit():
         db.add_log_entry(flask.g.email, f'Update tags on image {image_id}')
         image_name = flask.request.values.get('image-name')
         owner = flask.request.values.get('owner').lower()
+        application_env = flask.request.values.get('application-env', '')
+        application_role = flask.request.values.get('application-role', '')
+        business_unit = flask.request.values.get('business-unit', '')
         public = 'public' in flask.request.values
-        db.set_image_tags(image_id, image_name, owner, public)
+        params = {
+            'id': image_id,
+            'name': image_name,
+            'owner': owner,
+            'application_env': application_env,
+            'application_role': application_role,
+            'business_unit': business_unit,
+            'public': public
+        }
+        db.set_image_tags(params)
         tags = {
             'NAME': image_name,
             'OWNEREMAIL': owner,
+            'APPLICATIONENV': application_env,
+            'APPLICATIONROLE': application_role,
+            'BUSINESSUNIT': business_unit,
             'image_public': str(public)
         }
         cloud = image.get('cloud')
@@ -750,8 +765,10 @@ def images_edit():
             az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                      account.get('azure_tenant_id'))
             az.update_image_tags(image_id, tags)
+        flask.flash(f'Successfully updated image {image_name}', 'success')
     else:
         app.logger.warning(f'{flask.g.email} does not have permission to edit {image_id}')
+        flask.flash('You do not have permission to edit this image', 'danger')
     return flask.redirect(flask.url_for('images'))
 
 

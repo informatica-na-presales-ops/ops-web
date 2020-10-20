@@ -633,7 +633,10 @@ class AWSClient:
                         'public': ops_web.config.as_bool(tags.get('image_public', '')),
                         'state': image.state,
                         'created': image.creation_date,
-                        'instanceid': tags.get('machine__description', '')
+                        'instanceid': tags.get('machine__description', ''),
+                        'business_unit': tags.get('BUSINESSUNIT', ''),
+                        'application_env': tags.get('APPLICATIONENV', ''),
+                        'application_role': tags.get('APPLICATIONROLE', '')
                     }
                     cost = decimal.Decimal('0')
                     for b in image.block_device_mappings:

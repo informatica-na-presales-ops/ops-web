@@ -104,6 +104,9 @@ class AZClient:
                     'state': IMAGE_STATE_MAP.get(image.provisioning_state, image.provisioning_state),
                     'created': None,
                     'instanceid': None,
+                    'business_unit': image.tags.get('BUSINESSUNIT', ''),
+                    'application_env': image.tags.get('APPLICATIONENV', ''),
+                    'application_role': image.tags.get('APPLICATIONROLE', ''),
                     'cost': '0'
                 }
                 yield params

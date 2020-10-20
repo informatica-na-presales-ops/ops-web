@@ -616,7 +616,9 @@ class Database(fort.PostgresDatabase):
 
     def get_image(self, image_id: str) -> Dict:
         sql = '''
-            select id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id, cost
+            select
+                id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id, cost,
+                business_unit, application_env, application_role
             from images
             where id = %(id)s
         '''
@@ -632,6 +634,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     cc.description, i.id, i.cloud, region, name, owner, public, state, created, account_id, cost,
+                    business_unit, application_env, application_role,
                     state = 'available' can_modify, state = 'available' and i.cloud in ('aws', 'gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
@@ -646,6 +649,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     cc.description, i.id, i.cloud, region, name, owner, public, state, created, account_id, cost,
+                    business_unit, application_env, application_role,
                     state = 'available' and owner = %(email)s can_modify,
                     state = 'available' and i.cloud in ('aws', 'gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
@@ -696,9 +700,13 @@ class Database(fort.PostgresDatabase):
         params = {'id': image_id, 'state': state}
         self.u(sql, params)
 
-    def set_image_tags(self, image_id: str, name: str, owner: str, public: bool):
-        sql = 'update images set name = %(name)s, owner = %(owner)s, public = %(public)s where id = %(id)s'
-        params = {'id': image_id, 'name': name, 'owner': owner, 'public': public}
+    def set_image_tags(self, params: Dict):
+        sql = '''
+            update images
+            set name = %(name)s, owner = %(owner)s, application_env = %(application_env)s,
+                application_role = %(application_role)s, business_unit = %(business_unit)s, public = %(public)s
+            where id = %(id)s
+        '''
         self.u(sql, params)
 
     # syncing
@@ -763,14 +771,16 @@ class Database(fort.PostgresDatabase):
     def add_image(self, params: Dict):
         sql = '''
             insert into images (
-                id, cloud, region, name, owner, public, state, created, instanceid, account_id, cost, visible, synced
+                id, cloud, region, name, owner, public, state, created, instanceid, account_id, cost, business_unit,
+                application_env, application_role, visible, synced
             ) values (
                 %(id)s, %(cloud)s, %(region)s, %(name)s, %(owner)s, %(public)s, %(state)s, %(created)s, %(instanceid)s,
-                %(account_id)s, %(cost)s, true, true
+                %(account_id)s, %(cost)s, %(business_unit)s, %(application_env)s, %(application_role)s, true, true
             ) on conflict (id) do update set
                 cloud = %(cloud)s, region = %(region)s, name = %(name)s, owner = %(owner)s, state = %(state)s,
                 public = %(public)s, created = %(created)s, instanceid = %(instanceid)s, account_id = %(account_id)s,
-                cost = %(cost)s, visible = true, synced = true
+                cost = %(cost)s, business_unit = %(business_unit)s, application_env = %(application_env)s,
+                application_role = %(application_role)s, visible = true, synced = true
         '''
         self.u(sql, params)
 
@@ -2108,6 +2118,15 @@ class Database(fort.PostgresDatabase):
                 add column default_environment_name text default 'default-environment'
             ''')
             self.add_schema_version(52)
+        if self.version < 53:
+            self.log.info('Migrating to database schema version 53')
+            self.u('''
+                alter table images
+                add column business_unit text,
+                add column application_env text,
+                add column application_role text
+            ''')
+            self.add_schema_version(53)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

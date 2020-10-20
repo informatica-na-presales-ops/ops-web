@@ -324,6 +324,29 @@
                         <div class="form-group">
                             <label for="form-image-{{ loop.index }}-owner">Owner</label>
                             <input type="text" class="form-control" id="form-image-{{ loop.index }}-owner" name="owner" value="{{ m.owner }}" required>
+                            <small class="form-text text-muted">One email address only</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-application-env">Application environment</label>
+                            <select class="form-control" id="form-image-{{ loop.index }}-application-env"
+                                    name="application-env">
+                                <option hidden disabled value {{ 'selected' if m.application_env not in g.settings.app_env_values }}>
+                                    -- select an option --
+                                </option>
+                            {% for option in g.settings.app_env_values %}
+                                <option {{ 'selected' if option == m.application_env }}>{{ option }}</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-application-role">Application role</label>
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-application-role"
+                                   name="application-role" value="{{ m.application_role }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-image-{{ loop.index }}-business-unit">Business unit</label>
+                            <input type="text" class="form-control" id="form-image-{{ loop.index }}-business-unit"
+                                   name="business-unit" value="{{ m.business_unit }}">
                         </div>
                         <div class="form-group form-check {{ 'collapse' if g.settings.show_all_images }}">
                             <input type="checkbox" class="form-check-input" id="form-image-{{ loop.index }}-public" name="public">
