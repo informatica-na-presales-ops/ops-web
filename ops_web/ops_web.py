@@ -638,6 +638,9 @@ def images_create():
         name = flask.request.values.get('image-name')
         owner = flask.request.values.get('owner').lower()
         public = 'public' in flask.request.values
+        business_unit = flask.request.values.get('business-unit', '')
+        application_env = flask.request.values.get('application-env', '')
+        application_role = flask.request.values.get('application-role', '')
         if cloud == 'az':
             app.logger.warning(f'Unable to create images for cloud {cloud}')
             environment = flask.request.values.get('environment')
@@ -645,7 +648,8 @@ def images_create():
         elif cloud == 'aws':
             account = db.get_one_credential_for_use(machine.get('account_id'))
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            image_id = aws.create_image(region, machine_id, name, owner, public)
+            image_id = aws.create_image(region, machine_id, name, owner, public, business_unit, application_env,
+                                        application_role)
             params = {
                 'id': image_id,
                 'cloud': cloud,
@@ -657,7 +661,10 @@ def images_create():
                 'created': datetime.datetime.utcnow(),
                 'instanceid': machine_id,
                 'account_id': machine.get('account_id'),
-                'cost': decimal.Decimal('0')
+                'cost': decimal.Decimal('0'),
+                'business_unit': flask.request.values.get('business-unit', ''),
+                'application_env': flask.request.values.get('application-env', ''),
+                'application_role': flask.request.values.get('application-role', '')
             }
             db.add_image(params)
             return flask.redirect(flask.url_for('images'))

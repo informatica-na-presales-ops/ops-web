@@ -42,7 +42,8 @@ class AWSClient:
     def get_service_resource(self, service_name: str, region_name: str):
         return self.session.resource(service_name, region_name, config=self.boto_config)
 
-    def create_image(self, region: str, machine_id: str, name: str, owner: str, public: bool = False) -> str:
+    def create_image(self, region: str, machine_id: str, name: str, owner: str, public: bool, business_unit: str,
+                     application_env: str, application_role: str) -> str:
         log.debug(f'Creating image from {machine_id} for {owner}')
         ec2 = self.get_service_resource('ec2', region)
         instance = ec2.Instance(machine_id)
@@ -51,9 +52,12 @@ class AWSClient:
             'NAME': name,
             'OWNEREMAIL': owner,
             'machine__description': machine_id,
-            'image_public': str(public)
+            'image_public': str(public),
+            'BUSINESSUNIT': business_unit,
+            'APPLICATIONENV': application_env,
+            'APPLICATIONROLE': application_role
         }
-        image.create_tags(Tags=[{'Key': k, 'Value': v} for k, v in image_tags.items()])
+        image.create_tags(Tags=tag_dict_to_list(image_tags))
         return image.id
 
     def workshop_images(self, ws: str):
