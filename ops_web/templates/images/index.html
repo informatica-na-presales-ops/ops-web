@@ -75,7 +75,7 @@
                             <div class="btn-group btn-group-sm">
                                 <button type="button" class="btn btn-sm btn-outline-light" data-toggle="modal"
                                         data-target="#modal-image-launch" data-image-id="{{ i.id }}"
-                                        data-name="{{ i.name }}" title="Launch image"
+                                        data-name="{{ i.name }}" title="Launch a machine from this image"
                                         {{ 'disabled' if not i.can_launch }}>
                                     <span class="oi oi-media-play"></span>
                                 </button>
@@ -124,7 +124,7 @@
                                 data-target="#modal-image-launch" data-image-id="{{ i.id }}" data-name="{{ i.name }}"
                                 {{ 'disabled' if not i.can_launch }}>
                             <span class="oi oi-media-play"></span>
-                            Launch image
+                            Launch machine
                         </button>
                         <button type="button" class="btn btn-outline-light mb-2" data-toggle="modal"
                                 data-target="#modal-image-edit" data-image-id="{{ i.id }}"
@@ -155,7 +155,7 @@
         <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
-                    <h5 class="modal-title text-light">Launch image</h5>
+                    <h5 class="modal-title text-light">Launch a new machine</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
