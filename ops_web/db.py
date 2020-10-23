@@ -459,6 +459,7 @@ class Database(fort.PostgresDatabase):
                     cc.description, vm.id, vm.cloud, region, env_group, name, owner, contributors, state, private_ip,
                     public_ip, type, running_schedule, application_env, application_role, business_unit, dns_names,
                     whitelist, vpc, termination_protection, cost, cost::numeric cost_n, account_id,
+                    lower(concat_ws(' ', vm.id, name, owner)) filter_value,
                     case when state = 'running' then now() - created end running_time,
                     owner = %(email)s or position(%(email)s in contributors) > 0 can_control,
                     owner = %(email)s can_modify
