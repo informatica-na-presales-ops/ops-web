@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import google.auth.exceptions
 import google.oauth2.service_account
 import googleapiclient.discovery
@@ -22,11 +23,51 @@ class GCPClient:
         log.info(f'Getting all compute instances for GCP project {self.project_id}')
         result = self.compute.instances().aggregatedList(project=self.project_id).execute()
         for zone_name, zone_data in result.get('items', {}).items():
+            log.info(f'Getting all GCP instances in {zone_name}')
             if 'instances' in zone_data:
                 for instance in zone_data.get('instances'):
-                    log.debug(instance)
-            else:
-                log.info(f'No compute instances in {zone_name}')
+                    params = {
+                        'application_env': None,
+                        'application_role': None,
+                        'business_unit': None,
+                        'cloud': 'gcp',
+                        'contributors': None,
+                        'cost': decimal.Decimal('0'),
+                        'created': instance.get('creationTimestamp'),
+                        'dns_names': None,
+                        'id': instance.get('id'),
+                        'name': instance.get('name'),
+                        'owner': None,
+                        'private_ip': None,
+                        'public_ip': None,
+                        'region': zone_name[6:],
+                        'running_schedule': None,
+                        'state': instance.get('status').lower(),
+                        'state_transition_time': instance.get('lastStartTimestamp'),
+                        'type': instance.get('machineType').split('/')[-1],
+                        'vpc': None,
+                        'whitelist': None,
+                    }
+                    for item in instance.get('metadata', {}).get('items', []):
+                        item_key = item.get('key')
+                        item_value = item.get('value')
+                        if item_key == 'OWNEREMAIL':
+                            params.update({'owner': item_value})
+                        if item_key == 'APPLICATIONENV':
+                            params.update({'application_env': item_value})
+                        if item_key == 'APPLICATIONROLE':
+                            params.update({'application_role': item_value})
+                        if item_key == 'BUSINESSUNIT':
+                            params.update({'business_unit': item_value})
+                        if item_key == 'RUNNINGSCHEDULE':
+                            params.update({'running_schedule': item_value})
+                        if item_key == 'image__dns_names_private':
+                            params.update({'dns_names': item_value})
+                    for network_interface in instance.get('networkInterfaces'):
+                        params.update({'private_ip': network_interface.get('networkIP')})
+                        for access_config in network_interface.get('accessConfigs'):
+                            params.update({'public_ip': access_config.get('natIP')})
+                    yield params
 
 
 c = ops_web.config.Config()

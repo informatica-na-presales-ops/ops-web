@@ -1774,7 +1774,11 @@ def sync_machines():
         db.pre_sync('gcp')
         for account in db.get_all_credentials_for_use('gcp'):
             gcp = ops_web.gcp.GCPClient(config, account.get('username'), account.get('password'))
-            gcp.get_all_instances()
+            for instance in gcp.get_all_instances():
+                instance.update({'account_id': account.get('id')})
+                if instance.get('environment') is None:
+                    instance.update({'environment': account.get('default_environment_name')})
+                db.add_machine(instance)
         # for vm in ops_web.gcp.get_all_virtual_machines():
         #     vm['account_id'] = None
         #     db.add_machine(vm)
