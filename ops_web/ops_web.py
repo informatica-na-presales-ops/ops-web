@@ -1667,8 +1667,8 @@ def start_machine(machine_id):
         az.start_machine(machine_id)
     elif cloud == 'gcp':
         zone = machine.get('region')
-        app.logger.info(zone)
-        ops_web.gcp.start_machine(machine_id, zone)
+        gcp = ops_web.gcp.GCPClient(config, account.get('username'), account.get('password'))
+        gcp.start_instance(zone, machine_id)
     apm.client.end_transaction('start-machine')
 
 
@@ -1694,7 +1694,8 @@ def stop_machine(machine_id):
         az.stop_machine(machine_id)
     elif cloud == 'gcp':
         zone = machine.get('region')
-        ops_web.gcp.stop_machine(machine_id, zone)
+        gcp = ops_web.gcp.GCPClient(config, account.get('username'), account.get('password'))
+        gcp.stop_instance(zone, machine_id)
     apm.client.end_transaction('stop-machine')
 
 

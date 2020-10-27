@@ -69,6 +69,12 @@ class GCPClient:
                             params.update({'public_ip': access_config.get('natIP')})
                     yield params
 
+    def start_instance(self, zone, resource_id):
+        self.compute.instances().start(project=self.project_id, zone=zone, instance=resource_id).execute()
+
+    def stop_instance(self, zone, resource_id):
+        self.compute.instances().stop(project=self.project_id, zone=zone, instance=resource_id).execute()
+
 
 c = ops_web.config.Config()
 
@@ -199,29 +205,6 @@ def checkInstancesInZone(ZONE):
                 'contributors': contributors
             }
             yield params
-
-
-def start_machine(machine_id, zone):
-    operation = compute.instances().start(project=PROJECT_ID, zone=zone, instance=machine_id).execute()
-    # wait_for_operation(compute, PROJECT_ID, zone, operation['name'])
-    # instance = compute.instances().get(project=PROJECT_ID, zone=zone, instance=machine_id).execute()
-    # public_ip = instance['networkInterfaces'][0]['accessConfigs'][0]['natIP']
-    # return public_ip
-    return operation
-
-
-def stop_machine(machine_id, zone):
-    operation = compute.instances().stop(project=PROJECT_ID, zone=zone, instance=machine_id).execute()
-    return operation
-    # wait_for_operation(compute,PROJECT_ID,zone,machine_id)
-    # wait_for_operation(compute, PROJECT_ID, zone,operation['name'])
-    # instance = compute.instances().get(project=PROJECT_ID, zone=zone, instance=machine_id).execute()
-    # return instance
-
-
-def get_publicip(machine_id, zone):
-    instance = compute.instances().get(project=PROJECT_ID, zone=zone, instance=machine_id).execute()
-    return instance['networkInterfaces'][0]['accessConfigs'][0]['natIP']
 
 
 def update_machine_tags(machine_id, zone, tags):
