@@ -71,11 +71,6 @@
                         <div class="form-group">
                             <label>Show the following tools on the home page</label>
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="show-monolith-request-link"
-                                       name="show-monolith-request-link" {{ 'checked' if g.settings.show_monolith_request_link }}>
-                                <label class="custom-control-label" for="show-monolith-request-link">Monolith request</label>
-                            </div>
-                            <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-op-debrief-survey-link"
                                        name="show-op-debrief-survey-link" {{ 'checked' if g.settings.show_op_debrief_survey_link }}>
                                 <label class="custom-control-label" for="show-op-debrief-survey-link">Opportunity debrief surveys</label>
@@ -99,6 +94,11 @@
                                 <input type="checkbox" class="custom-control-input" id="show-security-groups-link"
                                        name="show-security-groups-link" {{ 'checked' if g.settings.show_security_groups_link }}>
                                 <label class="custom-control-label" for="show-security-groups-link">Security groups</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-monolith-request-link"
+                                       name="show-monolith-request-link" {{ 'checked' if g.settings.show_monolith_request_link }}>
+                                <label class="custom-control-label" for="show-monolith-request-link">Unity request</label>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-outline-success">Save</button>
@@ -172,7 +172,7 @@
                                    value="{{ g.settings.zendesk_widget_key }}">
                         </div>
                         <div class="form-group">
-                            <label for="monolith-support-group-id">Monolith support group ID</label>
+                            <label for="monolith-support-group-id">Unity support group ID</label>
                             <input type="number" class="form-control" id="monolith-support-group-id" name="monolith-support-group-id"
                                    value="{{ g.settings.monolith_support_group_id }}">
                         </div>

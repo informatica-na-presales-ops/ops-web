@@ -1072,18 +1072,18 @@ def manager_toolbox():
     return flask.render_template('manager-toolbox.html')
 
 
-@app.route('/monolith')
+@app.route('/unity')
 def monolith():
     return flask.redirect(flask.url_for('monolith_request'))
 
 
-@app.route('/monolith/request')
+@app.route('/unity/request')
 @login_required
 def monolith_request():
     return flask.render_template('monolith-request.html')
 
 
-@app.route('/monolith/request/submit', methods=['POST'])
+@app.route('/unity/request/submit', methods=['POST'])
 @login_required
 def monolith_request_submit():
     tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
