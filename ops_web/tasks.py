@@ -111,7 +111,7 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
         elif form_data.get('request-type') == 'bug':
             bug_description = form_data.get('bug-description')
             ticket_data.update({
-                'subject': f'Monolith bug report: {bug_description}',
+                'subject': f'Unity bug report: {bug_description}',
                 'comment': {
                     'html_body': flask.render_template('zendesk-tickets/monolith-bug.html', ctx=ctx)
                 },
@@ -120,7 +120,7 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
         elif form_data.get('request-type') == 'change-request':
             feature_description = form_data.get('feature-description')
             ticket_data.update({
-                'subject': f'Monolith change request: {feature_description}',
+                'subject': f'Unity change request: {feature_description}',
                 'comment': {
                     'html_body': flask.render_template('zendesk-tickets/monolith-change-request.html', ctx=ctx)
                 },
