@@ -103,9 +103,9 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
         if form_data.get('request-type') == 'system-down':
             region = form_data.get('region')
             ticket_data.update({
-                'subject': f'Monolith is down in {region} region',
+                'subject': f'The Unity Global Demo Environment is down in {region}',
                 'comment': {
-                    'html_body': f'{requester} reports that Monolith is down in {region} region.'
+                    'html_body': f'{requester} reports that the Unity Global Demo Environment is down in {region}.'
                 }
             })
         elif form_data.get('request-type') == 'bug':
