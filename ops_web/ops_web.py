@@ -9,6 +9,7 @@ import ops_web.gcp
 import ops_web.config
 import ops_web.db
 import ops_web.op_debrief_surveys
+import ops_web.sc_competency
 import ops_web.send_email
 import ops_web.tasks
 import ops_web.util.human_time
@@ -1357,6 +1358,7 @@ def sc_assignments_sales_reps_xlsx():
 @login_required
 def sc_competency():
     flask.g.employees = db.get_employees_for_manager(flask.g.email)
+    flask.g.competencies = ops_web.sc_competency.data.get('competencies')
     return flask.render_template('sc-competency.html')
 
 
