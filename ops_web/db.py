@@ -913,6 +913,45 @@ class Database(fort.PostgresDatabase):
 
     # sc competency
 
+    def add_sc_competency_plan(self, params: Dict):
+        sql = '''
+            insert into sc_competency_plans (
+                sc_employee_id, technical_acumen, domain_knowledge, discovery_and_qualification,
+                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
+                customer_advocacy, attitude, corporate_citizenship
+            ) values (
+                %(sc_employee_id)s, %(technical_acumen)s, %(domain_knowledge)s, %(discovery_and_qualification)s,
+                %(teamwork_and_collaboration)s, %(leadership_skills)s, %(communication)s,
+                %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s, %(corporate_citizenship)s
+            ) on conflict (sc_employee_id) do update set
+                technical_acumen = %(technical_acumen)s, domain_knowledge = %(domain_knowledge)s,
+                discovery_and_qualification = %(discovery_and_qualification)s,
+                teamwork_and_collaboration = %(teamwork_and_collaboration)s, leadership_skills = %(leadership_skills)s,
+                communication = %(communication)s, planning_and_prioritization = %(planning_and_prioritization)s,
+                customer_advocacy = %(customer_advocacy)s, attitude = %(attitude)s,
+                corporate_citizenship = %(corporate_citizenship)s
+        '''
+        self.u(sql, params)
+
+    def add_sc_competency_score(self, params: Dict):
+        sql = '''
+            insert into sc_competency_scores (
+                id, sc_employee_id, score_timestamp, technical_acumen, domain_knowledge, discovery_and_qualification,
+                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
+                customer_advocacy, attitude, corporate_citizenship
+            ) values (
+                %(id)s, %(sc_employee_id)s, %(score_timestamp)s, %(technical_acumen)s, %(domain_knowledge)s,
+                %(discovery_and_qualification)s, %(teamwork_and_collaboration)s, %(leadership_skills)s,
+                %(communication)s, %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s,
+                %(corporate_citizenship)s
+            )
+        '''
+        params.update({
+            'id': uuid.uuid4(),
+            'score_timestamp': datetime.datetime.utcnow()
+        })
+        self.u(sql, params)
+
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
@@ -951,24 +990,19 @@ class Database(fort.PostgresDatabase):
         result.extend(more)
         return result
 
-    def add_sc_competency_score(self, params: Dict):
+    def get_plan_for_employee(self, sc_employee_id: str) -> Dict:
         sql = '''
-            insert into sc_competency_scores (
-                id, sc_employee_id, score_timestamp, technical_acumen, domain_knowledge, discovery_and_qualification,
-                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
-                customer_advocacy, attitude, corporate_citizenship
-            ) values (
-                %(id)s, %(sc_employee_id)s, %(score_timestamp)s, %(technical_acumen)s, %(domain_knowledge)s,
-                %(discovery_and_qualification)s, %(teamwork_and_collaboration)s, %(leadership_skills)s,
-                %(communication)s, %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s,
-                %(corporate_citizenship)s
-            )
+            select
+                technical_acumen, domain_knowledge, discovery_and_qualification, teamwork_and_collaboration,
+                leadership_skills, communication, planning_and_prioritization, customer_advocacy, attitude,
+                corporate_citizenship
+            from sc_competency_plans
+            where sc_employee_id = %(sc_employee_id)s
         '''
-        params.update({
-            'id': uuid.uuid4(),
-            'score_timestamp': datetime.datetime.utcnow()
-        })
-        self.u(sql, params)
+        params = {
+            'sc_employee_id': sc_employee_id
+        }
+        return self.q_one(sql, params)
 
     # opportunity debrief surveys
 
@@ -2128,6 +2162,24 @@ class Database(fort.PostgresDatabase):
                 add column application_role text
             ''')
             self.add_schema_version(53)
+        if self.version < 54:
+            self.log.info('Migrating to database schema version 54')
+            self.u('''
+                create table sc_competency_plans (
+                    sc_employee_id text primary key,
+                    technical_acumen text,
+                    domain_knowledge text,
+                    discovery_and_qualification text,
+                    teamwork_and_collaboration text,
+                    leadership_skills text,
+                    communication text,
+                    planning_and_prioritization text,
+                    customer_advocacy text,
+                    attitude text,
+                    corporate_citizenship text
+                )
+            ''')
+            self.add_schema_version(54)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

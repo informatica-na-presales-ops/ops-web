@@ -1357,14 +1357,54 @@ def sc_assignments_sales_reps_xlsx():
 @app.route('/sc-competency')
 @login_required
 def sc_competency():
+    return flask.redirect(flask.url_for('sc_competency_scoring'))
+
+
+@app.route('/sc-competency/planning')
+@login_required
+def sc_competency_planning():
     flask.g.employees = db.get_employees_for_manager(flask.g.email)
     flask.g.competencies = ops_web.sc_competency.data.get('competencies')
-    return flask.render_template('sc-competency.html')
+    flask.g.plans = {
+        e.get('employee_id'): db.get_plan_for_employee(e.get('employee_id')) for e in flask.g.employees
+    }
+    return flask.render_template('sc-competency/planning.html')
 
 
-@app.route('/sc-competency/scores/add', methods=['POST'])
+@app.route('/sc-competency/planning/save', methods=['POST'])
 @login_required
-def sc_competency_scores_add():
+def sc_competency_planning_save():
+    sc_employee_id = flask.request.values.get('sc-employee-id')
+    params = {
+        'sc_employee_id': sc_employee_id,
+        'technical_acumen': flask.request.values.get('technical-acumen-plan'),
+        'domain_knowledge': flask.request.values.get('domain-knowledge-plan'),
+        'discovery_and_qualification': flask.request.values.get('discovery-and-qualification-plan'),
+        'teamwork_and_collaboration': flask.request.values.get('teamwork-and-collaboration-plan'),
+        'leadership_skills': flask.request.values.get('leadership-skills-plan'),
+        'communication': flask.request.values.get('communication-plan'),
+        'planning_and_prioritization': flask.request.values.get('planning-and-prioritization-plan'),
+        'customer_advocacy': flask.request.values.get('customer-advocacy-plan'),
+        'attitude': flask.request.values.get('attitude-plan'),
+        'corporate_citizenship': flask.request.values.get('corporate-citizenship-plan')
+    }
+    db.add_sc_competency_plan(params)
+    db.add_log_entry(flask.g.email, f'Save SC competency progression plan for {sc_employee_id}')
+    flask.flash('SC competency progression plan saved successfully', 'success')
+    return flask.redirect(flask.url_for('sc_competency_planning'))
+
+
+@app.route('/sc-competency/scoring')
+@login_required
+def sc_competency_scoring():
+    flask.g.employees = db.get_employees_for_manager(flask.g.email)
+    flask.g.competencies = ops_web.sc_competency.data.get('competencies')
+    return flask.render_template('sc-competency/scoring.html')
+
+
+@app.route('/sc-competency/scoring/add', methods=['POST'])
+@login_required
+def sc_competency_scoring_add():
     for name, value in flask.request.values.lists():
         app.logger.debug(f'{name}: {value}')
     if 'sc-employee-id' in flask.request.values:

@@ -1,5 +1,12 @@
 {% extends 'one-up.html' %}
 
+{% set tabs = [
+    ('scoring', 'Scoring', url_for('sc_competency_scoring')),
+    ('planning', 'Planning', url_for('sc_competency_planning'))
+] %}
+
+{% set active_tab = active_tab | default('scoring') %}
+
 {% block title %}SC Competency / {{ super() }}{% endblock %}
 
 {% block main_content %}
@@ -7,7 +14,16 @@
         <div class="col-4 col-xl-3">
             <h1 class="mb-4">SC Competency</h1>
 
-            <form class="form-inline mb-3" id="form" action="{{ url_for('sc_competency_scores_add') }}" method="post">
+            <ul class="nav nav-tabs mb-4">
+                {% for id, title, href in tabs %}
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if id == active_tab else 'text-light' }}" href="{{ href }}">{{ title }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <form class="form-inline mb-3" id="form" method="post"
+                  action="{{ url_for('sc_competency_scoring_add') if active_tab == 'scoring' else url_for('sc_competency_planning_save') }}">
                 <div class="form-group mb-2 mr-2">
                     <label for="select-sc" class="sr-only">Choose an employee</label>
                     <select class="custom-select" id="select-sc" name="sc-employee-id" required>
@@ -32,7 +48,9 @@
                         {% endfor %}
                     </select>
                 </div>
-                <button type="submit" class="btn btn-outline-success mb-2 mr-2">Add score</button>
+                <button type="submit" class="btn btn-outline-success mb-2 mr-2" disabled>
+                    {{ 'Add score' if active_tab == 'scoring' else 'Save plan' }}
+                </button>
             </form>
 
             <div id="job-title" class="collapse">
@@ -61,36 +79,9 @@
 
         <div class="col">
             <div class="tab-content">
-            {% for c in g.competencies %}
-                <div class="tab-pane {{ 'show active' if loop.first }}" id="{{ c.id }}">
-                    <h2>{{ c.display_name }}</h2>
-                    <p>{{ c.description }}</p>
-                    {% for level in c.levels %}
-                    <div class="score-selection px-2 score-{{ level.score }}">
-                        <div class="custom-control custom-radio">
-                            <input class="custom-control-input" type="radio" id="{{ c.id }}-{{ level.score }}"
-                                   name="{{ c.id }}" value="{{ level.score }}" form="form" required>
-                            <label class="custom-control-label" for="{{ c.id }}-{{ level.score }}">
-                                <strong>{{ level.title }} ({{ level.score }})</strong>
-                            </label>
-                            <ul class="ml-n4">
-                            {% for d in level.details %}
-                                <li>{{ d }}</li>
-                            {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% if not loop.last %}<hr class="border-light">{% endif %}
-                    {% endfor %}
-                </div>
-            {% endfor %}
+            {% block sub_content %}{% endblock %}
             </div>
         </div>
 
     </div>
-{% endblock %}
-
-{% block end_of_body %}
-    {{ super() }}
-    <script src="{{ url_for('static', filename='sc-competency.js') }}"></script>
 {% endblock %}
