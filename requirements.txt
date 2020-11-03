@@ -10,7 +10,7 @@ azure-mgmt-compute==14.0.0
 azure-mgmt-network==12.0.0
 azure-mgmt-subscription==0.7.0
 boto3==1.16.9
-botocore==1.19.9
+botocore==1.19.10
 elastic-apm[flask]==5.9.0
 fort==1.0.1
 google-api-python-client==1.12.5
