@@ -7,7 +7,16 @@
         <div class="tab-pane {{ 'show active' if loop.first }}" id="{{ c.id }}">
             <h2>{{ c.display_name }}</h2>
             <p>{{ c.description }}</p>
-            <div class="row">
+            {% for level in c.levels %}
+                <div class="custom-control custom-checkbox custom-control-inline">
+                    <input class="custom-control-input show-column-checkbox" type="checkbox"
+                           id="show-{{ c.id }}-{{ level.score }}" data-column-id="{{ c.id }}-{{ level.score }}">
+                    <label class="custom-control-label" for="show-{{ c.id }}-{{ level.score }}">
+                        {{ level.title }}
+                    </label>
+                </div>
+            {% endfor %}
+            <div class="row pt-3">
             {% for level in c.levels %}
                 <div class="col collapse score-column" id="{{ c.id }}-{{ level.score }}">
                     <h3>{{ level.title }}</h3>

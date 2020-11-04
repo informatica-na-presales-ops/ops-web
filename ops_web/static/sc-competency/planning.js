@@ -1,3 +1,16 @@
+// do all this when a show-column-checkbox is clicked
+document.querySelectorAll('.show-column-checkbox').forEach(function (el) {
+    el.addEventListener('change', function () {
+        // get the column to show or hide
+        const col = document.getElementById(this.dataset.columnId);
+        if (this.checked) {
+            col.classList.add('show');
+        } else {
+            col.classList.remove('show');
+        }
+    });
+});
+
 // do all this when the employee selection changes
 document.getElementById('select-sc').addEventListener('change', function () {
     const selected_option = this.options[this.selectedIndex];
@@ -28,6 +41,9 @@ document.getElementById('select-sc').addEventListener('change', function () {
     // hide all content columns
     document.querySelectorAll('.score-column').forEach(function (el) {
         el.classList.remove('show');
+    });
+    document.querySelectorAll('.show-column-checkbox').forEach(function (el) {
+        el.checked = false;
     });
 
     // clear current score badges
@@ -80,8 +96,8 @@ document.getElementById('select-sc').addEventListener('change', function () {
             left_column = 1;
         }
         let right_column = left_column + 1;
-        document.getElementById(`${id}-${left_column}`).classList.add('show');
-        document.getElementById(`${id}-${right_column}`).classList.add('show');
+        document.getElementById(`show-${id}-${left_column}`).click();
+        document.getElementById(`show-${id}-${right_column}`).click();
 
         // put plan text in textarea
         document.getElementById(`${id}-plan`).value = document.getElementById(`${employee_id}-plan`).getAttribute(`data-${id}`);
