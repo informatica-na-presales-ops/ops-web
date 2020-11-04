@@ -254,6 +254,7 @@ def admin_users_edit():
     permissions = set(flask.request.values.getlist('permissions'))
     db.add_log_entry(flask.g.email, f'Set permissions for {email} to {permissions}')
     db.set_permissions(email, permissions)
+    flask.flash(f'Successfully updated permissions for {email}', 'success')
     return flask.redirect(flask.url_for('admin'))
 
 
