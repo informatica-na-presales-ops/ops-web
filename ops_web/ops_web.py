@@ -241,7 +241,7 @@ def admin_users():
                   'cloud credentials'),
         'cert-approval': 'receive notifications of and approve new ecosystem certifications',
         'manager': 'access tools for managers (use this permission if email addresses do not match)',
-        'sc-assignments': 'view and manage sales consultant assignments',
+        'sc-assignments': 'edit sales consultant assignments',
         'survey-admin': 'view all opportunity debrief surveys'
     }
     return flask.render_template('admin/users.html')
