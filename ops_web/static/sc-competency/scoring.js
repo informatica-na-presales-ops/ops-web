@@ -58,6 +58,11 @@ document.querySelectorAll('input[type=radio]').forEach(function (el) {
 document.getElementById('select-sc').addEventListener('change', function () {
     const selected_option = this.options[this.selectedIndex];
 
+    // enable the save button
+    document.querySelectorAll('button').forEach(function (el) {
+        el.disabled = false;
+    });
+
     // clear current score content
     document.querySelectorAll('.current-score').forEach(function (el) {
         el.textContent = '';
