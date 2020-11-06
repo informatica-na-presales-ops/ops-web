@@ -1,0 +1,119 @@
+{% extends 'index.html' %}
+
+{% block title %}{{ g.game.game_name }} / Games / {{ super() }}{% endblock %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('games') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Games</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 justify-content-center text-light">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
+            <h1>{{ g.game.game_name }}</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3 justify-content-center text-light">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
+            <div class="card bg-dark border-light mb-3">
+                <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#game-overview" data-toggle="collapse">Overview</a>
+                </h5>
+                <div class="card-body collapse show" id="game-overview">
+                    <form method="post">
+                        <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
+                        <div class="form-group">
+                            <label for="game-name">Game name</label>
+                            <input type="text" class="form-control" id="game-name" name="name"
+                                   value="{{ g.game.game_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="game-intro">Introduction</label>
+                            <textarea class="form-control" id="game-intro" name="intro" rows="10">
+                                {{- g.game.game_intro if g.game.game_intro -}}
+                            </textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="game-outro">Conclusion</label>
+                            <textarea class="form-control" id="game-outro" name="outro" rows="10">
+                                {{- g.game.game_outro if g.game.game_outro -}}
+                            </textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="skip-code">Skip code</label>
+                            <input type="text" class="form-control" id="skip-code" name="skip-code"
+                                   value="{{ g.game.skip_code }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger" formaction="{{ url_for('games_delete') }}">
+                            <span class="oi oi-trash"></span>
+                            Delete
+                        </button>
+                        <button type="submit" class="btn btn-outline-success" formaction="{{ url_for('games_overview') }}">
+                            <span class="oi oi-task"></span>
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% for step in g.steps %}
+            <div class="card bg-dark border-light mb-3">
+                <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#step-{{ step.step_number }}"
+                       data-toggle="collapse">
+                        Step {{ step.step_number }}
+                    </a>
+                </h5>
+                <div class="card-body collapse" id="step-{{ step.step_number }}">
+                    <form action="{{ url_for('games_edit_step') }}" method="post">
+                        <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
+                        <input type="hidden" name="step-id" value="{{ step.step_id }}">
+                        <div class="form-group">
+                            <label for="step-{{ step.step_number }}-text">Step description</label>
+                            <textarea class="form-control" id="step-{{ step.step_number }}-text" name="text" rows="10"
+                                      required>
+                                {{- step.step_text -}}
+                            </textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="step-{{ step.step_number }}-answer">Answer</label>
+                            <input type="text" class="form-control" id="step-{{ step.step_number }}-answer"
+                                   name="answer" value="{{ step.step_answer }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">Save step</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="card bg-dark border-light mb-3">
+                <h5 class="card-header">
+                    <a class="text-decoration-none text-light" href="#add-step" data-toggle="collapse">
+                        <span class="oi oi-plus"></span>
+                        Add step
+                    </a>
+                </h5>
+                <div class="card-body collapse {{ 'show' if g.steps|length == 0 }}" id="add-step">
+                    <form action="{{ url_for('games_add_step') }}" method="post">
+                        <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
+                        <div class="form-group">
+                            <label for="new-step-text">Step description</label>
+                            <textarea class="form-control" id="new-step-text" name="text"  rows="10" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-step-answer">Answer</label>
+                            <input type="text" class="form-control" id="new-step-answer" name="answer" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-success">
+                            <span class="oi oi-plus"></span>
+                            Add step
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

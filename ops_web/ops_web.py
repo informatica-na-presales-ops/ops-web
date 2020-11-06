@@ -2,7 +2,14 @@ import apscheduler.schedulers.background
 import datetime
 import decimal
 import elasticapm.contrib.flask
+import flask
+import functools
+import io
 import ipaddress
+import jinja2
+import jwt
+import logging
+import markdown
 import ops_web.aws
 import ops_web.az
 import ops_web.gcp
@@ -13,11 +20,6 @@ import ops_web.sc_competency
 import ops_web.send_email
 import ops_web.tasks
 import ops_web.util.human_time
-import flask
-import functools
-import io
-import jwt
-import logging
 import pathlib
 import pendulum
 import sys
@@ -48,6 +50,18 @@ app.config['SERVER_NAME'] = config.server_name
 
 if config.scheme == 'https':
     app.config['SESSION_COOKIE_SECURE'] = True
+
+md = markdown.Markdown()
+app.jinja_env.filters['markdown'] = lambda text: jinja2.Markup(md.convert(text))
+
+
+def format_timedelta(t: datetime.timedelta) -> str:
+    hours, remainder = divmod(t.total_seconds(), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f'{int(hours):02}:{int(minutes):02}:{int(seconds):02}'
+
+
+app.jinja_env.filters['hms'] = format_timedelta
 
 
 def permission_required(permission: str):
@@ -240,6 +254,7 @@ def admin_users():
         'admin': ('view and manage all environments, launch sync manually, grant permissions to other users, manage '
                   'cloud credentials'),
         'cert-approval': 'receive notifications of and approve new ecosystem certifications',
+        'games-admin': 'create and modify games',
         'manager': 'access tools for managers (use this permission if email addresses do not match)',
         'sc-assignments': 'edit sales consultant assignments',
         'survey-admin': 'view all opportunity debrief surveys'
@@ -615,6 +630,148 @@ def external_links_delete():
     db.add_log_entry(flask.g.email, f'Deleted an external link with id {link_id}')
     flask.flash('Successfully deleted an external link', 'success')
     return flask.redirect(flask.url_for('external_links'))
+
+
+@app.route('/games')
+@login_required
+def games():
+    # list of games.
+    # links to play and (if games-admin) create or modify
+    flask.g.games = db.get_games()
+    return flask.render_template('games/index.html')
+
+
+@app.route('/games/add-step', methods=['POST'])
+@permission_required('games-admin')
+def games_add_step():
+    game_id = flask.request.values.get('game-id')
+    params = {
+        'game_id': game_id,
+        'step_text': flask.request.values.get('text'),
+        'step_answer': flask.request.values.get('answer')
+    }
+    db.add_step(params)
+    return flask.redirect(flask.url_for('games_edit', game_id=game_id))
+
+
+@app.route('/games/edit-step', methods=['POST'])
+@permission_required('games-admin')
+def games_edit_step():
+    params = {
+        'step_id': flask.request.values.get('step-id'),
+        'step_text': flask.request.values.get('text'),
+        'step_answer': flask.request.values.get('answer')
+    }
+    db.update_step(params)
+    return flask.redirect(flask.url_for('games_edit', game_id=flask.request.values.get('game-id')))
+
+
+@app.route('/games/delete', methods=['POST'])
+@permission_required('games-admin')
+def games_delete():
+    game_id = flask.request.values.get('game-id')
+    db.delete_game(game_id)
+    db.add_log_entry(flask.g.email, f'Delete game {game_id}')
+    flask.flash('Successfully deleted a game', 'success')
+    return flask.redirect(flask.url_for('games'))
+
+
+@app.route('/games/overview', methods=['POST'])
+@permission_required('games-admin')
+def games_overview():
+    game_id = flask.request.values.get('game-id')
+    params = {
+        'game_id': game_id,
+        'game_name': flask.request.values.get('name'),
+        'game_intro': flask.request.values.get('intro'),
+        'game_outro': flask.request.values.get('outro'),
+        'skip_code': flask.request.values.get('skip-code')
+    }
+    db.update_game_overview(params)
+    db.add_log_entry(flask.g.email, f'Update overview of game {game_id}')
+    flask.flash('Successfully updated overview values for this game', 'success')
+    return flask.redirect(flask.url_for('games_edit', game_id=game_id))
+
+
+@app.route('/games/new', methods=['POST'])
+@permission_required('games-admin')
+def games_new():
+    game_name = flask.request.values.get('name')
+    params = {
+        'game_name': game_name,
+        'game_intro': flask.request.values.get('intro'),
+        'game_outro': flask.request.values.get('outro'),
+        'skip_code': flask.request.values.get('skip-code')
+    }
+    game_id = db.create_game(params)
+    db.add_log_entry(flask.g.email, f'Create new game {game_id}')
+    flask.flash(f'Successfully created a new game: {game_name}', 'success')
+    return flask.redirect(flask.url_for('games_edit', game_id=game_id))
+
+
+@app.route('/games/<uuid:game_id>/edit')
+@permission_required('games-admin')
+def games_edit(game_id: uuid.UUID):
+    # edit a game
+    flask.g.game = db.get_game(game_id)
+    flask.g.steps = db.get_steps(game_id)
+    return flask.render_template('games/edit.html')
+
+
+@app.route('/games/<uuid:game_id>/play')
+@login_required
+def games_play(game_id: uuid.UUID):
+    # play a game.
+    flask.g.game = db.get_game(game_id)
+    flask.g.team = db.get_player_team(game_id, flask.g.email)
+    flask.g.progress = db.get_progress(game_id, flask.g.email)
+    flask.g.show_intro = all([p.get('step_start_time') is None for p in flask.g.progress])
+    flask.g.show_outro = all([p.get('step_stop_time') for p in flask.g.progress])
+    if not flask.g.show_intro:
+        flask.g.completed_step_time = sum([p.get('step_elapsed_time') for p in flask.g.progress], start=datetime.timedelta(0))
+    for p in flask.g.progress:
+        if p.get('step_start_time') is not None and p.get('step_stop_time') is None:
+            flask.g.current_step = p
+            break
+    return flask.render_template('games/play.html')
+
+
+@app.route('/games/<uuid:game_id>/play/submit', methods=['POST'])
+@login_required
+def games_play_submit(game_id: uuid.UUID):
+    if 'team-number' in flask.request.values:
+        # record team number and team name, and start the game
+        params = {
+            'game_id': game_id,
+            'player_email': flask.g.email,
+            'team_number': int(flask.request.values.get('team-number')),
+            'team_name': flask.request.values.get('team-name')
+        }
+        db.add_game_player(params)
+    elif 'answer' in flask.request.values:
+        # check for correct answer
+        game = db.get_game(game_id)
+
+        current_step = None
+        progress = db.get_progress(game_id, flask.g.email)
+        for p in progress:
+            if p.get('step_start_time') is not None and p.get('step_stop_time') is None:
+                current_step = p
+                break
+
+        if current_step is not None:
+            if game.get('skip_code') == flask.request.values.get('answer'):
+                # skip code
+                db.stop_step(current_step.get('step_result_id'), step_skipped=True)
+                flask.flash('You gave the skip code.', 'warning')
+            elif current_step.get('step_answer') == flask.request.values.get('answer'):
+                # correct answer
+                db.stop_step(current_step.get('step_result_id'))
+                flask.flash('You gave the correct answer.', 'success')
+            else:
+                # incorrect answer
+                flask.flash('You gave the wrong answer.', 'danger')
+    return flask.redirect(flask.url_for('games_play', game_id=game_id))
 
 
 @app.route('/images')
