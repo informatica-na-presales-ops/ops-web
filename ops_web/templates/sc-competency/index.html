@@ -14,7 +14,6 @@
         <div class="col-4 col-xl-3">
             <h1 class="mb-4">SC Competency</h1>
 
-            {#
             <ul class="nav nav-tabs mb-4">
                 {% for id, title, href in tabs %}
                 <li class="nav-item">
@@ -22,7 +21,6 @@
                 </li>
                 {% endfor %}
             </ul>
-            #}
 
             <form class="form-inline mb-3" id="form" method="post"
                   action="{{ url_for('sc_competency_scoring_add') if active_tab == 'scoring' else url_for('sc_competency_planning_save') }}">
