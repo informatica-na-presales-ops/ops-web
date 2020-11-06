@@ -32,15 +32,27 @@
                         </div>
                         <div class="form-group">
                             <label for="game-intro">Introduction</label>
-                            <textarea class="form-control" id="game-intro" name="intro" rows="10">
+                            <textarea class="form-control" id="game-intro" name="intro" rows="10"
+                                      data-preview-target="introduction-preview">
                                 {{- g.game.game_intro if g.game.game_intro -}}
                             </textarea>
                         </div>
+                        <div class="card bg-dark border-light mb-3">
+                            <div class="card-body" id="introduction-preview" >
+                                {{ g.game.game_intro | markdown }}
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label for="game-outro">Conclusion</label>
-                            <textarea class="form-control" id="game-outro" name="outro" rows="10">
+                            <textarea class="form-control" id="game-outro" name="outro" rows="10"
+                                      data-preview-target="conclusion-preview">
                                 {{- g.game.game_outro if g.game.game_outro -}}
                             </textarea>
+                        </div>
+                        <div class="card bg-dark border-light mb-3">
+                            <div class="card-body" id="conclusion-preview">
+                                {{ g.game.game_outro | markdown }}
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="skip-code">Skip code</label>
@@ -74,9 +86,15 @@
                         <div class="form-group">
                             <label for="step-{{ step.step_number }}-text">Step description</label>
                             <textarea class="form-control" id="step-{{ step.step_number }}-text" name="text" rows="10"
+                                      data-preview-target="step-{{ step.step_number }}-preview"
                                       required>
                                 {{- step.step_text -}}
                             </textarea>
+                        </div>
+                        <div class="card bg-dark border-light mb-3">
+                            <div class="card-body" id="step-{{ step.step_number }}-preview">
+                                {{ step.step_text | markdown }}
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="step-{{ step.step_number }}-answer">Answer</label>
@@ -101,7 +119,11 @@
                         <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
                         <div class="form-group">
                             <label for="new-step-text">Step description</label>
-                            <textarea class="form-control" id="new-step-text" name="text"  rows="10" required></textarea>
+                            <textarea class="form-control" id="new-step-text" name="text" rows="10"
+                                      data-preview-target="new-step-preview" required></textarea>
+                        </div>
+                        <div class="card bg-dark border-light mb-3">
+                            <div class="card-body" id="new-step-preview"></div>
                         </div>
                         <div class="form-group">
                             <label for="new-step-answer">Answer</label>
@@ -116,4 +138,10 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='remarkable-2.0.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='games/edit.js') }}"></script>
 {% endblock %}
