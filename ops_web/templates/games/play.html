@@ -57,7 +57,7 @@
 
             <h2 class="pb-3">Step overview</h2>
 
-            <ul class="list-group">
+            <ul class="list-group mb-3">
             {% for p in g.progress %}
                 <li class="list-group-item bg-dark border-light d-flex justify-content-between">
                     <h4>Step {{ p.step_number }}</h4>
@@ -79,6 +79,12 @@
                 </li>
             {% endfor %}
             </ul>
+
+            <form>
+                <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-reset">
+                    Reset progress
+                </button>
+            </form>
 
         {% else %}
             <div class="d-flex justify-content-between">
@@ -107,6 +113,27 @@
                 <button type="submit" class="btn btn-outline-success">Submit</button>
             </form>
         {% endif %}
+        </div>
+    </div>
+
+    <div class="modal" id="modal-reset">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reset this game</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to reset your progress in this game? All step results will be deleted.
+                </div>
+                <div class="modal-footer">
+                    <form action="{{ url_for('games_reset_progress') }}" method="post">
+                        <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
+                        <button type="button" class="btn btn-outline-light" data-dismiss="modal">Keep progress</button>
+                        <button type="submit" class="btn btn-outline-danger">Reset</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}

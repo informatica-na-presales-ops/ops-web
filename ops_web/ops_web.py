@@ -654,6 +654,16 @@ def games_add_step():
     return flask.redirect(flask.url_for('games_edit', game_id=game_id))
 
 
+@app.route('/games/delete', methods=['POST'])
+@permission_required('games-admin')
+def games_delete():
+    game_id = flask.request.values.get('game-id')
+    db.delete_game(game_id)
+    db.add_log_entry(flask.g.email, f'Delete game {game_id}')
+    flask.flash('Successfully deleted a game', 'success')
+    return flask.redirect(flask.url_for('games'))
+
+
 @app.route('/games/edit-step', methods=['POST'])
 @permission_required('games-admin')
 def games_edit_step():
@@ -666,14 +676,20 @@ def games_edit_step():
     return flask.redirect(flask.url_for('games_edit', game_id=flask.request.values.get('game-id')))
 
 
-@app.route('/games/delete', methods=['POST'])
+@app.route('/games/new', methods=['POST'])
 @permission_required('games-admin')
-def games_delete():
-    game_id = flask.request.values.get('game-id')
-    db.delete_game(game_id)
-    db.add_log_entry(flask.g.email, f'Delete game {game_id}')
-    flask.flash('Successfully deleted a game', 'success')
-    return flask.redirect(flask.url_for('games'))
+def games_new():
+    game_name = flask.request.values.get('name')
+    params = {
+        'game_name': game_name,
+        'game_intro': flask.request.values.get('intro'),
+        'game_outro': flask.request.values.get('outro'),
+        'skip_code': flask.request.values.get('skip-code')
+    }
+    game_id = db.create_game(params)
+    db.add_log_entry(flask.g.email, f'Create new game {game_id}')
+    flask.flash(f'Successfully created a new game: {game_name}', 'success')
+    return flask.redirect(flask.url_for('games_edit', game_id=game_id))
 
 
 @app.route('/games/overview', methods=['POST'])
@@ -693,20 +709,16 @@ def games_overview():
     return flask.redirect(flask.url_for('games_edit', game_id=game_id))
 
 
-@app.route('/games/new', methods=['POST'])
-@permission_required('games-admin')
-def games_new():
-    game_name = flask.request.values.get('name')
+@app.route('/games/reset-progress', methods=['POST'])
+@login_required
+def games_reset_progress():
+    game_id = flask.request.values.get('game-id')
     params = {
-        'game_name': game_name,
-        'game_intro': flask.request.values.get('intro'),
-        'game_outro': flask.request.values.get('outro'),
-        'skip_code': flask.request.values.get('skip-code')
+        'game_id': game_id,
+        'player_email': flask.g.email
     }
-    game_id = db.create_game(params)
-    db.add_log_entry(flask.g.email, f'Create new game {game_id}')
-    flask.flash(f'Successfully created a new game: {game_name}', 'success')
-    return flask.redirect(flask.url_for('games_edit', game_id=game_id))
+    db.reset_progress(params)
+    return flask.redirect(flask.url_for('games_play', game_id=game_id))
 
 
 @app.route('/games/<uuid:game_id>/edit')

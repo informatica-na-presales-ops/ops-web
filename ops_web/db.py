@@ -1610,6 +1610,20 @@ class Database(fort.PostgresDatabase):
         }
         return self.q(sql, params)
 
+    def reset_progress(self, params: Dict):
+        sql = '''
+            delete from game_step_results
+            where player_email = %(player_email)s
+            and step_id in (select step_id from game_steps where game_id = %(game_id)s)
+        '''
+        self.u(sql, params)
+        sql = '''
+            delete from game_players
+            where player_email = %(player_email)s
+            and game_id = %(game_id)s
+        '''
+        self.u(sql, params)
+
     def stop_step(self, step_result_id: uuid.UUID, step_skipped: bool = False):
         # get data for this step
         sql = '''
