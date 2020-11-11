@@ -737,14 +737,17 @@ def games_play(game_id: uuid.UUID):
     flask.g.game = db.get_game(game_id)
     flask.g.team = db.get_player_team(game_id, flask.g.email)
     flask.g.progress = db.get_progress(game_id, flask.g.email)
-    flask.g.show_intro = all([p.get('step_start_time') is None for p in flask.g.progress])
+    flask.g.show_intro = (flask.g.team is None)
     flask.g.show_outro = all([p.get('step_stop_time') for p in flask.g.progress])
     if not flask.g.show_intro:
         flask.g.completed_step_time = sum([p.get('step_elapsed_time') for p in flask.g.progress], start=datetime.timedelta(0))
-    for p in flask.g.progress:
-        if p.get('step_start_time') is not None and p.get('step_stop_time') is None:
-            flask.g.current_step = p
-            break
+        for p in flask.g.progress:
+            if p.get('step_start_time') is None:
+                db.start_step(p.get('step_id'), flask.g.email)
+                return flask.redirect(flask.url_for('games_play', game_id=game_id))
+            if p.get('step_stop_time') is None:
+                flask.g.current_step = p
+                break
     return flask.render_template('games/play.html')
 
 
@@ -765,20 +768,26 @@ def games_play_submit(game_id: uuid.UUID):
         game = db.get_game(game_id)
 
         current_step = None
+        current_step_result_id = None
         progress = db.get_progress(game_id, flask.g.email)
         for p in progress:
-            if p.get('step_start_time') is not None and p.get('step_stop_time') is None:
+            if p.get('step_start_time') is None:
+                current_step_result_id = db.start_step(p.get('step_id'), flask.g.email)
                 current_step = p
+                break
+            if p.get('step_stop_time') is None:
+                current_step = p
+                current_step_result_id = current_step.get('step_result_id')
                 break
 
         if current_step is not None:
             if game.get('skip_code') == flask.request.values.get('answer'):
                 # skip code
-                db.stop_step(current_step.get('step_result_id'), step_skipped=True)
+                db.stop_step(current_step_result_id, step_skipped=True)
                 flask.flash('You gave the skip code.', 'warning')
             elif current_step.get('step_answer') == flask.request.values.get('answer'):
                 # correct answer
-                db.stop_step(current_step.get('step_result_id'))
+                db.stop_step(current_step_result_id)
                 flask.flash('You gave the correct answer.', 'success')
             else:
                 # incorrect answer

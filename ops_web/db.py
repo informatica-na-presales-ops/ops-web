@@ -1493,30 +1493,6 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
-        # get step 1 for this game
-        sql = '''
-            select step_id
-            from game_steps
-            where game_id = %(game_id)s
-            and step_number = 1
-        '''
-        step_id = self.q_val(sql, params)
-
-        # start step 1
-        sql = '''
-            insert into game_step_results (
-                step_result_id, step_id, player_email, step_start_time
-            ) values (
-                %(step_result_id)s, %(step_id)s, %(player_email)s, %(step_start_time)s
-            )
-        '''
-        params.update({
-            'step_result_id': uuid.uuid4(),
-            'step_id': step_id,
-            'step_start_time': datetime.datetime.utcnow()
-        })
-        self.u(sql, params)
-
     def create_game(self, params: Dict) -> uuid.UUID:
         sql = '''
             insert into game_details (
@@ -1624,61 +1600,36 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def stop_step(self, step_result_id: uuid.UUID, step_skipped: bool = False):
-        # get data for this step
+    def start_step(self, step_id: uuid.UUID, player_email: str) -> uuid.UUID:
         sql = '''
-            select *
-            from game_step_results
-            where step_result_id = %(step_result_id)s
+            insert into game_step_results (
+                step_result_id, step_id, player_email, step_start_time
+            ) values (
+                %(step_result_id)s, %(step_id)s, %(player_email)s, %(step_start_time)s
+            )
         '''
         params = {
-            'step_result_id': step_result_id
+            'step_result_id': uuid.uuid4(),
+            'step_id': step_id,
+            'player_email': player_email,
+            'step_start_time':datetime.datetime.utcnow()
         }
-        current_step_result = self.q_one(sql, params)
-        current_step_id = current_step_result.get('step_id')
-        current_step = self.get_step(current_step_id)
+        self.u(sql, params)
+        return params.get('step_result_id')
 
+    def stop_step(self, step_result_id: uuid.UUID, step_skipped: bool = False):
         # record stop time and whether step was skipped
         sql = '''
             update game_step_results
             set step_stop_time = %(step_stop_time)s, step_skipped = %(step_skipped)s
             where step_result_id = %(step_result_id)s
         '''
-        params.update({
-            'step_stop_time': datetime.datetime.utcnow(),
-            'step_skipped': step_skipped
-        })
-        self.u(sql, params)
-
-        # get next step
-        sql = '''
-            select step_id
-            from game_steps
-            where game_id = %(game_id)s
-            and step_number = %(step_number)s
-        '''
         params = {
-            'game_id': current_step.get('game_id'),
-            'step_number': current_step.get('step_number') + 1
+            'step_stop_time': datetime.datetime.utcnow(),
+            'step_skipped': step_skipped,
+            'step_result_id': step_result_id
         }
-        next_step_id = self.q_val(sql, params)
-
-        if next_step_id is not None:
-            # start next step
-            sql = '''
-                insert into game_step_results (
-                    step_result_id, step_id, player_email, step_start_time
-                ) values (
-                    %(step_result_id)s, %(step_id)s, %(player_email)s, %(step_start_time)s
-                )
-            '''
-            params = {
-                'step_result_id': uuid.uuid4(),
-                'step_id': next_step_id,
-                'player_email': current_step_result.get('player_email'),
-                'step_start_time': datetime.datetime.utcnow()
-            }
-            self.u(sql, params)
+        self.u(sql, params)
 
     def update_game_overview(self, params: Dict):
         sql = '''
