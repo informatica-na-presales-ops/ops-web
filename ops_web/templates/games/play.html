@@ -29,7 +29,7 @@
                         <div class="form-group">
                             <label for="team-number">Team number</label>
                             <input type="number" class="form-control" id="team-number" name="team-number" min="1"
-                                   required>
+                                   required autofocus>
                         </div>
                     </div>
                     <div class="col">
@@ -108,7 +108,7 @@
             <form action="{{ url_for('games_play_submit', game_id=g.game.game_id) }}" method="post">
                 <div class="form-group">
                     <label for="answer">Answer</label>
-                    <input type="text" class="form-control" id="answer" name="answer" required>
+                    <input type="text" class="form-control" id="answer" name="answer" required autofocus>
                 </div>
                 <button type="submit" class="btn btn-outline-success">Submit</button>
             </form>
