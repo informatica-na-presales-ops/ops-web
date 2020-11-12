@@ -80,12 +80,6 @@
             {% endfor %}
             </ul>
 
-            <form>
-                <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-reset">
-                    Reset progress
-                </button>
-            </form>
-
         {% else %}
             <div class="d-flex justify-content-between">
                 <h2 id="step-title" data-step-start-time="{{ (g.current_step.step_start_time.timestamp() * 1000) | int }}">
