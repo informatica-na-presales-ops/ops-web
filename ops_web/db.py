@@ -1663,13 +1663,17 @@ class Database(fort.PostgresDatabase):
 
     def reset(self):
         self.log.warning('Database reset requested, dropping all tables')
-        for table in ('cloud_credentials', 'cost_data', 'cost_tracking', 'ecosystem_certification', 'employees',
-                      'environment_usage_events', 'external_links', 'images', 'log_entries', 'op_debrief_roles',
-                      'op_debrief_surveys', 'op_debrief_tracking', 'permissions', 'sales_consultants', 'sales_reps',
-                      'sc_competency_scores', 'sc_ra_assignments', 'sc_rep_assignments', 'scheduled_tasks',
-                      'schema_versions', 'security_group', 'security_group_rules', 'settings', 'sf_opportunities',
-                      'sf_opportunity_contacts', 'sf_opportunity_team_members', 'sync_tracking', 'virtual_machines'):
-            self.u(f'drop table if exists {table} cascade ')
+        sql = '''
+            select table_name
+            from information_schema.tables
+            where table_schema = %(table_schema)s;
+        '''
+        params = {
+            'table_schema': 'public'
+        }
+        for table in self.q(sql, params):
+            table_name = table.get('table_name')
+            self.u(f'drop table if exists {table_name} cascade ')
 
     def migrate(self):
         self.log.info(f'Database schema version is {self.version}')
