@@ -976,8 +976,7 @@ class Database(fort.PostgresDatabase):
             ) latest_scores on latest_scores.sc_employee_id = e.employee_id
             left join sc_competency_scores s on s.sc_employee_id = latest_scores.sc_employee_id
                 and s.score_timestamp = latest_scores.score_timestamp
-            where (e.is_sc is true or e.job_code in ('S1511', 'S1512'))
-            and e.visible is true
+            where e.visible is true
             and m.employee_email = %(manager_email)s
             order by e.employee_name
         '''
