@@ -989,19 +989,19 @@ class Database(fort.PostgresDatabase):
         result.extend(more)
         return result
 
-    def get_plan_for_employee(self, sc_employee_id: str) -> Dict:
+    def get_plans_for_employees(self, employee_ids: List[str]) -> Dict:
         sql = '''
             select
-                technical_acumen, domain_knowledge, discovery_and_qualification, teamwork_and_collaboration,
-                leadership_skills, communication, planning_and_prioritization, customer_advocacy, attitude,
-                corporate_citizenship
+                sc_employee_id, technical_acumen, domain_knowledge, discovery_and_qualification,
+                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
+                customer_advocacy, attitude, corporate_citizenship
             from sc_competency_plans
-            where sc_employee_id = %(sc_employee_id)s
+            where sc_employee_id = any (%(employee_ids)s)
         '''
         params = {
-            'sc_employee_id': sc_employee_id
+            'employee_ids': employee_ids
         }
-        return self.q_one(sql, params)
+        return {r.get('sc_employee_id'): r for r in self.q(sql, params)}
 
     # opportunity debrief surveys
 

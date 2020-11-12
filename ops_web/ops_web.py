@@ -1544,9 +1544,7 @@ def sc_competency():
 def sc_competency_planning():
     flask.g.employees = db.get_employees_for_manager(flask.g.email)
     flask.g.competencies = ops_web.sc_competency.data.get('competencies')
-    flask.g.plans = {
-        e.get('employee_id'): db.get_plan_for_employee(e.get('employee_id')) for e in flask.g.employees
-    }
+    flask.g.plans = db.get_plans_for_employees([e.get('employee_id') for e in flask.g.employees])
     return flask.render_template('sc-competency/planning.html')
 
 
