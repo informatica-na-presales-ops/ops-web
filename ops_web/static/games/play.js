@@ -33,6 +33,3 @@ setInterval(update_elapsed_time, 1000);
 // render time spent in previous steps
 const completed_steps_el = document.getElementById('completed-steps-elapsed-time');
 completed_steps_el.textContent = format_duration(completed_steps_el.dataset.timestamp);
-
-// enable fancy tooltips
-$('[data-toggle="tooltip"]').tooltip();

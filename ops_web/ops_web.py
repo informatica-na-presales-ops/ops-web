@@ -710,15 +710,15 @@ def games_overview():
 
 
 @app.route('/games/reset-progress', methods=['POST'])
-@login_required
+@permission_required('games-admin')
 def games_reset_progress():
     game_id = flask.request.values.get('game-id')
     params = {
         'game_id': game_id,
-        'player_email': flask.g.email
+        'player_email': flask.request.values.get('player-email')
     }
     db.reset_progress(params)
-    return flask.redirect(flask.url_for('games_play', game_id=game_id))
+    return flask.redirect(flask.url_for('games_monitor', game_id=game_id))
 
 
 @app.route('/games/<uuid:game_id>/edit')
@@ -728,6 +728,14 @@ def games_edit(game_id: uuid.UUID):
     flask.g.game = db.get_game(game_id)
     flask.g.steps = db.get_steps(game_id)
     return flask.render_template('games/edit.html')
+
+
+@app.route('/games/<uuid:game_id>/monitor')
+@permission_required('games-admin')
+def games_monitor(game_id: uuid.UUID):
+    flask.g.game = db.get_game(game_id)
+    flask.g.progress = db.get_progress_all(game_id)
+    return flask.render_template('games/monitor.html')
 
 
 @app.route('/games/<uuid:game_id>/play')

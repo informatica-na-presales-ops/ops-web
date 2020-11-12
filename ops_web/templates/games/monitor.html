@@ -1,0 +1,98 @@
+{% extends 'index.html' %}
+
+{% block title %}{{ g.game.game_name }} / Games / {{ super() }}{% endblock %}
+
+{% block end_of_head %}
+    {{ super() }}
+    <meta http-equiv="refresh" content="60">
+{% endblock %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('games') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Games</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <h1>{{ g.game.game_name }}</h1>
+            <p class="lead">Monitor progress</p>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col">
+            <a class="btn btn-outline-warning" href="{{ url_for('games_edit', game_id=g.game.game_id) }}">
+                <span class="oi oi-pencil"></span>
+                Edit game
+            </a>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col">
+            <table class="table table-dark table-striped table-hover table-sm table-responsive">
+                <thead>
+                <tr>
+                    <th>Team</th>
+                    <th>Player</th>
+                    <th>Current step</th>
+                    <th>Total time</th>
+                    <th># skipped</th>
+                    <th>Score</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for p in g.progress %}
+                    <tr>
+                        <td class="align-middle">{{ p.team_number }} / {{ p.team_name }}</td>
+                        <td class="align-middle">{{ p.player_email }}</td>
+                        <td class="align-middle">{{ 'done' if p.done else p.current_step_number }}</td>
+                        <td class="align-middle">{{ p.total_elapsed_time | hms }}</td>
+                        <td class="align-middle">{{ p.skip_count }}</td>
+                        <td class="align-middle">{{ p.total_score }}</td>
+                        <td class="align-middle" title="Reset progress" data-toggle="tooltip" data-placement="left">
+                            <button class="btn btn-sm btn-outline-danger" data-player-email="{{ p.player_email }}"
+                                    data-toggle="modal" data-target="#modal-reset">
+                                <span class="oi oi-trash"></span>
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-reset">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reset progress for <span class="reset-player-email"></span></h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to reset progress for <strong><span class="reset-player-email"></span></strong>
+                    in this game? All step results will be deleted.
+                </div>
+                <div class="modal-footer">
+                    <form action="{{ url_for('games_reset_progress') }}" method="post">
+                        <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
+                        <input type="hidden" name="player-email" id="reset-player-email">
+                        <button type="button" class="btn btn-outline-light" data-dismiss="modal">Keep progress</button>
+                        <button type="submit" class="btn btn-outline-danger">Reset</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='enable-tooltips.js') }}"></script>
+    <script src="{{ url_for('static', filename='games/monitor.js') }}"></script>
+{% endblock %}

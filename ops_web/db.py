@@ -1562,6 +1562,25 @@ class Database(fort.PostgresDatabase):
         }
         return self.q(sql, params)
 
+    def get_progress_all(self, game_id: uuid.UUID):
+        sql = '''
+            select team_number, team_name, r.player_email, max(step_number) current_step_number,
+                sum(coalesce(r.step_stop_time, now()) - r.step_start_time) total_elapsed_time,
+                bool_and(step_stop_time is not null) done,
+                sum(case when step_skipped then 1 else 0 end) skip_count,
+                sum(case when step_stop_time is null then 0 when step_skipped then 0 else 10 end) total_score
+            from game_step_results r
+            join game_steps s on s.step_id = r.step_id
+            join game_players p on p.game_id = s.game_id and p.player_email = r.player_email
+            where s.game_id = %(game_id)s
+            group by team_number, team_name, r.player_email
+            order by total_score desc
+        '''
+        params = {
+            'game_id': game_id
+        }
+        return self.q(sql, params)
+
     def get_step(self, step_id: uuid.UUID) -> Dict:
         sql = '''
             select step_id, game_id, step_number, step_text, step_answer
