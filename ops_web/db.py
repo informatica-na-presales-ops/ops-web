@@ -1506,13 +1506,29 @@ class Database(fort.PostgresDatabase):
         return game_id
 
     def delete_game(self, game_id: uuid.UUID):
+        params = {'game_id': game_id}
+        sql = '''
+            delete from game_step_results
+            where step_id in (select step_id from game_steps where game_id = %(game_id)s)
+        '''
+        self.u(sql, params)
+
+        sql = '''
+            delete from game_players
+            where game_id = %(game_id)s
+        '''
+        self.u(sql, params)
+
+        sql = '''
+            delete from game_steps
+            where game_id = %(game_id)s
+        '''
+        self.u(sql, params)
+
         sql = '''
             delete from game_details
             where game_id = %(game_id)s
         '''
-        params = {
-            'game_id': game_id
-        }
         self.u(sql, params)
 
     def get_game(self, game_id: uuid.UUID) -> Dict:
