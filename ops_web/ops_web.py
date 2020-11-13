@@ -1260,26 +1260,6 @@ def manager_toolbox():
     return flask.render_template('manager-toolbox.html')
 
 
-@app.route('/unity')
-def monolith():
-    return flask.redirect(flask.url_for('monolith_request'))
-
-
-@app.route('/unity/request')
-@login_required
-def monolith_request():
-    return flask.render_template('monolith-request.html')
-
-
-@app.route('/unity/request/submit', methods=['POST'])
-@login_required
-def monolith_request_submit():
-    tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
-    scheduler.add_job(ops_web.tasks.create_zendesk_ticket, args=[tc, flask.g.email, flask.request.values])
-    flask.flash('Thank you for submitting this request', 'success')
-    return flask.redirect(flask.url_for('monolith_request'))
-
-
 @app.route('/op-debrief')
 @login_required
 def op_debrief():
@@ -1798,6 +1778,26 @@ def synchosts_az():
 @permission_required('admin')
 def toolbox():
     return flask.render_template('toolbox.html')
+
+
+@app.route('/unity')
+def unity():
+    return flask.redirect(flask.url_for('unity_request'))
+
+
+@app.route('/unity/request')
+@login_required
+def unity_request():
+    return flask.render_template('unity-request.html')
+
+
+@app.route('/unity/request/submit', methods=['POST'])
+@login_required
+def unity_request_submit():
+    tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
+    scheduler.add_job(ops_web.tasks.create_zendesk_ticket, args=[tc, flask.g.email, flask.request.values])
+    flask.flash('Thank you for submitting this request', 'success')
+    return flask.redirect(flask.url_for('unity_request'))
 
 
 @app.route('/workshop-tools')
