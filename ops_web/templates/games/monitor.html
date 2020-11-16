@@ -38,11 +38,11 @@
                 <tr>
                     <th>Team</th>
                     <th>Player</th>
-                    <th>Current challenge</th>
-                    <th># correct</th>
-                    <th># skipped</th>
-                    <th>Total time</th>
-                    <th>Score</th>
+                    <th class="text-center">Current challenge</th>
+                    <th class="text-center"># correct</th>
+                    <th class="text-center"># skipped</th>
+                    <th class="text-center">Total time</th>
+                    <th class="text-center">Score</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -51,11 +51,11 @@
                     <tr>
                         <td class="align-middle">{{ p.team_number }} / {{ p.team_name }}</td>
                         <td class="align-middle">{{ p.player_email }}</td>
-                        <td class="align-middle">{{ 'done' if p.done else p.current_step_number }}</td>
-                        <td class="align-middle">{{ p.correct_count }}</td>
-                        <td class="align-middle">{{ p.skip_count }}</td>
-                        <td class="align-middle">{{ p.total_elapsed_time | hms }}</td>
-                        <td class="align-middle">{{ p.total_score }}</td>
+                        <td class="align-middle text-center">{{ 'done' if p.done else p.current_step_number }}</td>
+                        <td class="align-middle text-center">{{ p.correct_count }}</td>
+                        <td class="align-middle text-center">{{ p.skip_count }}</td>
+                        <td class="align-middle text-center">{{ p.total_elapsed_time | hms }}</td>
+                        <td class="align-middle text-center">{{ p.total_score }}</td>
                         <td class="align-middle" title="Reset progress" data-toggle="tooltip" data-placement="left">
                             <button class="btn btn-sm btn-outline-danger" data-player-email="{{ p.player_email }}"
                                     data-toggle="modal" data-target="#modal-reset">

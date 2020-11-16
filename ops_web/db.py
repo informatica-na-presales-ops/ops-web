@@ -1584,7 +1584,7 @@ class Database(fort.PostgresDatabase):
             select team_number, team_name, r.player_email, max(step_number) current_step_number,
                 sum(coalesce(r.step_stop_time, now()) - r.step_start_time) total_elapsed_time,
                 bool_and(step_stop_time is not null) done,
-                sum(case when step_skipped then 0 else 1 end) correct_count,
+                sum(case when step_skipped or step_stop_time is null then 0 else 1 end) correct_count,
                 sum(case when step_skipped then 1 else 0 end) skip_count,
                 sum(case when step_stop_time is null then 0 when step_skipped then 0 else 100 end) total_score
             from game_step_results r
@@ -1592,7 +1592,7 @@ class Database(fort.PostgresDatabase):
             join game_players p on p.game_id = s.game_id and p.player_email = r.player_email
             where s.game_id = %(game_id)s
             group by team_number, team_name, r.player_email
-            order by total_score desc
+            order by total_score desc, total_elapsed_time
         '''
         params = {
             'game_id': game_id
