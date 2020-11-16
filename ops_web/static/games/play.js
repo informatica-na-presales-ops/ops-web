@@ -29,3 +29,8 @@ function update_elapsed_time() {
 
 // 1000 milliseconds is 1 second
 setInterval(update_elapsed_time, 1000);
+
+// add target="_blank" to any <a> elements in rendered markdown
+document.querySelectorAll('.rendered a').forEach(function (el) {
+    el.target = '_blank';
+});

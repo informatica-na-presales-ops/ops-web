@@ -19,7 +19,7 @@
     <div class="row pt-3 justify-content-center text-light">
         <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
         {% if g.show_intro %}
-            {{ g.game.game_intro | markdown }}
+            <div class="rendered">{{ g.game.game_intro | markdown }}</div>
 
             <p>Enter a team number and team name below. Your team number is provided by the game administrator.</p>
 
@@ -45,7 +45,7 @@
             <h3>Team name: {{ g.team.team_name }}</h3>
             <h3>Team number: {{ g.team.team_number }}</h3>
 
-            {{ g.game.game_outro | markdown }}
+            <div class="rendered">{{ g.game.game_outro | markdown }}</div>
 
             <h2 class="pb-3">Challenge overview</h2>
 
@@ -98,7 +98,7 @@
                 </button>
             </div>
 
-            {{ g.current_step.step_text | markdown }}
+            <div class="rendered">{{ g.current_step.step_text | markdown }}</div>
 
             <p>Enter your answer below.</p>
             <form action="{{ url_for('games_play_submit', game_id=g.game.game_id) }}" method="post">
