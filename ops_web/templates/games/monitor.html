@@ -38,9 +38,10 @@
                 <tr>
                     <th>Team</th>
                     <th>Player</th>
-                    <th>Current step</th>
-                    <th>Total time</th>
+                    <th>Current challenge</th>
+                    <th># correct</th>
                     <th># skipped</th>
+                    <th>Total time</th>
                     <th>Score</th>
                     <th></th>
                 </tr>
@@ -51,8 +52,9 @@
                         <td class="align-middle">{{ p.team_number }} / {{ p.team_name }}</td>
                         <td class="align-middle">{{ p.player_email }}</td>
                         <td class="align-middle">{{ 'done' if p.done else p.current_step_number }}</td>
-                        <td class="align-middle">{{ p.total_elapsed_time | hms }}</td>
+                        <td class="align-middle">{{ p.correct_count }}</td>
                         <td class="align-middle">{{ p.skip_count }}</td>
+                        <td class="align-middle">{{ p.total_elapsed_time | hms }}</td>
                         <td class="align-middle">{{ p.total_score }}</td>
                         <td class="align-middle" title="Reset progress" data-toggle="tooltip" data-placement="left">
                             <button class="btn btn-sm btn-outline-danger" data-player-email="{{ p.player_email }}"
@@ -76,7 +78,7 @@
                 </div>
                 <div class="modal-body">
                     Are you sure you want to reset progress for <strong><span class="reset-player-email"></span></strong>
-                    in this game? All step results will be deleted.
+                    in this game? All challenge results will be deleted.
                 </div>
                 <div class="modal-footer">
                     <form action="{{ url_for('games_reset_progress') }}" method="post">

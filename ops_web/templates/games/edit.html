@@ -71,37 +71,37 @@
                 </div>
             </div>
 
-            {% for step in g.steps %}
+            {% for ch in g.steps %}
             <div class="card bg-dark border-light mb-3">
                 <h5 class="card-header">
-                    <a class="text-decoration-none text-light" href="#step-{{ step.step_number }}"
+                    <a class="text-decoration-none text-light" href="#step-{{ ch.step_number }}"
                        data-toggle="collapse">
-                        Step {{ step.step_number }}
+                        Challenge {{ ch.step_number }}
                     </a>
                 </h5>
-                <div class="card-body collapse" id="step-{{ step.step_number }}">
+                <div class="card-body collapse" id="step-{{ ch.step_number }}">
                     <form action="{{ url_for('games_edit_step') }}" method="post">
                         <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
-                        <input type="hidden" name="step-id" value="{{ step.step_id }}">
+                        <input type="hidden" name="step-id" value="{{ ch.step_id }}">
                         <div class="form-group">
-                            <label for="step-{{ step.step_number }}-text">Step description</label>
-                            <textarea class="form-control" id="step-{{ step.step_number }}-text" name="text" rows="10"
-                                      data-preview-target="step-{{ step.step_number }}-preview"
+                            <label for="step-{{ ch.step_number }}-text">Challenge description</label>
+                            <textarea class="form-control" id="step-{{ ch.step_number }}-text" name="text" rows="10"
+                                      data-preview-target="step-{{ ch.step_number }}-preview"
                                       required>
-                                {{- step.step_text -}}
+                                {{- ch.step_text -}}
                             </textarea>
                         </div>
                         <div class="card bg-dark border-light mb-3">
-                            <div class="card-body" id="step-{{ step.step_number }}-preview">
-                                {{ step.step_text | markdown }}
+                            <div class="card-body" id="step-{{ ch.step_number }}-preview">
+                                {{ ch.step_text | markdown }}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="step-{{ step.step_number }}-answer">Answer</label>
-                            <input type="text" class="form-control" id="step-{{ step.step_number }}-answer"
-                                   name="answer" value="{{ step.step_answer }}" required>
+                            <label for="step-{{ ch.step_number }}-answer">Answer</label>
+                            <input type="text" class="form-control" id="step-{{ ch.step_number }}-answer"
+                                   name="answer" value="{{ ch.step_answer }}" required>
                         </div>
-                        <button type="submit" class="btn btn-outline-success">Save step</button>
+                        <button type="submit" class="btn btn-outline-success">Save challenge</button>
                     </form>
                 </div>
             </div>
@@ -109,16 +109,16 @@
 
             <div class="card bg-dark border-light mb-3">
                 <h5 class="card-header">
-                    <a class="text-decoration-none text-light" href="#add-step" data-toggle="collapse">
+                    <a class="text-decoration-none text-light" href="#add-challenge" data-toggle="collapse">
                         <span class="oi oi-plus"></span>
-                        Add step
+                        Add challenge
                     </a>
                 </h5>
-                <div class="card-body collapse {{ 'show' if g.steps|length == 0 }}" id="add-step">
+                <div class="card-body collapse {{ 'show' if g.steps|length == 0 }}" id="add-challenge">
                     <form action="{{ url_for('games_add_step') }}" method="post">
                         <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
                         <div class="form-group">
-                            <label for="new-step-text">Step description</label>
+                            <label for="new-step-text">Challenge description</label>
                             <textarea class="form-control" id="new-step-text" name="text" rows="10"
                                       data-preview-target="new-step-preview" required></textarea>
                         </div>
@@ -131,7 +131,7 @@
                         </div>
                         <button type="submit" class="btn btn-outline-success">
                             <span class="oi oi-plus"></span>
-                            Add step
+                            Add challenge
                         </button>
                     </form>
                 </div>

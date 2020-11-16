@@ -42,25 +42,17 @@
                 <button type="submit" class="btn btn-outline-success">Begin</button>
             </form>
         {% elif g.show_outro %}
-            <div class="d-flex justify-content-between">
-                <h2>{{ g.team.team_name }}</h2>
-                <button type="button" class="btn btn-outline-light" data-toggle="tooltip" data-placement="bottom"
-                        title="Time spent in all steps" disabled>
-                    <span class="oi oi-timer"></span>
-                    <span class="text-monospace" id="completed-steps-elapsed-time"
-                          data-timestamp="{{ (g.completed_step_time.total_seconds() * 1000) | int }}">--:--:--</span>
-                </button>
-            </div>
-            <p class="lead">Team {{ g.team.team_number }}</p>
+            <h3>Team name: {{ g.team.team_name }}</h3>
+            <h3>Team number: {{ g.team.team_number }}</h3>
 
             {{ g.game.game_outro | markdown }}
 
-            <h2 class="pb-3">Step overview</h2>
+            <h2 class="pb-3">Challenge overview</h2>
 
             <ul class="list-group mb-3">
             {% for p in g.progress %}
                 <li class="list-group-item bg-dark border-light d-flex justify-content-between">
-                    <h4>Step {{ p.step_number }}</h4>
+                    <h4>Challenge {{ p.step_number }}</h4>
                     <div>
                     {% if p.step_skipped %}
                         <button type="button" class="btn btn-outline-warning">
@@ -78,21 +70,31 @@
                     </div>
                 </li>
             {% endfor %}
+                <li class="list-group-item bg-dark border-light d-flex justify-content-between">
+                    <h4>Totals</h4>
+                    <div>
+                        <button type="button" class="btn btn-outline-light">{{ g.total_score }} points</button>
+                        <button type="button" class="btn btn-outline-light" disabled>
+                            <span class="oi oi-timer"></span>
+                            <span class="text-monospace" data-toggle="tooltip" data-placement="bottom"
+                                title="Time spent in all challenges">{{ g.completed_step_time | hms }}</span>
+                        </button>
+                    </div>
+                </li>
             </ul>
 
         {% else %}
             <div class="d-flex justify-content-between">
                 <h2 id="step-title" data-step-start-time="{{ (g.current_step.step_start_time.timestamp() * 1000) | int }}">
-                    Step {{ g.current_step.step_number }}
+                    Challenge {{ g.current_step.step_number }}
                 </h2>
                 <button type="button" class="btn btn-outline-light" disabled>
                     <span class="oi oi-timer"></span>
-                    <span class="text-monospace" id="completed-steps-elapsed-time" data-toggle="tooltip"
-                          data-placement="bottom" title="Time spent in previous steps"
-                          data-timestamp="{{ (g.completed_step_time.total_seconds() * 1000) | int }}">--:--:--</span>
+                    <span class="text-monospace" data-toggle="tooltip" data-placement="bottom"
+                          title="Time spent in previous challenges">{{ g.completed_step_time | hms }}</span>
                     +
                     <span class="text-monospace" id="step-elapsed-time" data-toggle="tooltip" data-placement="bottom"
-                          title="Time spent in this step">--:--:--</span>
+                          title="Time spent in this challenge">--:--:--</span>
                 </button>
             </div>
 
@@ -107,27 +109,6 @@
                 <button type="submit" class="btn btn-outline-success">Submit</button>
             </form>
         {% endif %}
-        </div>
-    </div>
-
-    <div class="modal" id="modal-reset">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark text-light">
-                <div class="modal-header">
-                    <h5 class="modal-title">Reset this game</h5>
-                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to reset your progress in this game? All step results will be deleted.
-                </div>
-                <div class="modal-footer">
-                    <form action="{{ url_for('games_reset_progress') }}" method="post">
-                        <input type="hidden" name="game-id" value="{{ g.game.game_id }}">
-                        <button type="button" class="btn btn-outline-light" data-dismiss="modal">Keep progress</button>
-                        <button type="submit" class="btn btn-outline-danger">Reset</button>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 {% endblock %}

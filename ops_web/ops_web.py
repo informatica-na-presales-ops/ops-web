@@ -747,6 +747,7 @@ def games_play(game_id: uuid.UUID):
     flask.g.progress = db.get_progress(game_id, flask.g.email)
     flask.g.show_intro = (flask.g.team is None)
     flask.g.show_outro = all([p.get('step_stop_time') for p in flask.g.progress])
+    flask.g.total_score = sum([p.get('step_score') for p in flask.g.progress])
     if not flask.g.show_intro:
         flask.g.completed_step_time = sum([p.get('step_elapsed_time') for p in flask.g.progress], start=datetime.timedelta(0))
         for p in flask.g.progress:
