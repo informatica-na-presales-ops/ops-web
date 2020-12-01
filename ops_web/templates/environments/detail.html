@@ -61,6 +61,7 @@
                     <th>Type</th>
                     <th>Running time</th>
                     <th>Running schedule</th>
+                    <th></th>
                     <th class="text-right">
                         30 day cost
                         <span class="badge badge-secondary" role="button" data-toggle="popover" data-container="body"
@@ -97,6 +98,17 @@
                         <td>{{ m.type }}</td>
                         <td>{{ m.running_time_human }}</td>
                         <td>{{ m.running_schedule }}</td>
+                        <td>
+                            {% if m.transition_time != None %}
+                              {% if m.transition_time > 182 %}
+                                 <button type="button" class="btn btn-sm btn-danger"
+                                    title="This machine is expired" data-toggle="popover" data-trigger="focus"
+                                    data-content="This machine has not been used from the past 6 months.Please delete this or start it atleast once if you still need this machine">
+                                <span class="oi oi-warning"></span>
+                            </button>
+                              {% endif %}
+                            {% endif %}
+                        </td>
                         <td class="text-right">{{ m.cost }}</td>
                         <td>{{ m.owner }}</td>
                         <td class="text-center">
