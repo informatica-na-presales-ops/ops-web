@@ -29,7 +29,37 @@ class TaskContext:
         self.db = db
 
 
-def create_zendesk_ticket(tc: TaskContext, requester, form_data):
+def get_zendesk_user(email: str, settings: ops_web.db.Settings) -> int:
+    """Use an email address to get the user_id in Zendesk. Create a user if one does not already exist."""
+
+    auth = requests.auth.HTTPBasicAuth(f'{settings.zendesk_email_address}/token', settings.zendesk_api_token)
+    session = requests.Session()
+    session.auth = auth
+
+    query = {'query': email}
+    url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users/search.json?{urllib.parse.urlencode(query)}'
+    response = session.get(url)
+    response.raise_for_status()
+    users = response.json().get('users')
+    if users:
+        return users[0].get('id')
+    else:
+        # create this user in zendesk
+        url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users.json'
+        json_data = {
+            'user': {
+                'email': email,
+                'name': email.split('@')[0],
+                'verified': True
+            }
+        }
+        response = session.post(url, json=json_data)
+        response.raise_for_status()
+        user = response.json().get('user')
+        return user.get('id')
+
+
+def create_zendesk_ticket_unity(tc: TaskContext, requester, form_data):
     tc.apm.begin_transaction('task')
     task_name = 'create-zendesk-ticket'
     log.info('Creating a Zendesk ticket')
@@ -73,28 +103,7 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
     session = requests.Session()
     session.auth = auth
 
-    # find this user in zendesk
-    query = {'query': requester}
-    url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users/search.json?{urllib.parse.urlencode(query)}'
-    response = session.get(url)
-    response.raise_for_status()
-    users = response.json().get('users')
-    if users:
-        ticket_data.update({'requester_id': users[0].get('id')})
-    else:
-        # create this user in zendesk
-        url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/users.json'
-        json_data = {
-            'user': {
-                'email': requester,
-                'name': requester.split('@')[0],
-                'verified': True
-            }
-        }
-        response = session.post(url, json=json_data)
-        response.raise_for_status()
-        user = response.json().get('user')
-        ticket_data.update({'requester_id': user.get('id')})
+    ticket_data.update({'requester_id': get_zendesk_user(requester, settings)})
 
     ctx = form_data.to_dict()
     ctx['requester'] = requester

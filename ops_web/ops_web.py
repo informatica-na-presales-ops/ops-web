@@ -1796,7 +1796,7 @@ def unity_request():
 @login_required
 def unity_request_submit():
     tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
-    scheduler.add_job(ops_web.tasks.create_zendesk_ticket, args=[tc, flask.g.email, flask.request.values])
+    scheduler.add_job(ops_web.tasks.create_zendesk_ticket_unity, args=[tc, flask.g.email, flask.request.values])
     flask.flash('Thank you for submitting this request', 'success')
     return flask.redirect(flask.url_for('unity_request'))
 
