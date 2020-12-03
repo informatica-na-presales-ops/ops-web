@@ -1,0 +1,116 @@
+{% extends 'one-up.html' %}
+
+{% block title %}Strategic Ecosystem Architecture Solutions request / {{ super() }}{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <h1>Strategic Ecosystem Architecture Solutions request</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+            <form>
+                <div class="form-group">
+                    <label for="primary-product">Primary product</label>
+                    <select class="custom-select" id="primary-product" name="primary-product" required>
+                        <option hidden disabled selected>-- choose a product --</option>
+                        {% for product_name, product_code in g.primary_products.items() %}
+                            <option value="{{ product_code }}">{{ product_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <select class="custom-select" id="department" name="department" required>
+                        <option hidden disabled selected>-- choose a department --</option>
+                        {% for department in g.departments %}
+                            <option>{{ department }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="ecosystem">Ecosystem</label>
+                            <select class="custom-select" id="ecosystem" name="ecosystem" required>
+                                <option hidden disabled selected>-- choose an ecosystem --</option>
+                                {% for eco_name, eco_code in g.ecosystems.items() %}
+                                    <option value="{{ eco_code }}">{{ eco_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="activity">Activity</label>
+                            <select class="custom-select" id="activity" name="activity" required>
+                                <option hidden disabled selected>-- choose an activity --</option>
+                                {% for activity_code, activity in g.activities.items() %}
+                                    <option value="{{ activity_code }}">{{ activity }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="business-drivers">Business drivers</label>
+                    <textarea class="form-control" id="business-drivers" name="business-drivers"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="request">What are you requesting to be done?</label>
+                    <textarea class="form-control" id="request" name="request"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="target-timeline">Target timeline</label>
+                            <input type="date" class="form-control" id="target-timeline" name="target-timeline">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="priority">Priority</label>
+                            <select class="custom-select" id="priority" name="priority">
+                            {% for priority in g.priorities %}
+                                <option>{{ priority }}</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="existing-solution">What is the existing solution?</label>
+                    <textarea class="form-control" id="existing-solution" name="existing-solution"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="td-completed" name="td-completed">
+                        <label class="custom-control-label" for="td-completed">Technical discovery completed</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="audience">Who is the audience?</label>
+                    <textarea class="form-control" id="audience" name="audience"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="sf-account-number">Salesforce account number</label>
+                            <input type="text" class="form-control" id="sf-account-number" name="sf-account-number">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="sf-opportunity-number">Salesforce opportunity number</label>
+                            <input type="text" class="form-control" id="sf-opportunity-number" name="sf-opportunity-number">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-outline-success">Submit request</button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}

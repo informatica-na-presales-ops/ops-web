@@ -1596,6 +1596,17 @@ def sc_competency_scoring_add():
     return flask.redirect(flask.url_for('sc_competency'))
 
 
+@app.route('/seas/request')
+@login_required
+def seas_request():
+    flask.g.primary_products = db.get_seas_request_primary_products()
+    flask.g.departments = db.get_seas_request_departments()
+    flask.g.ecosystems = db.get_seas_request_ecosystems()
+    flask.g.activities = db.get_seas_request_activities()
+    flask.g.priorities = ['Low', 'Normal', 'High', 'Urgent']
+    return flask.render_template('seas-request.html')
+
+
 @app.route('/security-groups')
 @login_required
 def security_groups():

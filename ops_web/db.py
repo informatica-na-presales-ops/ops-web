@@ -1686,6 +1686,36 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
+    # seas request
+
+    def get_seas_request_activities(self):
+        sql = '''
+            select code, description from seas_request_activity
+            order by description
+        '''
+        return {r.get('code'): r.get('description') for r in self.q(sql)}
+
+    def get_seas_request_departments(self):
+        sql = '''
+            select name from seas_request_department
+            order by name
+        '''
+        return [r.get('name') for r in self.q(sql)]
+
+    def get_seas_request_ecosystems(self):
+        sql = '''
+            select code, name from seas_request_ecosystem
+            order by name
+        '''
+        return {r.get('name'): r.get('code') for r in self.q(sql)}
+
+    def get_seas_request_primary_products(self):
+        sql = '''
+            select tag, value from seas_request_primary_product
+            order by value
+        '''
+        return {r.get('value'): r.get('tag') for r in self.q(sql)}
+
     # migrations and metadata
 
     def add_schema_version(self, schema_version: int):
@@ -2453,6 +2483,32 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(55)
+        if self.version < 56:
+            self.log.info('Migrating to database schema version 56')
+            self.u('''
+                create table seas_request_department (
+                    name text primary key
+                )
+            ''')
+            self.u('''
+                create table seas_request_ecosystem (
+                    code text primary key,
+                    name text not null
+                )
+            ''')
+            self.u('''
+                create table seas_request_activity (
+                    code text primary key,
+                    description text not null
+                )
+            ''')
+            self.u('''
+                create table seas_request_primary_product (
+                    tag text primary key,
+                    value text not null
+                )
+            ''')
+            self.add_schema_version(56)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
