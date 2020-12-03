@@ -113,7 +113,7 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
             ticket_data.update({
                 'subject': f'Unity bug report: {bug_description}',
                 'comment': {
-                    'html_body': flask.render_template('zendesk-tickets/monolith-bug.html', ctx=ctx)
+                    'html_body': flask.render_template('zendesk-tickets/unity-bug.html', ctx=ctx)
                 },
                 'external_id': 'monolith-jira-candidate'
             })
@@ -122,7 +122,7 @@ def create_zendesk_ticket(tc: TaskContext, requester, form_data):
             ticket_data.update({
                 'subject': f'Unity change request: {feature_description}',
                 'comment': {
-                    'html_body': flask.render_template('zendesk-tickets/monolith-change-request.html', ctx=ctx)
+                    'html_body': flask.render_template('zendesk-tickets/unity-change-request.html', ctx=ctx)
                 },
                 'external_id': 'monolith-jira-candidate'
             })
