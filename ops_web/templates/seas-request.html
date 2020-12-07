@@ -15,7 +15,7 @@
                 <div class="form-group">
                     <label for="primary-product">Primary product</label>
                     <select class="custom-select" id="primary-product" name="primary-product" required>
-                        <option hidden disabled selected>-- choose a product --</option>
+                        <option hidden disabled selected value="">-- choose a product --</option>
                         {% for product_name, product_code in g.primary_products.items() %}
                             <option value="{{ product_code }}">{{ product_name }}</option>
                         {% endfor %}
@@ -24,7 +24,7 @@
                 <div class="form-group">
                     <label for="department">Department</label>
                     <select class="custom-select" id="department" name="department" required>
-                        <option hidden disabled selected>-- choose a department --</option>
+                        <option hidden disabled selected value="">-- choose a department --</option>
                         {% for department in g.departments %}
                             <option>{{ department }}</option>
                         {% endfor %}
@@ -35,7 +35,7 @@
                         <div class="form-group">
                             <label for="ecosystem">Ecosystem</label>
                             <select class="custom-select" id="ecosystem" name="ecosystem" required>
-                                <option hidden disabled selected>-- choose an ecosystem --</option>
+                                <option hidden disabled selected value="">-- choose an ecosystem --</option>
                                 {% for eco_name, eco_code in g.ecosystems.items() %}
                                     <option value="{{ eco_code }}">{{ eco_name }}</option>
                                 {% endfor %}
@@ -46,7 +46,7 @@
                         <div class="form-group">
                             <label for="activity">Activity</label>
                             <select class="custom-select" id="activity" name="activity" required>
-                                <option hidden disabled selected>-- choose an activity --</option>
+                                <option hidden disabled selected value="">-- choose an activity --</option>
                                 {% for activity_code, activity in g.activities.items() %}
                                     <option value="{{ activity_code }}">{{ activity }}</option>
                                 {% endfor %}
