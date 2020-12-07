@@ -1718,6 +1718,13 @@ class Database(fort.PostgresDatabase):
         '''
         return {r.get('name'): r.get('code') for r in self.q(sql)}
 
+    def get_seas_request_initial_activities(self):
+        sql = '''
+            select tag, value from seas_request_initial_activity
+            order by value
+        '''
+        return {r.get('value'): r.get('tag') for r in self.q(sql)}
+
     def get_seas_request_primary_products(self):
         sql = '''
             select tag, value from seas_request_primary_product
@@ -2513,6 +2520,12 @@ class Database(fort.PostgresDatabase):
             ''')
             self.u('''
                 create table seas_request_primary_product (
+                    tag text primary key,
+                    value text not null
+                )
+            ''')
+            self.u('''
+                create table seas_request_initial_activity (
                     tag text primary key,
                     value text not null
                 )
