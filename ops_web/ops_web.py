@@ -1609,6 +1609,16 @@ def seas_request():
     return flask.render_template('seas-request.html')
 
 
+@app.route('/seas/request/submit', methods=['POST'])
+@login_required
+def seas_request_submit():
+    app.logger.debug(flask.request.values.to_dict())
+    tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
+    scheduler.add_job(ops_web.tasks.create_zendesk_ticket_seas, args=[tc, flask.g.email, flask.request.values])
+    flask.flash('Thank you for submitting this request', 'success')
+    return flask.redirect(flask.url_for('seas_request'))
+
+
 @app.route('/security-groups')
 @login_required
 def security_groups():

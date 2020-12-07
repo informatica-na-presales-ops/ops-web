@@ -59,30 +59,42 @@ def get_zendesk_user(email: str, settings: ops_web.db.Settings) -> int:
         return user.get('id')
 
 
+def create_zendesk_ticket(tc: TaskContext, ticket_data: dict):
+    settings = ops_web.db.Settings(tc.db)
+
+    if not settings.zendesk_api_token:
+        log.warning('Cannot create a ticket, zendesk-api-token is not set')
+        return
+
+    if not settings.zendesk_email_address:
+        log.warning('Cannot create a ticket, zendesk-email-address is not set')
+        return
+
+    if not settings.zendesk_company:
+        log.warning('Cannot create a ticket, zendesk-company is not set')
+        return
+
+    auth = requests.auth.HTTPBasicAuth(f'{settings.zendesk_email_address}/token', settings.zendesk_api_token)
+    session = requests.Session()
+    session.auth = auth
+
+    url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/tickets.json'
+    json_data = {'ticket': ticket_data}
+    response = session.post(url, json=json_data)
+    response.raise_for_status()
+    ticket_id = response.json().get('ticket', {}).get('id')
+    log.debug(f'Created a Zendesk ticket: {ticket_id}')
+
+
 def create_zendesk_ticket_unity(tc: TaskContext, requester, form_data):
     tc.apm.begin_transaction('task')
-    task_name = 'create-zendesk-ticket'
+    task_name = 'create-zendesk-ticket-unity'
     log.info('Creating a Zendesk ticket')
 
     settings = ops_web.db.Settings(tc.db)
 
     if not settings.monolith_support_group_id:
         log.warning('Cannot create a ticket, monolith-support-group-id is not set')
-        tc.apm.end_transaction(task_name)
-        return
-
-    if not settings.zendesk_api_token:
-        log.warning('Cannot create a ticket, zendesk-api-token is not set')
-        tc.apm.end_transaction(task_name)
-        return
-
-    if not settings.zendesk_email_address:
-        log.warning('Cannot create a ticket, zendesk-email-address is not set')
-        tc.apm.end_transaction(task_name)
-        return
-
-    if not settings.zendesk_company:
-        log.warning('Cannot create a ticket, zendesk-company is not set')
         tc.apm.end_transaction(task_name)
         return
 
@@ -98,10 +110,6 @@ def create_zendesk_ticket_unity(tc: TaskContext, requester, form_data):
         ],
         'group_id': settings.monolith_support_group_id
     }
-
-    auth = requests.auth.HTTPBasicAuth(f'{settings.zendesk_email_address}/token', settings.zendesk_api_token)
-    session = requests.Session()
-    session.auth = auth
 
     ticket_data.update({'requester_id': get_zendesk_user(requester, settings)})
 
@@ -140,6 +148,10 @@ def create_zendesk_ticket_unity(tc: TaskContext, requester, form_data):
             tc.apm.end_transaction(task_name)
             return
 
+    auth = requests.auth.HTTPBasicAuth(f'{settings.zendesk_email_address}/token', settings.zendesk_api_token)
+    session = requests.Session()
+    session.auth = auth
+
     # upload a json representation of the request
     query = {
         'filename': 'monolith-request.json'
@@ -153,14 +165,73 @@ def create_zendesk_ticket_unity(tc: TaskContext, requester, form_data):
     ticket_comment.update({'uploads': [upload_token]})
     ticket_data.update({'comment': ticket_comment})
 
-    # create the ticket
-    url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/tickets.json'
-    json_data = {'ticket': ticket_data}
-    response = session.post(url, json=json_data)
-    response.raise_for_status()
-    ticket_id = response.json().get('ticket', {}).get('id')
-    log.debug(f'Created a Zendesk ticket: {ticket_id}')
+    create_zendesk_ticket(tc, ticket_data)
 
+    tc.apm.end_transaction(task_name)
+
+
+def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict):
+    tc.apm.begin_transaction('task')
+    task_name = 'create-zendesk-ticket-seas'
+
+    settings = ops_web.db.Settings(tc.db)
+
+    if not settings.seas_support_group_id:
+        log.warning('Cannot create a ticket, seas-support-group-id is not set')
+        tc.apm.end_transaction(task_name)
+        return
+
+    if 'td-completed' in form_data:
+        td_completed = 'Yes'
+    else:
+        td_completed = 'No'
+    request = form_data.get('request')
+
+    activity = form_data.get('activity', '')
+    ecosystem = form_data.get('ecosystem', '')
+    existing_solution = form_data.get('existing-solution')
+
+    sf_account_number = form_data.get('sf-account-number')
+    if not sf_account_number:
+        sf_account_number = ecosystem
+    sf_opportunity_number = form_data.get('sf-opportunity-number')
+    if not sf_opportunity_number:
+        sf_opportunity_number = activity
+
+    ticket_data = {
+        'comment': {
+            'body': 'This is a test.'
+        },
+        'custom_fields': [
+            # sfdc account number
+            {'id': 455040, 'value': sf_account_number},
+            # sfdc opportunity number
+            {'id': 455041, 'value': sf_opportunity_number},
+            # service type
+            {'id': 455056, 'value': 'ecosystem_architect_request'},
+            # primary product
+            {'id': 20655668, 'value': form_data.get('primary-product')},
+            # initial activity
+            {'id': 21497921, 'value': form_data.get('initial-activity')},
+            # business drivers
+            {'id': 360000390987, 'value': form_data.get('business-drivers')},
+            # existing solution
+            {'id': 360000391027, 'value': f'{activity} {ecosystem} {existing_solution}'},
+            # what are you requesting to be done?
+            {'id': 360000398408, 'value': f'Technical Discovery Completed: {td_completed} / {request}'},
+            # target timeline
+            {'id': 360000398428, 'value': form_data.get('target-timeline')},
+            # audience
+            {'id': 360000398448, 'value': form_data.get('audience')}
+        ],
+        'group_id': settings.seas_support_group_id,
+        'priority': form_data.get('priority', 'normal').lower(),
+        'tags': ['ecosystem', ecosystem],
+        'type': 'task'
+    }
+
+    ticket_data.update({'requester_id': get_zendesk_user(requester, settings)})
+    create_zendesk_ticket(tc, ticket_data)
     tc.apm.end_transaction(task_name)
 
 
