@@ -83,6 +83,15 @@ class Settings(dict):
         self.db.set_setting('monolith-support-group-id', str(value))
 
     @property
+    def seas_support_group_id(self):
+        return int(self.get('seas-support-group-id', 0))
+
+    @seas_support_group_id.setter
+    def seas_support_group_id(self, value):
+        self.update({'seas-support-group-id': str(value)})
+        self.db.set_setting('seas-support-group-id', str(value))
+
+    @property
     def show_account_for_images(self) -> bool:
         return self.get('show-account-for-images', 'false') == 'true'
 
