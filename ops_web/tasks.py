@@ -81,6 +81,7 @@ def create_zendesk_ticket(tc: TaskContext, ticket_data: dict):
     url = f'https://{settings.zendesk_company}.zendesk.com/api/v2/tickets.json'
     json_data = {'ticket': ticket_data}
     response = session.post(url, json=json_data)
+    log.debug(response.json())
     response.raise_for_status()
     ticket_id = response.json().get('ticket', {}).get('id')
     log.debug(f'Created a Zendesk ticket: {ticket_id}')
@@ -190,6 +191,10 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
     activity = form_data.get('activity', '')
     ecosystem = form_data.get('ecosystem', '')
     existing_solution = form_data.get('existing-solution')
+    primary_product = form_data.get('primary-product')
+    primary_product_name = form_data.get('primary-product-name')
+    department = form_data.get('department')
+    subject = f'{ecosystem} {primary_product_name} {department} Ecosystem Architecture Request'
 
     sf_account_number = form_data.get('sf-account-number')
     if not sf_account_number:
@@ -198,9 +203,12 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
     if not sf_opportunity_number:
         sf_opportunity_number = activity
 
+    with tc.app.app_context():
+        html_body = flask.render_template('zendesk-tickets/seas-request.html')
+
     ticket_data = {
         'comment': {
-            'body': 'This is a test.'
+            'html_body': html_body
         },
         'custom_fields': [
             # sfdc account number
@@ -210,7 +218,7 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
             # service type
             {'id': 455056, 'value': 'ecosystem_architect_request'},
             # primary product
-            {'id': 20655668, 'value': form_data.get('primary-product')},
+            {'id': 20655668, 'value': primary_product},
             # initial activity
             {'id': 21497921, 'value': form_data.get('initial-activity')},
             # business drivers
@@ -226,6 +234,7 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
         ],
         'group_id': settings.seas_support_group_id,
         'priority': form_data.get('priority', 'normal').lower(),
+        'subject': subject,
         'tags': ['ecosystem', ecosystem],
         'type': 'task'
     }

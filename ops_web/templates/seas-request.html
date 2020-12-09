@@ -12,6 +12,7 @@
     <div class="row pt-3 text-light">
         <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
             <form action="{{ url_for('seas_request_submit') }}" method="post">
+                <input type="hidden" id="primary-product-name" name="primary-product-name">
                 <div class="form-group">
                     <label for="primary-product">Primary product</label>
                     <select class="custom-select" id="primary-product" name="primary-product" required>
@@ -122,4 +123,9 @@
         </div>
     </div>
 
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='seas-request.js') }}"></script>
 {% endblock %}
