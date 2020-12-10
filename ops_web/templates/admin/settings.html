@@ -96,6 +96,11 @@
                                 <label class="custom-control-label" for="show-security-groups-link">Security groups</label>
                             </div>
                             <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="show-seas-request-link"
+                                       name="show-seas-request-link" {{ 'checked' if g.settings.show_seas_request_link }}>
+                                <label class="custom-control-label" for="show-seas-request-link">Strategic Ecosystem Architecture Solutions request</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="show-monolith-request-link"
                                        name="show-monolith-request-link" {{ 'checked' if g.settings.show_monolith_request_link }}>
                                 <label class="custom-control-label" for="show-monolith-request-link">Unity request</label>

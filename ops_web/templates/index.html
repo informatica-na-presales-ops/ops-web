@@ -157,6 +157,19 @@
         </div>
         {% endif %}
 
+        {% if g.settings.show_seas_request_link %}
+        <div class="col pb-3 filter-candidate collapse show" data-filter-value="seas strategic ecosystem architecture solutions request">
+            <div class="card h-100 bg-dark border-light">
+                <div class="card-body">
+                    <h5 class="card-title">Strategic Ecosystem Architecture Solutions request</h5>
+                    <a href="{{ url_for('seas_request') }}" class="card-link stretched-link text-light">
+                        Request Marketing, Product, GSI, Ecosystem Vendor and Field Enablement Ecosystem Architecture support.
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% if g.settings.show_monolith_request_link %}
         <div class="col pb-3 filter-candidate collapse show" data-filter-value="unity request">
             <div class="card h-100 bg-dark border-light">
