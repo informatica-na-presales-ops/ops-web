@@ -70,33 +70,47 @@
                     </div>
                     <div class="form-group">
                         <h5><label for="bug-steps-to-reproduce">What steps did you take to trigger the bug?</label></h5>
-                        <textarea class="form-control" id="bug-steps-to-reproduce" name="bug-steps-to-reproduce"></textarea>
+                        <textarea class="form-control" id="bug-steps-to-reproduce" name="bug-steps-to-reproduce" rows="6"></textarea>
                     </div>
                     <div class="form-group">
                         <h5><label for="bug-expectation">What did you expect to happen?</label></h5>
-                        <textarea class="form-control" id="bug-expectation" name="bug-expectation"></textarea>
+                        <textarea class="form-control" id="bug-expectation" name="bug-expectation" rows="6"></textarea>
                     </div>
                     <div class="form-group">
                         <h5><label for="bug-actual">What actually happened?</label></h5>
-                        <textarea class="form-control" id="bug-actual" name="bug-actual"></textarea>
+                        <textarea class="form-control" id="bug-actual" name="bug-actual" rows="6"></textarea>
                     </div>
                     <div class="form-group">
                         <h5><label for="bug-when">When did this bug happen?</label></h5>
                         <input class="form-control" type="text" id="bug-when" name="bug-when">
                     </div>
+                    <div class="form-group">
+                        <p>
+                            You will receive an email confirmation after you submit this request. <strong>If you have
+                            screenshots or other files that help explain this bug</strong>, please reply to your
+                            confirmation email and attach those files.
+                        </p>
+                    </div>
                 </div>
                 <div class="collapse" id="envelope-change-request">
                     <div class="form-group">
                         <h5><label for="feature-description">What feature or change are you requesting?</label></h5>
-                        <input class="form-control" type="text" id="feature-description" name="feature-description">
+                        <textarea class="form-control" type="text" id="feature-description" name="feature-description" rows="5"></textarea>
                     </div>
                     <div class="form-group">
                         <h5><label for="business-case">What is the business case for this request?</label></h5>
-                        <input class="form-control" type="text" id="business-case" name="business-case">
+                        <textarea class="form-control" type="text" id="business-case" name="business-case" rows="5"></textarea>
                     </div>
                     <div class="form-group">
                         <h5><label for="affected-products">What products are affected by this request?</label></h5>
-                        <input class="form-control" type="text" id="affected-products" name="affected-products">
+                        <textarea class="form-control" type="text" id="affected-products" name="affected-products" rows="5"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <p>
+                            You will receive an email confirmation after you submit this request. <strong>If you have
+                            screenshots or other files that help explain this change request</strong>, please reply to
+                            your confirmation email and attach those files.
+                        </p>
                     </div>
                 </div>
                 <button class="btn btn-outline-success" type="submit">Submit request</button>
