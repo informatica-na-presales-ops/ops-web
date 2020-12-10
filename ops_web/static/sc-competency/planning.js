@@ -57,6 +57,9 @@ document.getElementById('select-sc').addEventListener('change', function () {
         el.value = '';
     })
 
+    // get this employee's current plan
+    const employee_plan = document.getElementById(`${employee_id}-plan`);
+
     const competency_ids = [
         'technical-acumen',
         'domain-knowledge',
@@ -100,6 +103,8 @@ document.getElementById('select-sc').addEventListener('change', function () {
         document.getElementById(`show-${id}-${right_column}`).click();
 
         // put plan text in textarea
-        document.getElementById(`${id}-plan`).value = document.getElementById(`${employee_id}-plan`).getAttribute(`data-${id}`);
+        if (employee_plan) {
+            document.getElementById(`${id}-plan`).value = employee_plan.getAttribute(`data-${id}`);
+        }
     }
 });
