@@ -792,11 +792,12 @@ def games_play_submit(game_id: uuid.UUID):
                 break
 
         if current_step is not None:
-            if game.get('skip_code') == flask.request.values.get('answer'):
+            answer = flask.request.values.get('answer', '').lower()
+            if game.get('skip_code').lower() == answer:
                 # skip code
                 db.stop_step(current_step_result_id, step_skipped=True)
                 flask.flash('You gave the skip code.', 'warning')
-            elif current_step.get('step_answer') == flask.request.values.get('answer'):
+            elif current_step.get('step_answer').lower() == answer:
                 # correct answer
                 db.stop_step(current_step_result_id)
                 flask.flash('You gave the correct answer.', 'success')
