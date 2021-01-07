@@ -203,6 +203,8 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
     if not sf_opportunity_number:
         sf_opportunity_number = activity
 
+    initial_activity = form_data.get('initial-activity')
+
     with tc.app.app_context():
         html_body = flask.render_template('zendesk-tickets/seas-request.html')
 
@@ -220,7 +222,7 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
             # primary product
             {'id': 20655668, 'value': primary_product},
             # initial activity
-            {'id': 21497921, 'value': form_data.get('initial-activity')},
+            {'id': 21497921, 'value': initial_activity},
             # business drivers
             {'id': 360000390987, 'value': form_data.get('business-drivers')},
             # existing solution
@@ -232,6 +234,7 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
             # audience
             {'id': 360000398448, 'value': form_data.get('audience')}
         ],
+        'due_at': form_data.get('target-timeline'),
         'group_id': settings.seas_support_group_id,
         'priority': form_data.get('priority', 'normal').lower(),
         'subject': subject,
