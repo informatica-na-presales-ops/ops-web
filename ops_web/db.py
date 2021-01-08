@@ -220,7 +220,6 @@ class Settings(dict):
 
 class Database(fort.PostgresDatabase):
     _permissions_cache: Dict = None
-    _settings_cache: Dict = None
     _version: int = None
 
     def __init__(self, config: ops_web.config.Config):
@@ -1320,11 +1319,9 @@ class Database(fort.PostgresDatabase):
     # settings
 
     def get_all_settings(self):
-        if self._settings_cache is None:
-            sql = 'select setting_id, setting_value from settings'
-            settings = self.q(sql)
-            self._settings_cache = {s.get('setting_id'): s.get('setting_value') for s in settings}
-        return self._settings_cache
+        sql = 'select setting_id, setting_value from settings'
+        settings = self.q(sql)
+        return {s.get('setting_id'): s.get('setting_value') for s in settings}
 
     def get_setting(self, setting_id: str) -> Optional[str]:
         settings = self.get_all_settings()
@@ -1340,7 +1337,6 @@ class Database(fort.PostgresDatabase):
         '''
         params = {'setting_id': setting_id, 'setting_value': setting_value}
         self.u(sql, params)
-        self._settings_cache.update({setting_id: setting_value})
 
     # ecosystem certification
 
