@@ -588,8 +588,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     id, cloud, group_name, owner, account_id, region,
-                    lower(coalesce(id, '') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) as
-                    filter_value 
+                    lower(concat_ws(' ', id, group_name, owner)) filter_value
                 from security_group
                 where visible is true
                 '''
@@ -597,8 +596,7 @@ class Database(fort.PostgresDatabase):
             sql = '''
                 select
                     id, cloud, group_name, owner, account_id, region,
-                    lower(coalesce(id, '') || ' ' || coalesce(group_name, '') || ' ' || coalesce(owner, '')) as
-                    filter_value 
+                    lower(concat_ws(' ', id, group_name, owner)) filter_value
                 from security_group
                 where visible is true
                 and owner = %(email)s
