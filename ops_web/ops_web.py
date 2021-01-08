@@ -1607,7 +1607,6 @@ def seas_request():
     flask.g.ecosystems = db.get_seas_request_ecosystems()
     flask.g.activities = db.get_seas_request_activities()
     flask.g.priorities = ['Low', 'Normal', 'High', 'Urgent']
-    flask.g.initial_activities = db.get_seas_request_initial_activities()
     return flask.render_template('seas-request.html')
 
 

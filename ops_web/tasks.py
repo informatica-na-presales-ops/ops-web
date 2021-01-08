@@ -188,7 +188,6 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
         td_completed = 'No'
     request = form_data.get('request')
 
-    activity = form_data.get('activity', '')
     ecosystem = form_data.get('ecosystem', '')
     existing_solution = form_data.get('existing-solution')
     primary_product = form_data.get('primary-product')
@@ -201,9 +200,9 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
         sf_account_number = ecosystem
     sf_opportunity_number = form_data.get('sf-opportunity-number')
     if not sf_opportunity_number:
-        sf_opportunity_number = activity
+        sf_opportunity_number = 'N/A'
 
-    initial_activity = form_data.get('initial-activity')
+    initial_activity = form_data.get('activity')
 
     with tc.app.app_context():
         html_body = flask.render_template('zendesk-tickets/seas-request.html')
@@ -226,7 +225,7 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
             # business drivers
             {'id': 360000390987, 'value': form_data.get('business-drivers')},
             # existing solution
-            {'id': 360000391027, 'value': f'{activity} {ecosystem} {existing_solution}'},
+            {'id': 360000391027, 'value': f'{ecosystem} {existing_solution}'},
             # what are you requesting to be done?
             {'id': 360000398408, 'value': f'Technical Discovery Completed: {td_completed} / {request}'},
             # target timeline

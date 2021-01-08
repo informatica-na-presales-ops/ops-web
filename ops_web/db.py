@@ -1703,10 +1703,10 @@ class Database(fort.PostgresDatabase):
 
     def get_seas_request_activities(self):
         sql = '''
-            select code, description from seas_request_activity
-            order by description
+            select activity, zd_activity from seas_request_activity
+            order by activity
         '''
-        return {r.get('code'): r.get('description') for r in self.q(sql)}
+        return {r.get('activity'): r.get('zd_activity') for r in self.q(sql)}
 
     def get_seas_request_departments(self):
         sql = '''
@@ -1721,13 +1721,6 @@ class Database(fort.PostgresDatabase):
             order by name
         '''
         return {r.get('name'): r.get('code') for r in self.q(sql)}
-
-    def get_seas_request_initial_activities(self):
-        sql = '''
-            select tag, value from seas_request_initial_activity
-            order by value
-        '''
-        return {r.get('value'): r.get('tag') for r in self.q(sql)}
 
     def get_seas_request_primary_products(self):
         sql = '''
@@ -2535,6 +2528,23 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(56)
+        if self.version < 57:
+            self.log.info('Migrating to database schema version 57')
+            # noinspection SqlResolve
+            self.u('''
+                alter table seas_request_activity
+                rename description to zd_activity
+            ''')
+            # noinspection SqlResolve
+            self.u('''
+                alter table seas_request_activity
+                rename code to activity
+            ''')
+            # noinspection SqlResolve
+            self.u('''
+                drop table seas_request_initial_activity
+            ''')
+            self.add_schema_version(57)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

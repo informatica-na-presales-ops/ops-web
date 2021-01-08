@@ -48,8 +48,8 @@
                             <label for="activity">Activity</label>
                             <select class="custom-select" id="activity" name="activity" required>
                                 <option hidden disabled selected value="">-- choose an activity --</option>
-                                {% for activity_code, activity in g.activities.items() %}
-                                    <option value="{{ activity_code }}">{{ activity }}</option>
+                                {% for activity, zd_activity in g.activities.items() %}
+                                    <option value="{{ zd_activity }}">{{ activity }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -108,15 +108,6 @@
                             <input type="text" class="form-control" id="sf-opportunity-number" name="sf-opportunity-number">
                         </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="initial-activity">Initial activity requested</label>
-                    <select class="custom-select" id="initial-activity" name="initial-activity">
-                        <option hidden disabled selected>-- choose an activity --</option>
-                        {% for activity_name, activity_code in g.initial_activities.items() %}
-                            <option value="{{ activity_code }}">{{ activity_name }}</option>
-                        {% endfor %}
-                    </select>
                 </div>
                 <button type="submit" class="btn btn-outline-success">Submit request</button>
             </form>
