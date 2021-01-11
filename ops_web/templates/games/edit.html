@@ -59,6 +59,11 @@
                             <input type="text" class="form-control" id="skip-code" name="skip-code"
                                    value="{{ g.game.skip_code }}" required>
                         </div>
+                        <div class="form-group">
+                            <label for="points-per-step">Points per challenge</label>
+                            <input type="number" class="form-control" id="points-per-step" name="points-per-step"
+                                   value="{{ g.game.game_points_per_step }}">
+                        </div>
                         <button type="submit" class="btn btn-outline-danger" formaction="{{ url_for('games_delete') }}">
                             <span class="oi oi-trash"></span>
                             Delete

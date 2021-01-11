@@ -686,7 +686,8 @@ def games_new():
         'game_name': game_name,
         'game_intro': flask.request.values.get('intro'),
         'game_outro': flask.request.values.get('outro'),
-        'skip_code': flask.request.values.get('skip-code')
+        'skip_code': flask.request.values.get('skip-code'),
+        'game_points_per_step': flask.request.values.get('points-per-step')
     }
     game_id = db.create_game(params)
     db.add_log_entry(flask.g.email, f'Create new game {game_id}')
@@ -703,7 +704,8 @@ def games_overview():
         'game_name': flask.request.values.get('name'),
         'game_intro': flask.request.values.get('intro'),
         'game_outro': flask.request.values.get('outro'),
-        'skip_code': flask.request.values.get('skip-code')
+        'skip_code': flask.request.values.get('skip-code'),
+        'game_points_per_step': flask.request.values.get('points-per-step')
     }
     db.update_game_overview(params)
     db.add_log_entry(flask.g.email, f'Update overview of game {game_id}')

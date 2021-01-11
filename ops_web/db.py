@@ -1510,9 +1510,9 @@ class Database(fort.PostgresDatabase):
     def create_game(self, params: Dict) -> uuid.UUID:
         sql = '''
             insert into game_details (
-                game_id, game_name, game_intro, game_outro, skip_code
+                game_id, game_name, game_intro, game_outro, skip_code, game_points_per_step
             ) values (
-                %(game_id)s, %(game_name)s, %(game_intro)s, %(game_outro)s, %(skip_code)s
+                %(game_id)s, %(game_name)s, %(game_intro)s, %(game_outro)s, %(skip_code)s, %(game_points_per_step)s
             )
         '''
         game_id = uuid.uuid4()
@@ -1548,7 +1548,7 @@ class Database(fort.PostgresDatabase):
 
     def get_game(self, game_id: uuid.UUID) -> Dict:
         sql = '''
-            select game_id, game_name, game_intro, game_outro, skip_code
+            select game_id, game_name, game_intro, game_outro, skip_code, game_points_per_step
             from game_details
             where game_id = %(game_id)s
         '''
@@ -1582,9 +1582,10 @@ class Database(fort.PostgresDatabase):
                 s.game_id, s.step_id, s.step_number, s.step_text, s.step_answer, r.step_result_id, r.step_start_time,
                 r.step_stop_time, r.step_skipped,
                 coalesce(r.step_stop_time - r.step_start_time, '0 seconds') step_elapsed_time,
-                case when r.step_skipped then 0 else 100 end step_score
+                case when r.step_skipped then 0 else g.game_points_per_step end step_score
             from game_steps s
             left join game_step_results r on r.step_id = s.step_id and r.player_email = %(player_email)s
+            left join game_details g on g.game_id = s.game_id
             where s.game_id = %(game_id)s
             order by s.step_number
         '''
@@ -1601,10 +1602,17 @@ class Database(fort.PostgresDatabase):
                 bool_and(step_stop_time is not null) done,
                 sum(case when step_skipped or step_stop_time is null then 0 else 1 end) correct_count,
                 sum(case when step_skipped then 1 else 0 end) skip_count,
-                sum(case when step_stop_time is null then 0 when step_skipped then 0 else 100 end) total_score
+                sum(
+                    case
+                        when step_stop_time is null then 0
+                        when step_skipped then 0
+                        else g.game_points_per_step
+                    end
+                ) total_score
             from game_step_results r
             join game_steps s on s.step_id = r.step_id
             join game_players p on p.game_id = s.game_id and p.player_email = r.player_email
+            left join game_details g on g.game_id = s.game_id
             where s.game_id = %(game_id)s
             group by team_number, team_name, r.player_email
             order by total_score desc, total_elapsed_time
@@ -1686,7 +1694,7 @@ class Database(fort.PostgresDatabase):
         sql = '''
             update game_details
             set game_name = %(game_name)s, game_intro = %(game_intro)s, game_outro = %(game_outro)s,
-                skip_code = %(skip_code)s
+                skip_code = %(skip_code)s, game_points_per_step = %(game_points_per_step)s
             where game_id = %(game_id)s
         '''
         self.u(sql, params)
@@ -2545,6 +2553,13 @@ class Database(fort.PostgresDatabase):
                 drop table seas_request_initial_activity
             ''')
             self.add_schema_version(57)
+        if self.version < 58:
+            self.log.info('Migrating to database schema version 58')
+            self.u('''
+                alter table game_details
+                add game_points_per_step int not null default 100
+            ''')
+            self.add_schema_version(58)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
