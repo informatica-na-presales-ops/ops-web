@@ -735,7 +735,7 @@ def games_edit(game_id: uuid.UUID):
 
 
 @app.route('/games/<uuid:game_id>/monitor')
-@permission_required('games-admin')
+@login_required
 def games_monitor(game_id: uuid.UUID):
     flask.g.game = db.get_game(game_id)
     flask.g.progress = db.get_progress_all(game_id)

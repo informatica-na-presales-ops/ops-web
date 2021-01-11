@@ -18,10 +18,11 @@
     <div class="row pt-3 text-light">
         <div class="col">
             <h1>{{ g.game.game_name }}</h1>
-            <p class="lead">Monitor progress</p>
+            <p class="lead">Leaderboard</p>
         </div>
     </div>
 
+    {% if 'games-admin' in g.permissions %}
     <div class="row pt-3">
         <div class="col">
             <a class="btn btn-outline-warning" href="{{ url_for('games_edit', game_id=g.game.game_id) }}">
@@ -30,6 +31,7 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
     <div class="row pt-3">
         <div class="col">
@@ -43,7 +45,7 @@
                     <th class="text-center"># skipped</th>
                     <th class="text-center">Total time</th>
                     <th class="text-center">Score</th>
-                    <th></th>
+                    {% if 'games-admin' in g.permissions %}<th></th>{% endif %}
                 </tr>
                 </thead>
                 <tbody>
@@ -56,12 +58,14 @@
                         <td class="align-middle text-center">{{ p.skip_count }}</td>
                         <td class="align-middle text-center">{{ p.total_elapsed_time | hms }}</td>
                         <td class="align-middle text-center">{{ p.total_score }}</td>
+                        {% if 'games-admin' in g.permissions %}
                         <td class="align-middle" title="Reset progress" data-toggle="tooltip" data-placement="left">
                             <button class="btn btn-sm btn-outline-danger" data-player-email="{{ p.player_email }}"
                                     data-toggle="modal" data-target="#modal-reset">
                                 <span class="oi oi-trash"></span>
                             </button>
                         </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>

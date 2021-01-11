@@ -41,14 +41,14 @@
                                 <span class="oi oi-media-play"></span>
                                 Play
                             </a>
+                            <a class="btn btn-outline-info" href="{{ url_for('games_monitor', game_id=game.game_id) }}">
+                                <span class="oi oi-badge"></span>
+                                Leaderboard
+                            </a>
                             {% if 'games-admin' in g.permissions %}
                                 <a class="btn btn-outline-warning" href="{{ url_for('games_edit', game_id=game.game_id) }}">
                                     <span class="oi oi-pencil"></span>
                                     Edit
-                                </a>
-                                <a class="btn btn-outline-info" href="{{ url_for('games_monitor', game_id=game.game_id) }}">
-                                    <span class="oi oi-eye"></span>
-                                    Monitor
                                 </a>
                             {% endif %}
                         </div>
