@@ -193,7 +193,7 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
     primary_product = form_data.get('primary-product')
     primary_product_name = form_data.get('primary-product-name')
     department = form_data.get('department')
-    subject = f'{ecosystem} {primary_product_name} {department} Ecosystem Architecture Request'
+    subject = f'{ecosystem} {primary_product_name} {department} SEAS Request'
 
     sf_account_number = form_data.get('sf-account-number')
     if not sf_account_number:
