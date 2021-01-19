@@ -206,6 +206,18 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
 
     initial_activity = form_data.get('activity')
 
+    target_timeline = form_data.get('target-timeline')
+    target_date = datetime.datetime.strptime(target_timeline, '%Y-%m-%d').date()
+    lead_days = (target_date - datetime.date.today()).days
+    if lead_days < 1:
+        lead_days_value = 'less_than_1_day'
+    elif lead_days < 2:
+        lead_days_value = '1_day'
+    elif lead_days < 5:
+        lead_days_value = '2_4_days'
+    else:
+        lead_days_value = '5_days'
+
     with tc.app.app_context():
         html_body = flask.render_template('zendesk-tickets/seas-request.html')
 
@@ -222,6 +234,8 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
             {'id': 455056, 'value': 'ecosystem_architect_request'},
             # primary product
             {'id': 20655668, 'value': primary_product},
+            # lead days provided
+            {'id': 21350618, 'value': lead_days_value},
             # initial activity
             {'id': 21497921, 'value': initial_activity},
             # business drivers
@@ -233,7 +247,7 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
             # what are you requesting to be done?
             {'id': 360000398408, 'value': f'Technical Discovery Completed: {td_completed} / {request}'},
             # target timeline
-            {'id': 360000398428, 'value': form_data.get('target-timeline')},
+            {'id': 360000398428, 'value': target_timeline},
             # audience
             {'id': 360000398448, 'value': form_data.get('audience')}
         ],
