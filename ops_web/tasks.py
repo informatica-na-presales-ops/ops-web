@@ -183,8 +183,10 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
         return
 
     if 'td-completed' in form_data:
+        request_quality = None
         td_completed = 'Yes'
     else:
+        request_quality = 'incomplete_or_insufficient_quality'
         td_completed = 'No'
     request = form_data.get('request')
 
@@ -224,6 +226,8 @@ def create_zendesk_ticket_seas(tc: TaskContext, requester: str, form_data: dict)
             {'id': 21497921, 'value': initial_activity},
             # business drivers
             {'id': 360000390987, 'value': form_data.get('business-drivers')},
+            # request quality
+            {'id': 360000398388, 'value': request_quality},
             # existing solution
             {'id': 360000391027, 'value': f'{ecosystem} {existing_solution}'},
             # what are you requesting to be done?
