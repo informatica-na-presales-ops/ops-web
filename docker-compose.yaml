@@ -19,5 +19,15 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+  load-test:
+    image: locustio/locust:1.4.1
+    working_dir: /workspace
+    entrypoint:
+      - locust
+    volumes:
+      - ./:/workspace
+    ports:
+      - 8089:8089
+
 volumes:
   postgres-data:
