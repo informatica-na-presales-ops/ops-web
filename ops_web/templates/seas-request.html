@@ -67,7 +67,8 @@
                     <div class="col">
                         <div class="form-group">
                             <label for="target-timeline">Target timeline</label>
-                            <input type="date" class="form-control" id="target-timeline" name="target-timeline" required>
+                            <input type="date" class="form-control" id="target-timeline" name="target-timeline"
+                                   min="{{ g.min_date }}" required>
                         </div>
                     </div>
                     <div class="col">

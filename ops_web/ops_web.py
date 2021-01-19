@@ -112,6 +112,7 @@ def load_request_data():
     flask.g.settings = ops_web.db.Settings(flask.g.db)
     flask.g.email = flask.session.get('email')
     flask.g.permissions = flask.g.db.get_permissions(flask.g.email)
+    flask.g.today = datetime.date.today()
 
 
 @app.route('/')
@@ -1609,6 +1610,7 @@ def seas_request():
     flask.g.ecosystems = db.get_seas_request_ecosystems()
     flask.g.activities = db.get_seas_request_activities()
     flask.g.priorities = ['Low', 'Normal', 'High', 'Urgent']
+    flask.g.min_date = flask.g.today + datetime.timedelta(days=1)
     return flask.render_template('seas-request.html')
 
 
