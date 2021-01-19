@@ -1598,6 +1598,7 @@ class Database(fort.PostgresDatabase):
     def get_progress_all(self, game_id: uuid.UUID):
         sql = '''
             select team_number, team_name, r.player_email, max(step_number) current_step_number,
+                max(greatest(step_start_time, step_stop_time)) last_activity,
                 sum(coalesce(r.step_stop_time, now()) - r.step_start_time) total_elapsed_time,
                 bool_and(step_stop_time is not null) done,
                 sum(case when step_skipped or step_stop_time is null then 0 else 1 end) correct_count,

@@ -740,6 +740,10 @@ def games_edit(game_id: uuid.UUID):
 def games_monitor(game_id: uuid.UUID):
     flask.g.game = db.get_game(game_id)
     flask.g.progress = db.get_progress_all(game_id)
+    flask.g.last_activity = {
+        r.get('player_email'): pendulum.instance(r.get('last_activity')).diff_for_humans()
+        for r in flask.g.progress
+    }
     return flask.render_template('games/monitor.html')
 
 

@@ -40,6 +40,7 @@
                 <tr>
                     <th>Team</th>
                     <th>Player</th>
+                    <th>Last activity</th>
                     <th class="text-center">Current challenge</th>
                     <th class="text-center"># correct</th>
                     <th class="text-center"># skipped</th>
@@ -53,6 +54,7 @@
                     <tr>
                         <td class="align-middle">{{ p.team_number }} / {{ p.team_name }}</td>
                         <td class="align-middle">{{ p.player_email }}</td>
+                        <td class="align-middle" title="{{ p.last_activity }}">{{ g.last_activity.get(p.player_email) }}</td>
                         <td class="align-middle text-center">{{ 'done' if p.done else p.current_step_number }}</td>
                         <td class="align-middle text-center">{{ p.correct_count }}</td>
                         <td class="align-middle text-center">{{ p.skip_count }}</td>
