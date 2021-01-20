@@ -1,18 +1,18 @@
 {% extends 'one-up.html' %}
 
 {% set tabs = [
-    ('scoring', 'Scoring', url_for('sc_competency_scoring')),
-    ('planning', 'Planning', url_for('sc_competency_planning'))
+    ('scoring', 'Scoring', url_for('competency_scoring')),
+    ('planning', 'Planning', url_for('competency_planning'))
 ] %}
 
 {% set active_tab = active_tab | default('scoring') %}
 
-{% block title %}SC Competency / {{ super() }}{% endblock %}
+{% block title %}Competency / {{ super() }}{% endblock %}
 
 {% block main_content %}
     <div class="row pt-3 text-light">
         <div class="col-4 col-xl-3">
-            <h1 class="mb-4">SC Competency</h1>
+            <h1 class="mb-4">Competency</h1>
 
             <ul class="nav nav-tabs mb-4">
                 {% for id, title, href in tabs %}
@@ -23,7 +23,7 @@
             </ul>
 
             <form class="form-inline mb-3" id="form" method="post"
-                  action="{{ url_for('sc_competency_scoring_add') if active_tab == 'scoring' else url_for('sc_competency_planning_save') }}">
+                  action="{{ url_for('competency_scoring_add') if active_tab == 'scoring' else url_for('competency_planning_save') }}">
                 <div class="form-group mb-2 mr-2">
                     <label for="select-sc" class="sr-only">Choose an employee</label>
                     <select class="custom-select" id="select-sc" name="sc-employee-id" required>
