@@ -1759,7 +1759,7 @@ class Database(fort.PostgresDatabase):
         }
         for table in self.q(sql, params):
             table_name = table.get('table_name')
-            self.u(f'drop table if exists {table_name} cascade ')
+            self.u(f'drop table if exists {table_name} cascade')
 
     def migrate(self):
         self.log.info(f'Database schema version is {self.version}')
