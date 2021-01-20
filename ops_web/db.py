@@ -112,6 +112,16 @@ class Settings(dict):
         self.db.set_setting('show-all-images', str_value)
 
     @property
+    def show_competency_link(self) -> bool:
+        return self.get('show-competency-link', 'false') == 'true'
+
+    @show_competency_link.setter
+    def show_competency_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-competency-link': str_value})
+        self.db.set_setting('show-competency-link', str_value)
+
+    @property
     def show_monolith_request_link(self) -> bool:
         return self.get('show-monolith-request-link', 'false') == 'true'
 
@@ -150,16 +160,6 @@ class Settings(dict):
         str_value = 'true' if value else 'false'
         self.update({'show-sc-assignments-link': str_value})
         self.db.set_setting('show-sc-assignments-link', str_value)
-
-    @property
-    def show_sc_competency_link(self) -> bool:
-        return self.get('show-sc-competency-link', 'false') == 'true'
-
-    @show_sc_competency_link.setter
-    def show_sc_competency_link(self, value: bool):
-        str_value = 'true' if value else 'false'
-        self.update({'show-sc-competency-link': str_value})
-        self.db.set_setting('show-sc-competency-link', str_value)
 
     @property
     def show_seas_request_link(self) -> bool:
@@ -2556,6 +2556,14 @@ class Database(fort.PostgresDatabase):
                 add game_points_per_step int not null default 100
             ''')
             self.add_schema_version(58)
+        if self.version < 59:
+            self.log.info('Migrating to database schema version 59')
+            self.u('''
+                update settings
+                set setting_id = 'show-competency-link'
+                where setting_id = 'show-sc-competency-link'
+            ''')
+            self.add_schema_version(59)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
