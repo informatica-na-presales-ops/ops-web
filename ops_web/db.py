@@ -924,11 +924,11 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    # sc competency
+    # competency
 
-    def add_sc_competency_plan(self, params: Dict):
+    def add_competency_plan(self, params: Dict):
         sql = '''
-            insert into sc_competency_plans (
+            insert into competency_plans (
                 sc_employee_id, technical_acumen, domain_knowledge, discovery_and_qualification,
                 teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
                 customer_advocacy, attitude, corporate_citizenship
@@ -946,9 +946,9 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def add_sc_competency_score(self, params: Dict):
+    def add_competency_score(self, params: Dict):
         sql = '''
-            insert into sc_competency_scores (
+            insert into competency_scores (
                 id, sc_employee_id, score_timestamp, technical_acumen, domain_knowledge, discovery_and_qualification,
                 teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
                 customer_advocacy, attitude, corporate_citizenship
@@ -984,10 +984,10 @@ class Database(fort.PostgresDatabase):
             join employees m on m.employee_name = e.manager_name
             left join (
                 select sc_employee_id, max(score_timestamp) score_timestamp
-                from sc_competency_scores
+                from competency_scores
                 group by sc_employee_id
             ) latest_scores on latest_scores.sc_employee_id = e.employee_id
-            left join sc_competency_scores s on s.sc_employee_id = latest_scores.sc_employee_id
+            left join competency_scores s on s.sc_employee_id = latest_scores.sc_employee_id
                 and s.score_timestamp = latest_scores.score_timestamp
             where e.visible is true
             and m.employee_email = %(manager_email)s
@@ -1008,7 +1008,7 @@ class Database(fort.PostgresDatabase):
                 sc_employee_id, technical_acumen, domain_knowledge, discovery_and_qualification,
                 teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
                 customer_advocacy, attitude, corporate_citizenship
-            from sc_competency_plans
+            from competency_plans
             where sc_employee_id = any (%(employee_ids)s)
         '''
         params = {
@@ -2577,6 +2577,17 @@ class Database(fort.PostgresDatabase):
                 where postgres.public.settings.setting_id = 'monolith-support-group-id'
             ''')
             self.add_schema_version(60)
+        if self.version < 61:
+            self.log.info('Migrating to database schema version 61')
+            self.u('''
+                alter table sc_competency_plans
+                rename to competency_plans
+            ''')
+            self.u('''
+                alter table sc_competency_scores
+                rename to competency_scores
+            ''')
+            self.add_schema_version(61)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

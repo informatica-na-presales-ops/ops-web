@@ -395,7 +395,7 @@ def competency_planning_save():
         'attitude': flask.request.values.get('attitude-plan'),
         'corporate_citizenship': flask.request.values.get('corporate-citizenship-plan')
     }
-    db.add_sc_competency_plan(params)
+    db.add_competency_plan(params)
     db.add_log_entry(flask.g.email, f'Save SC competency progression plan for {sc_employee_id}')
     flask.flash('SC competency progression plan saved successfully', 'success')
     return flask.redirect(flask.url_for('competency_planning'))
@@ -429,7 +429,7 @@ def competency_scoring_add():
             'attitude': int(flask.request.values.get('attitude')),
             'corporate_citizenship': int(flask.request.values.get('corporate-citizenship'))
         }
-        db.add_sc_competency_score(params)
+        db.add_competency_score(params)
         db.add_log_entry(flask.g.email, f'Add SC competency score for {sc_employee_id}')
         flask.flash('SC competency score added successfully.', 'success')
     else:
