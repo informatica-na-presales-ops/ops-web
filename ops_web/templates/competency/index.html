@@ -1,87 +1,42 @@
 {% extends 'one-up.html' %}
 
-{% set tabs = [
-    ('scoring', 'Scoring', url_for('competency_scoring')),
-    ('planning', 'Planning', url_for('competency_planning'))
-] %}
-
-{% set active_tab = active_tab | default('scoring') %}
-
 {% block title %}Competency / {{ super() }}{% endblock %}
 
 {% block main_content %}
     <div class="row pt-3 text-light">
-        <div class="col-4 col-xl-3">
-            <h1 class="mb-4">Competency</h1>
-
-            <ul class="nav nav-tabs mb-4">
-                {% for id, title, href in tabs %}
-                <li class="nav-item">
-                    <a class="nav-link {{ 'active' if id == active_tab else 'text-light' }}" href="{{ href }}">{{ title }}</a>
-                </li>
-                {% endfor %}
-            </ul>
-
-            <form class="form-inline mb-3" id="form" method="post"
-                  action="{{ url_for('competency_scoring_add') if active_tab == 'scoring' else url_for('competency_planning_save') }}">
-                <div class="form-group mb-2 mr-2">
-                    <label for="select-sc" class="sr-only">Choose an employee</label>
-                    <select class="custom-select" id="select-sc" name="sc-employee-id" required>
-                        <option hidden disabled selected>-- choose an employee --</option>
-                        {% for e in g.employees | sort(attribute='employee_name') | rejectattr('is_manager') %}
-                            <option value="{{ e.employee_id }}" data-job-title="{{ e.job_title }}"
-                                    data-expected-score="{{ e.expected_score }}"
-                                    data-score-timestamp="{{ e.score_timestamp.date() if e.score_timestamp }}"
-                                    data-technical-acumen="{{ e.technical_acumen }}"
-                                    data-domain-knowledge="{{ e.domain_knowledge }}"
-                                    data-discovery-and-qualification="{{ e.discovery_and_qualification }}"
-                                    data-teamwork-and-collaboration="{{ e.teamwork_and_collaboration }}"
-                                    data-leadership-skills="{{ e.leadership_skills }}"
-                                    data-communication="{{ e.communication }}"
-                                    data-planning-and-prioritization="{{ e.planning_and_prioritization }}"
-                                    data-customer-advocacy="{{ e.customer_advocacy }}" data-attitude="{{ e.attitude }}"
-                                    data-corporate-citizenship="{{ e.corporate_citizenship }}">
-                                {{ e.employee_name }}
-                            </option>
-                        {% else %}
-                            <option disabled>-- you do not manage any candidates --</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-outline-success mb-2 mr-2" disabled>
-                    {{ 'Add score' if active_tab == 'scoring' else 'Save plan' }}
-                </button>
-            </form>
-
-            <div id="job-title" class="collapse">
-                <p class="text font-italic">
-                    <span id="job-title-span"></span><span id="last-score" class="collapse">, last scored
-                    <span id="last-score-span"></span></span>
-                </p>
-            </div>
-
-            <nav class="nav nav-pills flex-column sticky-top pt-3">
-            {% for c in g.competencies %}
-                <a class="nav-link text-light d-flex justify-content-between align-items-center {{ 'active' if loop.first }}"
-                   data-toggle="pill" href="#{{ c.id }}">
-                    {{ c.display_name }}
-                    <div>
-                        <span class="badge badge-light current-score" id="badge-{{ c.id }}-current"></span>
-                        <span class="badge new-score collapse" id="badge-{{ c.id }}-new">
-                            <span class="collapse oi" id="{{ c.id }}-delta"></span>
-                            <span id="{{ c.id }}-score"></span>
-                        </span>
-                    </div>
-                </a>
-            {% endfor %}
-            </nav>
-        </div>
-
         <div class="col">
-            <div class="tab-content">
-            {% block sub_content %}{% endblock %}
-            </div>
+            <h1>Competency</h1>
         </div>
-
     </div>
+
+    {% if g.employees %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <h2>Your employees</h2>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <table class="table table-dark table-striped table-hover table-sm">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Job title</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for e in g.employees | sort(attribute='employee_name') %}
+                    <tr>
+                        <td>{{ e.employee_name }}</td>
+                        <td>{{ e.employee_email }}</td>
+                        <td>{{ e.job_title }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 {% endblock %}

@@ -365,7 +365,8 @@ def az_launch():
 @app.route('/competency')
 @login_required
 def competency():
-    return flask.redirect(flask.url_for('competency_scoring'))
+    flask.g.employees = db.get_employees_for_manager(flask.g.email)
+    return flask.render_template('competency/index.html')
 
 
 @app.route('/competency/planning')
