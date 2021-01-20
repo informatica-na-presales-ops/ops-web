@@ -219,7 +219,6 @@ class Settings(dict):
 
 
 class Database(fort.PostgresDatabase):
-    _permissions_cache: Dict = None
     _version: int = None
 
     def __init__(self, config: ops_web.config.Config):
@@ -235,10 +234,8 @@ class Database(fort.PostgresDatabase):
         self.add_permission(self.config.bootstrap_admin, 'admin')
 
     def get_all_permissions(self) -> Dict[str, Set]:
-        if self._permissions_cache is None:
-            sql = 'select email, permissions from permissions order by email'
-            self._permissions_cache = {r.get('email'): set(r.get('permissions').split()) for r in self.q(sql)}
-        return self._permissions_cache
+        sql = 'select email, permissions from permissions order by email'
+        return {r.get('email'): set(r.get('permissions').split()) for r in self.q(sql)}
 
     def add_permission(self, email: str, permission: str):
         current_permissions = self.get_permissions(email)
@@ -256,13 +253,11 @@ class Database(fort.PostgresDatabase):
         if current_permissions == permissions:
             return
         if permissions:
-            self._permissions_cache.update({email: permissions})
             sql = '''
                 insert into permissions (email, permissions) values (%(email)s, %(permissions)s)
                 on conflict (email) do update set permissions = %(permissions)s
             '''
         else:
-            self._permissions_cache.pop(email, None)
             sql = 'delete from permissions where email = %(email)s'
         params = {'email': email, 'permissions': ' '.join(sorted(permissions))}
         self.u(sql, params)
