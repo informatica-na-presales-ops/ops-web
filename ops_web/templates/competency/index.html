@@ -28,7 +28,7 @@
                 </thead>
                 <tbody>
                 {% for e in g.employees | sort(attribute='employee_name') %}
-                    <tr>
+                    <tr role="button" data-href="{{ url_for('competency_scoring_employee', employee_id=e.employee_id) }}">
                         <td>{{ e.employee_name }}</td>
                         <td>{{ e.employee_email }}</td>
                         <td>{{ e.job_title }}</td>
@@ -39,4 +39,9 @@
         </div>
     </div>
     {% endif %}
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='data-href-clickable.js') }}"></script>
 {% endblock %}

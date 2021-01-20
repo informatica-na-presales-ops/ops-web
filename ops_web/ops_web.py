@@ -437,6 +437,12 @@ def competency_scoring_add():
     return flask.redirect(flask.url_for('competency'))
 
 
+@app.route('/competency/scoring/<employee_id>')
+@login_required
+def competency_scoring_employee(employee_id: str):
+    return 'ok'
+
+
 @app.route('/ecosystem-certification')
 @login_required
 def ecosystem_certification():
