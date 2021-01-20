@@ -74,13 +74,13 @@ class Settings(dict):
         self.db.set_setting('image-name-display-length', str(value))
 
     @property
-    def monolith_support_group_id(self):
-        return int(self.get('monolith-support-group-id', 0))
+    def unity_support_group_id(self):
+        return int(self.get('unity-support-group-id', 0))
 
-    @monolith_support_group_id.setter
-    def monolith_support_group_id(self, value):
-        self.update({'monolith-support-group-id': str(value)})
-        self.db.set_setting('monolith-support-group-id', str(value))
+    @unity_support_group_id.setter
+    def unity_support_group_id(self, value):
+        self.update({'unity-support-group-id': str(value)})
+        self.db.set_setting('unity-support-group-id', str(value))
 
     @property
     def seas_support_group_id(self):
@@ -120,16 +120,6 @@ class Settings(dict):
         str_value = 'true' if value else 'false'
         self.update({'show-competency-link': str_value})
         self.db.set_setting('show-competency-link', str_value)
-
-    @property
-    def show_monolith_request_link(self) -> bool:
-        return self.get('show-monolith-request-link', 'false') == 'true'
-
-    @show_monolith_request_link.setter
-    def show_monolith_request_link(self, value: bool):
-        str_value = 'true' if value else 'false'
-        self.update({'show-monolith-request-link': str_value})
-        self.db.set_setting('show-monolith-request-link', str_value)
 
     @property
     def show_op_debrief_survey_link(self) -> bool:
@@ -180,6 +170,16 @@ class Settings(dict):
         str_value = 'true' if value else 'false'
         self.update({'show-security-groups-link': str_value})
         self.db.set_setting('show-security-groups-link', str_value)
+
+    @property
+    def show_unity_request_link(self) -> bool:
+        return self.get('show-unity-request-link', 'false') == 'true'
+
+    @show_unity_request_link.setter
+    def show_unity_request_link(self, value: bool):
+        str_value = 'true' if value else 'false'
+        self.update({'show-unity-request-link': str_value})
+        self.db.set_setting('show-unity-request-link', str_value)
 
     @property
     def zendesk_api_token(self):
@@ -2564,6 +2564,19 @@ class Database(fort.PostgresDatabase):
                 where setting_id = 'show-sc-competency-link'
             ''')
             self.add_schema_version(59)
+        if self.version < 60:
+            self.log.info('Migrating to database schema version 60')
+            self.u('''
+                update settings
+                set setting_id = 'show-unity-request-link'
+                where setting_id = 'show-monolith-request-link'
+            ''')
+            self.u('''
+                update settings
+                set setting_id = 'unity-support-group-id'
+                where postgres.public.settings.setting_id = 'monolith-support-group-id'
+            ''')
+            self.add_schema_version(60)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

@@ -94,7 +94,7 @@ def create_zendesk_ticket_unity(tc: TaskContext, requester, form_data):
 
     settings = ops_web.db.Settings(tc.db)
 
-    if not settings.monolith_support_group_id:
+    if not settings.unity_support_group_id:
         log.warning('Cannot create a ticket, monolith-support-group-id is not set')
         tc.apm.end_transaction(task_name)
         return
@@ -109,7 +109,7 @@ def create_zendesk_ticket_unity(tc: TaskContext, requester, form_data):
             {'id': 455041, 'value': 'n/a'},  # sfdc opportunity number
             {'id': 20655668, 'value': 'na'}  # primary product
         ],
-        'group_id': settings.monolith_support_group_id
+        'group_id': settings.unity_support_group_id
     }
 
     ticket_data.update({'requester_id': get_zendesk_user(requester, settings)})
