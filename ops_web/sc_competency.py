@@ -10,15 +10,22 @@ data = {
                             'and solution depth are primary factors to what drive this competency.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Able to perform initial discovery for standard CDW/L opportunities, with support '
+                                    'from other more senior/mentor resources as required. Certified at 401 level for '
+                                    'CDW/DL. Leverages support from mentors and team as required. Can deliver standard '
+                                    'lakehouse pitch & demo. Able to go deeper in specific areas based on prior '
+                                    'experience. Ongoing technical enablement.'),
                     'details': [
-                        ('Unable to independently identify, qualify, or evaluate (i.e. demo, workshop, or POC) many of '
-                         'our solutions.'),
-                        'Very resource intensive to handle basic conversations around technology.',
-                        'Narrow technology focused with very little desire to expand knowledge.',
-                        'Does not have a strong grasp on the CDW/DL journey.'
+                        'Proven delivery presenting the core Informatica overview in internal or mock scenarios.',
+                        'External presentation of the core Informatica overview with Mentor/Manager/lead SC support.',
+                        'Successfully achieves Presales onboarding certification.',
+                        'Leverages SME or peer support in order to deliver solution journey demonstrations.',
+                        ('Ramping in day to day tasks of role with coaching and assistance from assigned mentor, peers '
+                         'and/or management. Tasks include, but are not limited to, specific assigned POC tasks, '
+                         'supporting workshops, responding to RFP/RFIs, and performing initial discovery of CFCN CDW/L '
+                         'cloud solutions.')
                     ]
                 },
                 {
@@ -103,16 +110,19 @@ data = {
                             'data management space.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Developing knowledge of the SC role in the sales cycle. Responsible for assigned '
+                                    'tactical activities within the cycle at the direction of, and with support from, '
+                                    'the owning SC, assigned mentor and/or management. Familiar with general data '
+                                    'management challenges and developing awareness of aligned business challenges.'),
                     'details': [
-                        'Cannot articulate business and data management challenges with a customer.',
-                        'Little to no experience with cloud ecosystems.',
-                        'Unable or unwilling to build a rapport with the customer to become a trusted advisor.',
-                        'Lacks an understanding of the role of sales consulting and the tasks that should be owned.',
-                        ('Unfamiliar with an understanding of the preferred sales cycle and the methodologies we use, '
-                         'and cannot define his/her ownership throughout.')
+                        'Understands and can articulate the broad technical principles of Enterprise Data Management.',
+                        ('Is familiar with and can articulate basic summary cloud data warehouse concepts aligned to '
+                         'CDW/L CFCN.'),
+                        ('Will rely on assistance from assigned mentor, peers & management in the following areas: '
+                         'Developing trusted advisory status with clients, leveraging an effective strategy for '
+                         'developing rapport, proper use of sales methodology, and building credibility with clients.')
                     ]
                 },
                 {
@@ -148,7 +158,7 @@ data = {
                         ('Technical advice and approach is considered consultative and sought by peers within their '
                          'immediate sales region.'),
                         ('Follows sales best practices and demonstrates a clear strategy for gaining trusted '
-                         'advisorship with their clients.'),
+                         'advisership with their clients.'),
                         ('Can understand and communicate the pros and cons of multiple architectural approaches to '
                          'data management problems.'),
                         ('Achieves a single cloud ecosystem certification along with achieving Informaticaʼs 301 and '
@@ -203,13 +213,19 @@ data = {
                             'expresses empathy and understanding of the customerʼs goals and needs.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Develops good habits surrounding customer interactions including, but not limited '
+                                    'to, advance preparation and post-session followup. Questions are primarily around '
+                                    'areas of technology vs business drivers. Ramping knowledge and adherence to '
+                                    'discovery checklist and documents as appropriate.'),
                     'details': [
-                        'Interaction with customer devoid of insight and awareness of customerʼs world.',
-                        'No questions asked to explore customer needs and concerns.',
-                        'Communication style non-consultative.'
+                        ('Conducts first level discovery of customer need for the identification of technical needs. '
+                         'Leverages assigned SC/Mentor/Manager/team for technical pains and outcomes. Support required '
+                         'for business pain and related conversations.'),
+                        ('Scope and depth of conversations are tactical and limited to basic use cases around one or '
+                         'two product areas.'),
+                        'Develops actionable technical requirements documentation.'
                     ]
                 },
                 {
@@ -285,14 +301,18 @@ data = {
                             'team” with the competition being outside our walls, not within.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Tasks are tactical in nature, with ramping degree of proactivity as knowledge of '
+                                    'role increases. Proactively reaches out with questions to supporting internal '
+                                    'team. Develops awareness of goals and supports lead SC in support of those goals '
+                                    'as needed. Contributes knowledge to the team in any areas of existing knowledge.'),
                     'details': [
-                        'Territorial; weak communicator; competitive towards peers.',
-                        'Confrontational or non-collaborative with field, peers, management, customers.',
-                        'Minimal influence with others outside circle of authority.',
-                        'Slow to share knowledge with others.'
+                        'Responds to tasks and input when asked and offers feedback or advice when asked.',
+                        ('Actions and communications are tactical in nature, with ramping awareness of the bigger '
+                         'strategy or goal.'),
+                        'Respects cultural and technical diversity.',
+                        'Looks for opportunities to leverage existing experience/knowledge and contribute to the team.'
                     ]
                 },
                 {
@@ -359,13 +379,14 @@ data = {
                             'for oneself.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Demonstrates intellectual curiosity. Interacts with the team. Leverages '
+                                    'participation in team meetings (QBRs, SC team calls, etc.) to learn (e.g. ask '
+                                    'questions of mentor/peers/manager to enable understanding of the SC role).'),
                     'details': [
-                        'Never engages or contributes in team settings.',
-                        'Never takes on responsibility to learn and teach beyond what is mandated.',
-                        'Operates at a low standard “minimal viable” execution approach.'
+                        'Focus is primarily on immediate tasks and learning.',
+                        'Will proactively offer suggestions as able to help the team and foster learning.'
                     ]
                 },
                 {
@@ -432,16 +453,20 @@ data = {
             'display_name': 'Communication',
             'description': ('Ability to achieve desired change in audience behavior, attitudes, or perceptions through '
                             'influential communication style as demonstrated in presentations, written communication '
-                            '(reports, emails, whitepapers, etc.), dialogue, conversations, meetings; negotiation '
+                            '(reports, emails, white papers, etc.), dialogue, conversations, meetings; negotiation '
                             'skills.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Communication style is based on specific task at hand. Effective written and '
+                                    'verbal skills. Able to communicate effectively with customers at similar '
+                                    '(lower/mid technical) level.'),
                     'details': [
-                        'Communication style is not tailored to audience motivators.',
-                        'Inability to empathize with stakeholder needs, pain, business problems.'
+                        'Is capable of communicating CDW/L solutions at technical/functional level.',
+                        'Both written and communication skills are clear but generally informational vs. influential.',
+                        ('Participates during internal planning discussions at a tactical/task level within areas of '
+                         'knowledge.')
                     ]
                 },
                 {
@@ -496,7 +521,7 @@ data = {
                         'Advises team on competitive stance and creates counter strategies to threats in accounts.',
                         ('Can formulate overall technical account strategy e.g. SWOT analysis – strengths, weaknesses, '
                          'opportunities, and threats.'),
-                        ('Publish at least 2 whitepapers or related capstone projects per year and keep public '
+                        ('Publish at least 2 white papers or related capstone projects per year and keep public '
                          'communications updated regularly (e.g. social media, blog posts etc.).')
                     ]
                 }
@@ -510,15 +535,16 @@ data = {
                             'the business. Assist in account and opportunity planning.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Achieves timely and effective administrative duties. Emerging time management '
+                                    'skills for assigned tasks, requiring support from mentor or manager to assist in '
+                                    'prioritization.'),
                     'details': [
-                        'Activity tracking is not done in a timely fashion.',
-                        'Expenses and other administrative tasks are often submitted late.',
-                        'Rarely contributes to the business beyond minimal job related activities.',
-                        'Generally low performance related to job duties.',
-                        'No account or opportunity planning with sales counterparts.'
+                        'Consistently maintains administrative tasks on time.',
+                        'Executes owned tasks, such as tasks within a POC, in alignment to the defined plan.',
+                        ('While executing tasks, such as tasks within a POC, will develop increasing awareness of the '
+                         'tasks in context, dependencies and risk management.')
                     ]
                 },
                 {
@@ -600,14 +626,17 @@ data = {
                             'an escalation point for customers.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Effective followup as required, leveraging lead SC/mentor/manager to collaborate '
+                                    'and prepare customer responses as needed. Leverages lead SC/mentor/manager to '
+                                    'engage internal teams, such as CSM, product management and CST, developing '
+                                    'knowledge, driving towards independence.'),
                     'details': [
-                        'Rarely does customer follow-up activity.',
-                        'Limited to no engagement when other technical resources are engaged.',
-                        'Never provides feedback to PM teams on customer needs.',
-                        'Lacks awareness of customer implementation and value of INFA solutions.'
+                        ('Knows how to access and review customer support cases. Will review and determine course of '
+                         'action with lead SC.'),
+                        ('Works with mentor/Manager to develop understanding of SC role in customer advocacy and '
+                         'support.')
                     ]
                 },
                 {
@@ -688,20 +717,25 @@ data = {
             'display_name': 'Attitude',
             'description': ('We encourage original thinking in all areas of our work. We set the highest standards and '
                             'expectations for ourselves and strive to exceed them. This is not just about innovation '
-                            'or technical excellence. The idea that we create things weʼre passionate about — '
+                            'or technical excellence. The idea that we create things we are passionate about — '
                             'products, deployments, partnerships, this entire company — goes beyond any one single '
                             'accomplishment. Having the right attitude goes to the core of everything that we do. It '
-                            'is an expression of how we feel about what we do and who we are when weʼre doing it.'),
+                            'is an expression of how we feel about what we do and who we are when we are doing it.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Focuses on assigned tasks. Developing awareness of broader context with '
+                                    'opportunities, accounts and territories. Looks for opportunities to provide '
+                                    'expertise to the team in areas of existing knowledge.'),
                     'details': [
-                        'Performs inconsistently and lacks clear vision and goals.',
-                        'Operates at (or below) the bare minimum when engaged.',
-                        'Reactively works on value added activities and projects.',
-                        'Generally seen as a negative influence on others.'
+                        'Effectively performs tasks and will lean into situations where possible.',
+                        ('Willing to initiate actions without getting too far afield of goals and objectives as agreed '
+                         'upon by their manager.'),
+                        ('Demonstrates curiosity for delving deeper into tasks and outcomes for continuous improvement '
+                         'of delivery and expertise.'),
+                        'Enthusiastic about Informatica culture.',
+                        'Engages others with an optimistic outcome.'
                     ]
                 },
                 {
@@ -719,9 +753,9 @@ data = {
                     'title': 'Senior SC',
                     'score': 3,
                     'description': ('Actively engages in projects for the team. Provides positive guidance on '
-                                    'solutioning and provides clear ideas on customer innovation. Embraces change and '
-                                    'is engaged on strategic initiatives. Motivated to go beyond tasks set forth and '
-                                    'job duties. Aspires for growth.'),
+                                    'developing solutions and provides clear ideas on customer innovation. Embraces '
+                                    'change and is engaged on strategic initiatives. Motivated to go beyond tasks set '
+                                    'forth and job duties. Aspires for growth.'),
                     'details': [
                         'Leans into situations without having to be prompted.',
                         ('Willing to initiate actions without getting too far afield of goals and objectives as agreed '
@@ -771,13 +805,15 @@ data = {
                             'multiple facets of the business.'),
             'levels': [
                 {
-                    'title': 'Underperforming',
+                    'title': 'Associate SC',
                     'score': 1,
-                    'description': '',
+                    'description': ('Engages with the immediate team and shares perspectives. Executes against defined '
+                                    'goals. Tasks align to company, organization and team priorities. Able to build '
+                                    'and refine repeatable processes for assigned tasks.'),
                     'details': [
-                        'Never engages the team or broader INFA teams to drive initiatives.',
-                        'Lacks the ability to provide content and thought leadership that is usable by others.',
-                        'Never engages with other departments to drive new ideas or contribution to existing platforms.'
+                        'Engages with immediate team but may require prompts for feedback.',
+                        'Focus is on assigned tasks.',
+                        'Effectively builds lessons learned awareness and leverages for continuous improvement.'
                     ]
                 },
                 {
@@ -830,11 +866,11 @@ data = {
                     'description': ('Consistently engages with broader teams across Informatica to build and deliver '
                                     'differentiated material and content in support of strategic corporate '
                                     'initiatives. Has a high degree of involvement with marketing and other '
-                                    'departments due to thought leadership and seasoned abilities around solutioning. '
-                                    'Creates content and material regularly for consumption across teams that help '
-                                    'drive companywide outcomes. Viewed as a leader in their industry and documents '
-                                    'best practices for others to leverage. Acts as a sounding board back to product '
-                                    'management and engineering on best practices and direction.'),
+                                    'departments due to thought leadership and seasoned abilities around developing '
+                                    'solutions. Creates content and material regularly for consumption across teams '
+                                    'that help drive outcomes across the company. Viewed as a leader in their industry '
+                                    'and documents best practices for others to leverage. Acts as a sounding board '
+                                    'back to product management and engineering on best practices and direction.'),
                     'details': [
                         'Regularly shares lessons learned, best practices and solution ideas to multiple sales teams.',
                         ('Consistently engages with broader teams across Informatica to build and deliver '
