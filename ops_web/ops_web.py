@@ -365,8 +365,18 @@ def az_launch():
 @app.route('/competency')
 @login_required
 def competency():
-    flask.g.employees = db.get_employees_for_manager(flask.g.email)
+    flask.g.employees = db.get_subordinates(flask.g.email)
     return flask.render_template('competency/index.html')
+
+
+@app.route('/competency/levels/create', methods=['post'])
+@permission_required('admin')
+def competency_levels_create():
+    track_id = flask.request.values.get('track-id')
+    title = flask.request.values.get('title')
+    score = int(flask.request.values.get('score'))
+    db.create_level(track_id, title, score)
+    return flask.redirect(flask.url_for('competency_track_detail', track_id=track_id))
 
 
 @app.route('/competency/planning')
@@ -441,6 +451,36 @@ def competency_scoring_add():
 @login_required
 def competency_scoring_employee(employee_id: str):
     return 'ok'
+
+
+@app.route('/competency/tracks')
+@permission_required('admin')
+def competency_tracks():
+    flask.g.tracks = db.get_all_tracks()
+    return flask.render_template('competency/tracks.html')
+
+
+@app.route('/competency/tracks/create', methods=['POST'])
+@permission_required('admin')
+def competency_tracks_create():
+    track_id = db.create_track(flask.request.values.get('name'), flask.request.values.get('description'))
+    return flask.redirect(flask.url_for('competency_track_detail', track_id=track_id))
+
+
+@app.route('/competency/tracks/edit', methods=['POST'])
+@permission_required('admin')
+def competency_tracks_edit():
+    track_id = flask.request.values.get('id')
+    db.update_track(flask.request.values)
+    return flask.redirect(flask.url_for('competency_track_detail', track_id=track_id))
+
+
+@app.route('/competency/tracks/<uuid:track_id>')
+@permission_required('admin')
+def competency_track_detail(track_id):
+    flask.g.track = db.get_track_details(track_id)
+    flask.g.levels = db.get_track_levels(track_id)
+    return flask.render_template('competency/track-detail.html')
 
 
 @app.route('/ecosystem-certification')

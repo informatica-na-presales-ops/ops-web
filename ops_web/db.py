@@ -965,6 +965,80 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
+    def get_all_tracks(self):
+        sql = '''
+            select t.id, t.name, t.description, array_agg(l.title) levels
+            from competency_tracks t
+            left join competency_levels l on l.track_id = t.id
+            group by t.id, t.name, t.description
+            order by t.name
+        '''
+        return self.q(sql)
+
+    def create_track(self, name: str, description: str) -> uuid.UUID:
+        sql = '''
+            insert into competency_tracks (id, name, description) values (%(id)s, %(name)s, %(description)s)
+        '''
+        params = {
+            'id': uuid.uuid4(),
+            'name': name,
+            'description': description
+        }
+        self.u(sql, params)
+        return params.get('id')
+
+    def update_track(self, params: Dict):
+        sql = '''
+            update competency_tracks
+            set name = %(name)s, description = %(description)s, ta_description = %(ta_description)s,
+                dk_description = %(dk_description)s, dq_description = %(dq_description)s,
+                tc_description = %(tc_description)s, ls_description = %(ls_description)s,
+                co_description = %(co_description)s, pp_description = %(pp_description)s,
+                ca_description = %(ca_description)s, at_description = %(at_description)s,
+                cc_description = %(cc_description)s
+            where id = %(id)s
+        '''
+        self.u(sql, params)
+
+    def get_track_details(self, track_id: uuid.UUID):
+        sql = '''
+            select
+                id, name, description, ta_description, dk_description, dq_description, tc_description, ls_description,
+                co_description, pp_description, ca_description, at_description, cc_description
+            from competency_tracks
+            where id = %(id)s
+        '''
+        params = {
+            'id': track_id
+        }
+        return self.q_one(sql, params)
+
+    def create_level(self, track_id: uuid.UUID, title: str, score: int) -> uuid.UUID:
+        sql = '''
+            insert into competency_levels (id, track_id, title, score)
+            values (%(id)s, %(track_id)s, %(title)s, %(score)s)
+        '''
+        params = {
+            'id': uuid.uuid4(),
+            'track_id': track_id,
+            'title': title,
+            'score': score
+        }
+        self.u(sql, params)
+        return params.get('id')
+
+    def get_track_levels(self, track_id: uuid.UUID):
+        sql = '''
+            select
+                id, score, ta_description, dk_description, dq_description, tc_description, ls_description,
+                co_description, pp_description, ca_description, at_description, cc_description
+            from competency_levels
+            where track_id = %(track_id)s
+            order by score
+        '''
+        params = {'track_id': track_id}
+        return self.q(sql, params)
+
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
@@ -1015,6 +1089,29 @@ class Database(fort.PostgresDatabase):
             'employee_ids': employee_ids
         }
         return {r.get('sc_employee_id'): r for r in self.q(sql, params)}
+
+    def get_subordinates(self, manager_email: str) -> List:
+        sql = '''
+            with recursive subordinates as (
+                select
+                    e.employee_id, e.employee_name, e.employee_email, e.job_code, e.job_title, e.business_title,
+                    e.visible
+                from employees e
+                left join employees m on m.employee_name = e.manager_name
+                where m.employee_email = %(manager_email)s
+                union
+                select
+                    e.employee_id, e.employee_name, e.employee_email, e.job_code, e.job_title, e.business_title,
+                    e.visible
+                from employees e
+                join subordinates s on s.employee_name = e.manager_name
+            )
+            select employee_id, employee_name, employee_email, job_code, job_title, business_title
+            from subordinates
+            where visible is true
+        '''
+        params = {'manager_email': manager_email}
+        return self.q(sql, params)
 
     # opportunity debrief surveys
 
@@ -2128,6 +2225,7 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(23)
         if self.version < 24:
             self.log.info('Migrating database to schema version 24')
+            # noinspection SqlResolve
             self.u('''
                 alter table sales_consultants
                 add column employee_id text
@@ -2180,10 +2278,12 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(27)
         if self.version < 28:
             self.log.info('Migrating to database schema version 28')
+            # noinspection SqlResolve
             self.u('''
                 alter table sales_consultants
                 add column sc_email text
             ''')
+            # noinspection SqlResolve
             self.u('''
                 alter table sales_consultants
                 drop constraint sales_consultants_pkey
@@ -2260,6 +2360,7 @@ class Database(fort.PostgresDatabase):
                     synced boolean
                 )
             ''')
+            # noinspection SqlResolve
             self.u('''
                 alter table security_group
                 drop column inbound_rules,
@@ -2579,15 +2680,62 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(60)
         if self.version < 61:
             self.log.info('Migrating to database schema version 61')
+            # noinspection SqlResolve
             self.u('''
                 alter table sc_competency_plans
                 rename to competency_plans
             ''')
+            # noinspection SqlResolve
             self.u('''
                 alter table sc_competency_scores
                 rename to competency_scores
             ''')
             self.add_schema_version(61)
+        if self.version < 62:
+            self.log.info('Migrating to database schema version 62')
+            self.u('''
+                create table competency_tracks (
+                    id uuid primary key,
+                    name text not null,
+                    description text,
+                    ta_description text,
+                    dk_description text,
+                    dq_description text,
+                    tc_description text,
+                    ls_description text,
+                    co_description text,
+                    pp_description text,
+                    ca_description text,
+                    at_description text,
+                    cc_description text
+                )
+            ''')
+            self.u('''
+                create table competency_levels (
+                    id uuid primary key,
+                    track_id uuid not null references competency_tracks on delete cascade,
+                    title text not null,
+                    score integer not null,
+                    ta_description text,
+                    dk_description text,
+                    dq_description text,
+                    tc_description text,
+                    ls_description text,
+                    co_description text,
+                    pp_description text,
+                    ca_description text,
+                    at_description text,
+                    cc_description text
+                )
+            ''')
+            self.u('''
+                create table competency_level_details (
+                    id uuid primary key,
+                    level_id uuid not null references competency_levels on delete cascade,
+                    detail text not null
+                )
+            ''')
+            self.add_schema_version(62)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

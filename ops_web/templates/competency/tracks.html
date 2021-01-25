@@ -1,0 +1,65 @@
+{% extends 'competency/breadcrumb.html' %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <h1>Competency tracks</h1>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-create-track">
+                <span class="oi oi-plus"></span>
+                Create a new track
+            </button>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <div class="list-group">
+            {% for t in g.tracks %}
+                <a class="list-group-item bg-dark border-light text-light"
+                   href="{{ url_for('competency_track_detail', track_id=t.id) }}">
+                    <h5>{{ t.name }}</h5>
+                    <p>{{ t.description }}</p>
+                    <p>
+                    {% for level in t.levels %}
+                        {{ level if level }}
+                        {{ '&rarr;' if not loop.last }}
+                    {% endfor %}
+                    </p>
+                </a>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-create-track">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create a new track</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-create-track" action="{{ url_for('competency_tracks_create') }}" method="post">
+                        <div class="form-group">
+                            <label for="name">Track name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Track description</label>
+                            <input type="text" class="form-control" id="description" name="description">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-outline-success" form="form-create-track">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

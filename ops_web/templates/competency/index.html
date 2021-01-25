@@ -9,6 +9,14 @@
         </div>
     </div>
 
+    {% if 'admin' in g.permissions %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <a class="btn btn-outline-light" href="{{ url_for('competency_tracks') }}">Manage tracks</a>
+        </div>
+    </div>
+    {% endif %}
+
     {% if g.employees %}
     <div class="row pt-3 text-light">
         <div class="col">
@@ -36,6 +44,12 @@
                 {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <p class="lead">You do not manage any employees.</p>
         </div>
     </div>
     {% endif %}
