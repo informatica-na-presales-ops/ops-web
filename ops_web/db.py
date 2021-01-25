@@ -1042,7 +1042,8 @@ class Database(fort.PostgresDatabase):
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
-                e.employee_id, e.employee_name, e.employee_email, e.is_manager, e.job_code, e.job_title,
+                e.employee_id, e.employee_email, e.is_manager, e.job_code, e.job_title,
+                replace(e.employee_name, ' (On Leave)', '') employee_name, 
                 case e.job_code
                     when 'S412' then 2
                     when 'S413' then 3
@@ -1055,7 +1056,7 @@ class Database(fort.PostgresDatabase):
                 s.leadership_skills, s.communication, s.planning_and_prioritization, s.customer_advocacy, s.attitude,
                 s.corporate_citizenship
             from employees e
-            join employees m on m.employee_name = e.manager_name
+            join employees m on replace(m.employee_name, ' (On Leave)', '') = e.manager_name
             left join (
                 select sc_employee_id, max(score_timestamp) score_timestamp
                 from competency_scores
