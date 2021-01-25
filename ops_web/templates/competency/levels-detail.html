@@ -1,0 +1,70 @@
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('competency_tracks_detail', track_id=g.level.track_id) }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>{{ g.level.track_name }}</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <h1>{{ g.level.track_name }} / {{ g.level.title }}</h1>
+            <p>Enter competency descriptions and details for this level below. Use the buttons to toggle the form fields.</p>
+        </div>
+    </div>
+
+    {% set competencies = [
+        ('Technical acumen', 'ta'),
+        ('Domain knowledge', 'dk'),
+        ('Discovery and qualification', 'dq'),
+        ('Teamwork and collaboration', 'tc'),
+        ('Leadership skills', 'ls'),
+        ('Communication', 'co'),
+        ('Planning and prioritization', 'pp'),
+        ('Customer advocacy', 'ca'),
+        ('Attitude', 'at'),
+        ('Corporate citizenship', 'cc')
+    ] %}
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            {% for c_name, c_abbr in competencies %}
+            <button type="button" class="btn btn-outline-light mb-2" data-toggle="collapse" data-target="#{{ c_abbr }}-card">
+                {{ c_name }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <form action="{{ url_for('competency_levels_edit', level_id=g.level.id) }}" method="post">
+                <input type="hidden" name="id" value="{{ g.level.id }}">
+
+                {% for c_name, c_abbr in competencies %}
+                <div class="collapse" id="{{ c_abbr }}-card">
+                    <div class="card card-body bg-dark text-light border-light mb-3">
+                        <h5>{{ c_name }}</h5>
+                        <div class="form-group">
+                            <label for="{{ c_abbr }}-description">Description</label>
+                            <textarea class="form-control" id="{{ c_abbr }}-description" name="{{ c_abbr }}_description">
+                                {{- g.level[c_abbr + '_description'] if g.level[c_abbr + '_description'] -}}
+                            </textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ c_abbr }}-details">Details</label>
+                            <textarea class="form-control" id="{{ c_abbr }}-details" name="{{ c_abbr }}_details">
+                                {{- g.level[c_abbr + '_details'] if g.level[c_abbr + '_details'] -}}
+                            </textarea>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-outline-success">Save</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

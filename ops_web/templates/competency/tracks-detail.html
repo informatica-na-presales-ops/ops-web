@@ -17,10 +17,13 @@
 
     <div class="row pt-3 text-light">
         <div class="col">
-            <button type="button" class="btn btn-outline-light" data-toggle="modal"
-                    data-target="#modal-edit-track">
+            <button type="button" class="btn btn-outline-light" data-toggle="modal" data-target="#modal-edit-track">
                 <span class="oi oi-pencil"></span>
                 Edit this track
+            </button>
+            <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal-create-level">
+                <span class="oi oi-plus"></span>
+                Create a new level
             </button>
         </div>
     </div>
@@ -29,12 +32,11 @@
         <div class="col">
             <div class="list-group">
             {% for l in g.levels %}
-                <a class="list-group-item bg-dark border-light text-light" href="#">
-                    <h5>{{ l.title }}</h5>
-                    <p>Score: {{ l.score }}</p>
+                <a class="list-group-item bg-dark border-light text-light text-decoration-none" href="{{ url_for('competency_levels_detail', level_id=l.id) }}"
+                   data-score="{{ l.score }}">
+                    <h5>{{ l.score }} / {{ l.title }}</h5>
                 </a>
             {% endfor %}
-                <a class="list-group-item bg-dark border-light text-light" href="#" data-toggle="modal">Add a level</a>
             </div>
         </div>
     </div>
@@ -43,7 +45,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content bg-dark text-light">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit track</h5>
+                    <h5 class="modal-title">Edit this track</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -60,7 +62,7 @@
                                    value="{{ g.track.description if g.track.description }}">
                         </div>
                         <hr class="border-light">
-                        <h5>Competency descriptions</h5>
+                        <h5>Competency definitions</h5>
                         <div class="form-group">
                             <label for="ta-description">Technical acumen</label>
                             <textarea class="form-control" id="ta-description" name="ta_description">
@@ -131,18 +133,36 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-add-level">
-        <div class="modal-dialog modal-lg">
+    <div class="modal" id="modal-create-level">
+        <div class="modal-dialog">
             <div class="modal-content bg-dark text-light">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add a level</h5>
+                    <h5 class="modal-title">Create a new level</h5>
                     <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-add-level" action="{{ url_for('competency_levels_create') }}" method="post"></form>
+                    <form id="form-add-level" action="{{ url_for('competency_levels_create') }}" method="post">
+                        <input type="hidden" name="track-id" value="{{ g.track.id }}">
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="score">Score</label>
+                            <input type="number" class="form-control" id="score" name="score" min="1" required>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-footer"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-outline-success" form="form-add-level">Create</button>
+                </div>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block end_of_body %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='competency/tracks-detail.js') }}"></script>
 {% endblock %}

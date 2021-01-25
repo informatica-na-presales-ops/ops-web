@@ -20,14 +20,14 @@
         <div class="col">
             <div class="list-group">
             {% for t in g.tracks %}
-                <a class="list-group-item bg-dark border-light text-light"
-                   href="{{ url_for('competency_track_detail', track_id=t.id) }}">
+                <a class="list-group-item bg-dark border-light text-light text-decoration-none"
+                   href="{{ url_for('competency_tracks_detail', track_id=t.id) }}">
                     <h5>{{ t.name }}</h5>
                     <p>{{ t.description }}</p>
                     <p>
                     {% for level in t.levels %}
                         {{ level if level }}
-                        {{ '&rarr;' if not loop.last }}
+                        {{ '&rarr;'|safe if not loop.last }}
                     {% endfor %}
                     </p>
                 </a>

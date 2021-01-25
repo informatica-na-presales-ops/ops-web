@@ -967,7 +967,7 @@ class Database(fort.PostgresDatabase):
 
     def get_all_tracks(self):
         sql = '''
-            select t.id, t.name, t.description, array_agg(l.title) levels
+            select t.id, t.name, t.description, array_agg(l.title order by l.score) levels
             from competency_tracks t
             left join competency_levels l on l.track_id = t.id
             group by t.id, t.name, t.description
@@ -1027,10 +1027,26 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
         return params.get('id')
 
+    def update_level(self, params: Dict):
+        sql = '''
+            update competency_levels
+            set ta_description = %(ta_description)s, dk_description = %(dk_description)s,
+                dq_description = %(dq_description)s, tc_description = %(tc_description)s,
+                ls_description = %(ls_description)s, co_description = %(co_description)s,
+                pp_description = %(pp_description)s, ca_description = %(ca_description)s,
+                at_description = %(at_description)s, cc_description = %(cc_description)s,
+                ta_details = %(ta_details)s, dk_details = %(dk_details)s, dq_details = %(dq_details)s,
+                tc_details = %(tc_details)s, ls_details = %(ls_details)s, co_details = %(co_details)s,
+                pp_details = %(pp_details)s, ca_details = %(ca_details)s, at_details = %(at_details)s,
+                cc_details = %(cc_details)s
+            where id = %(id)s
+        '''
+        self.u(sql, params)
+
     def get_track_levels(self, track_id: uuid.UUID):
         sql = '''
             select
-                id, score, ta_description, dk_description, dq_description, tc_description, ls_description,
+                id, title, score, ta_description, dk_description, dq_description, tc_description, ls_description,
                 co_description, pp_description, ca_description, at_description, cc_description
             from competency_levels
             where track_id = %(track_id)s
@@ -1038,6 +1054,22 @@ class Database(fort.PostgresDatabase):
         '''
         params = {'track_id': track_id}
         return self.q(sql, params)
+
+    def get_level_details(self, level_id: uuid.UUID):
+        sql = '''
+            select
+                l.id, track_id, title, score, l.ta_description, l.dk_description, l.dq_description, l.tc_description,
+                l.ls_description, l.co_description, l.pp_description, l.ca_description, l.at_description,
+                l.cc_description, ta_details, dk_details, dq_details, tc_details, ls_details, co_details, pp_details,
+                ca_details, at_details, cc_details, t.name track_name
+            from competency_levels l
+            left join competency_tracks t on t.id = l.track_id
+            where l.id = %(id)s
+        '''
+        params = {
+            'id': level_id
+        }
+        return self.q_one(sql, params)
 
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
@@ -2737,6 +2769,26 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(62)
+        if self.version < 63:
+            self.log.info('Migrating to database schema version 63')
+            self.u('''
+                alter table competency_levels
+                add ta_details text,
+                add dk_details text,
+                add dq_details text,
+                add tc_details text,
+                add ls_details text,
+                add co_details text,
+                add pp_details text,
+                add ca_details text,
+                add at_details text,
+                add cc_details text
+            ''')
+            # noinspection SqlResolve
+            self.u('''
+                drop table competency_level_details;
+            ''')
+            self.add_schema_version(63)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
