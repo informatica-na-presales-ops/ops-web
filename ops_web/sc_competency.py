@@ -34,8 +34,7 @@ data = {
                     'description': ('Able to independently identify and qualify technical opportunities through proper '
                                     'discovery, but lacks the means to evaluate (demo) many of our solutions '
                                     'independently. Can get by without other resources on a few technical topics. '
-                                    'Knowledgeable in multiple technology areas, but does not keep current. Has a '
-                                    'basic foundation for the CDW/DL journey, but not yet certified.'),
+                                    'Knowledgeable in multiple technology areas, but does not keep current.'),
                     'details': [
                         'Proven delivery presenting the core Informatica platform overview.',
                         'Successfully achieves Presales onboarding certification.',
@@ -52,8 +51,7 @@ data = {
                     'description': ('Able to independently identify, qualify, and evaluate (demo, workshop) some of '
                                     'our solutions with a customer. Needs assistance from other resources on deeper '
                                     'technical conversations, but knows when to ask for help and drives up to that '
-                                    'point. Very knowledgeable in multiple technologies and strives to learn more. '
-                                    'Certified in CDW/DL journey.'),
+                                    'point. Very knowledgeable in multiple technologies and strives to learn more.'),
                     'details': [
                         ('Proven demonstration and certification in one Informatica journey area (e.g. Informatica '
                          'Cloud DW/DL).'),
