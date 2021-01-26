@@ -26,9 +26,10 @@
 
     <div class="row pt-3 text-light">
         <div class="col">
-            <table class="table table-dark table-striped table-hover table-sm">
+            <table class="table table-dark table-striped table-hover table-responsive table-sm">
                 <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Job title</th>
@@ -37,6 +38,7 @@
                 <tbody>
                 {% for e in g.employees | sort(attribute='employee_name') %}
                     <tr role="button" data-href="{{ url_for('competency_scoring_employee', employee_id=e.employee_id) }}">
+                        <td>{{ e.employee_id }}</td>
                         <td>{{ e.employee_name }}</td>
                         <td>{{ e.employee_email }}</td>
                         <td>{{ e.job_title }}</td>
