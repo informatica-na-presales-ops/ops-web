@@ -1130,14 +1130,14 @@ class Database(fort.PostgresDatabase):
                     e.employee_id, e.employee_name, e.employee_email, e.job_code, e.job_title, e.business_title,
                     e.visible
                 from employees e
-                left join employees m on m.employee_name = e.manager_name
+                left join employees m on m.employee_id = e.manager_id
                 where m.employee_email = %(manager_email)s
                 union
                 select
                     e.employee_id, e.employee_name, e.employee_email, e.job_code, e.job_title, e.business_title,
                     e.visible
                 from employees e
-                join subordinates s on s.employee_name = e.manager_name
+                join subordinates s on s.employee_id = e.manager_id
             )
             select employee_id, employee_name, employee_email, job_code, job_title, business_title
             from subordinates
