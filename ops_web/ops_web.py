@@ -375,7 +375,8 @@ def competency_levels_create():
     track_id = flask.request.values.get('track-id')
     title = flask.request.values.get('title')
     score = int(flask.request.values.get('score'))
-    db.create_level(track_id, title, score)
+    level_id = db.create_level(track_id, title, score)
+    db.add_log_entry(flask.g.email, f'Create competency level {level_id} for track {track_id}')
     return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
 
 
@@ -384,6 +385,7 @@ def competency_levels_create():
 def competency_levels_edit():
     level_id = flask.request.values.get('id')
     db.update_level(flask.request.values)
+    db.add_log_entry(flask.g.email, f'Update values for competency level {level_id}')
     return flask.redirect(flask.url_for('competency_levels_detail', level_id=level_id))
 
 
@@ -426,8 +428,8 @@ def competency_planning_save():
         'corporate_citizenship': flask.request.values.get('corporate-citizenship-plan')
     }
     db.add_competency_plan(params)
-    db.add_log_entry(flask.g.email, f'Save SC competency progression plan for {sc_employee_id}')
-    flask.flash('SC competency progression plan saved successfully', 'success')
+    db.add_log_entry(flask.g.email, f'Save competency progression plan for {sc_employee_id}')
+    flask.flash('Competency progression plan saved successfully', 'success')
     return flask.redirect(flask.url_for('competency_planning'))
 
 
@@ -467,10 +469,10 @@ def competency_scoring_add():
             'corporate_citizenship': int(flask.request.values.get('corporate-citizenship'))
         }
         db.add_competency_score(params)
-        db.add_log_entry(flask.g.email, f'Add SC competency score for {sc_employee_id}')
-        flask.flash('SC competency score added successfully.', 'success')
+        db.add_log_entry(flask.g.email, f'Add competency score for {sc_employee_id}')
+        flask.flash('Competency score added successfully.', 'success')
     else:
-        flask.flash('Please choose an SC.', 'danger')
+        flask.flash('Please choose an employee.', 'danger')
     return flask.redirect(flask.url_for('competency'))
 
 
@@ -491,6 +493,7 @@ def competency_tracks():
 @permission_required('admin')
 def competency_tracks_create():
     track_id = db.create_track(flask.request.values.get('name'), flask.request.values.get('description'))
+    db.add_log_entry(flask.g.email, f'Create competency track {track_id}')
     return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
 
 
@@ -499,6 +502,7 @@ def competency_tracks_create():
 def competency_tracks_edit():
     track_id = flask.request.values.get('id')
     db.update_track(flask.request.values)
+    db.add_log_entry(flask.g.email, f'Update values for competency track {track_id}')
     return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
 
 
