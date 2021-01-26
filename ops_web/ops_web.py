@@ -394,6 +394,11 @@ def competency_levels_detail(level_id: uuid):
     return flask.render_template('competency/levels-detail.html')
 
 
+@app.route('/sc-competency/planning')
+def sc_competency_planning_redirect():
+    return flask.redirect(flask.url_for('competency_planning'))
+
+
 @app.route('/competency/planning')
 @login_required
 def competency_planning():
@@ -424,6 +429,13 @@ def competency_planning_save():
     db.add_log_entry(flask.g.email, f'Save SC competency progression plan for {sc_employee_id}')
     flask.flash('SC competency progression plan saved successfully', 'success')
     return flask.redirect(flask.url_for('competency_planning'))
+
+
+
+@app.route('/sc-competency')
+@app.route('/sc-competency/scoring')
+def sc_competency_redirect():
+    return flask.redirect(flask.url_for('competency_scoring'))
 
 
 @app.route('/competency/scoring')
@@ -465,7 +477,7 @@ def competency_scoring_add():
 @app.route('/competency/scoring/<employee_id>')
 @login_required
 def competency_scoring_employee(employee_id: str):
-    return 'ok'
+    return f'OK {employee_id}'
 
 
 @app.route('/competency/tracks')
