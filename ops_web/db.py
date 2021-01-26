@@ -2788,6 +2788,10 @@ class Database(fort.PostgresDatabase):
             self.u('''
                 drop table competency_level_details;
             ''')
+            self.u('''
+                alter table employees
+                add manager_id text
+            ''')
             self.add_schema_version(63)
 
     def _table_exists(self, table_name: str) -> bool:
