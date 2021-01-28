@@ -369,6 +369,17 @@ def competency():
     return flask.render_template('competency/index.html')
 
 
+@app.route('/competency/competencies/create', methods=['POST'])
+@permission_required('admin')
+def competency_competencies_create():
+    track_id = flask.request.values.get('track-id')
+    name = flask.request.values.get('name')
+    definition = flask.request.values.get('definition')
+    comp_id = db.create_competency(track_id, name, definition)
+    db.add_log_entry(flask.g.email, f'Create competency {comp_id} ({name}) for track {track_id}')
+    return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
+
+
 @app.route('/competency/levels/create', methods=['POST'])
 @permission_required('admin')
 def competency_levels_create():
@@ -380,12 +391,38 @@ def competency_levels_create():
     return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
 
 
-@app.route('/competency/levels/edit', methods=['POST'])
+@app.route('/competency/levels/delete', methods=['POST'])
 @permission_required('admin')
-def competency_levels_edit():
+def competency_levels_delete():
     level_id = flask.request.values.get('id')
-    db.update_level(flask.request.values)
-    db.add_log_entry(flask.g.email, f'Update values for competency level {level_id}')
+    track_id = flask.request.values.get('track-id')
+    db.delete_level(level_id)
+    db.add_log_entry(flask.g.email, f'Delete competency level {level_id} for track {track_id}')
+    return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
+
+
+@app.route('/competency/levels/update', methods=['POST'])
+@permission_required('admin')
+def competency_levels_update():
+    level_id = flask.request.values.get('id')
+    title = flask.request.values.get('title')
+    score = flask.request.values.get('score')
+    db.update_level(level_id, title, score)
+    db.add_log_entry(flask.g.email, f'Update title and score for competency level {level_id}')
+    return flask.redirect(flask.url_for('competency_levels_detail', level_id=level_id))
+
+
+@app.route('/competency/levels/update-competencies', methods=['POST'])
+@permission_required('admin')
+def competency_levels_update_competencies():
+    level_id = flask.request.values.get('id')
+    app.logger.debug(flask.request.values.to_dict())
+    for c in db.get_competencies_for_level(level_id):
+        competency_id = c.get('id')
+        description = flask.request.values.get(f'{competency_id}/description')
+        details = flask.request.values.get(f'{competency_id}/details')
+        db.update_level_comp_details(level_id, competency_id, description, details)
+    db.add_log_entry(flask.g.email, f'Update competency descriptions for competency level {level_id}')
     return flask.redirect(flask.url_for('competency_levels_detail', level_id=level_id))
 
 
@@ -393,6 +430,7 @@ def competency_levels_edit():
 @permission_required('admin')
 def competency_levels_detail(level_id: uuid):
     flask.g.level = db.get_level_details(level_id)
+    flask.g.competencies = db.get_competencies_for_level(level_id)
     return flask.render_template('competency/levels-detail.html')
 
 
@@ -497,6 +535,15 @@ def competency_tracks_create():
     return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
 
 
+@app.route('/competency/tracks/delete', methods=['POST'])
+@permission_required('admin')
+def competency_tracks_delete():
+    track_id = flask.request.values.get('id')
+    db.delete_track(track_id)
+    db.add_log_entry(flask.g.email, f'Delete competency track {track_id}')
+    return flask.redirect(flask.url_for('competency_tracks'))
+
+
 @app.route('/competency/tracks/edit', methods=['POST'])
 @permission_required('admin')
 def competency_tracks_edit():
@@ -511,6 +558,7 @@ def competency_tracks_edit():
 def competency_tracks_detail(track_id):
     flask.g.track = db.get_track_details(track_id)
     flask.g.levels = db.get_track_levels(track_id)
+    flask.g.competencies = db.get_track_competencies(track_id)
     return flask.render_template('competency/tracks-detail.html')
 
 

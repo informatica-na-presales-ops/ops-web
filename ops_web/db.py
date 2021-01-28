@@ -965,112 +965,6 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
-    def get_all_tracks(self):
-        sql = '''
-            select t.id, t.name, t.description, array_agg(l.title order by l.score) levels
-            from competency_tracks t
-            left join competency_levels l on l.track_id = t.id
-            group by t.id, t.name, t.description
-            order by t.name
-        '''
-        return self.q(sql)
-
-    def create_track(self, name: str, description: str) -> uuid.UUID:
-        sql = '''
-            insert into competency_tracks (id, name, description) values (%(id)s, %(name)s, %(description)s)
-        '''
-        params = {
-            'id': uuid.uuid4(),
-            'name': name,
-            'description': description
-        }
-        self.u(sql, params)
-        return params.get('id')
-
-    def update_track(self, params: Dict):
-        sql = '''
-            update competency_tracks
-            set name = %(name)s, description = %(description)s, ta_description = %(ta_description)s,
-                dk_description = %(dk_description)s, dq_description = %(dq_description)s,
-                tc_description = %(tc_description)s, ls_description = %(ls_description)s,
-                co_description = %(co_description)s, pp_description = %(pp_description)s,
-                ca_description = %(ca_description)s, at_description = %(at_description)s,
-                cc_description = %(cc_description)s
-            where id = %(id)s
-        '''
-        self.u(sql, params)
-
-    def get_track_details(self, track_id: uuid.UUID):
-        sql = '''
-            select
-                id, name, description, ta_description, dk_description, dq_description, tc_description, ls_description,
-                co_description, pp_description, ca_description, at_description, cc_description
-            from competency_tracks
-            where id = %(id)s
-        '''
-        params = {
-            'id': track_id
-        }
-        return self.q_one(sql, params)
-
-    def create_level(self, track_id: uuid.UUID, title: str, score: int) -> uuid.UUID:
-        sql = '''
-            insert into competency_levels (id, track_id, title, score)
-            values (%(id)s, %(track_id)s, %(title)s, %(score)s)
-        '''
-        params = {
-            'id': uuid.uuid4(),
-            'track_id': track_id,
-            'title': title,
-            'score': score
-        }
-        self.u(sql, params)
-        return params.get('id')
-
-    def update_level(self, params: Dict):
-        sql = '''
-            update competency_levels
-            set ta_description = %(ta_description)s, dk_description = %(dk_description)s,
-                dq_description = %(dq_description)s, tc_description = %(tc_description)s,
-                ls_description = %(ls_description)s, co_description = %(co_description)s,
-                pp_description = %(pp_description)s, ca_description = %(ca_description)s,
-                at_description = %(at_description)s, cc_description = %(cc_description)s,
-                ta_details = %(ta_details)s, dk_details = %(dk_details)s, dq_details = %(dq_details)s,
-                tc_details = %(tc_details)s, ls_details = %(ls_details)s, co_details = %(co_details)s,
-                pp_details = %(pp_details)s, ca_details = %(ca_details)s, at_details = %(at_details)s,
-                cc_details = %(cc_details)s
-            where id = %(id)s
-        '''
-        self.u(sql, params)
-
-    def get_track_levels(self, track_id: uuid.UUID):
-        sql = '''
-            select
-                id, title, score, ta_description, dk_description, dq_description, tc_description, ls_description,
-                co_description, pp_description, ca_description, at_description, cc_description
-            from competency_levels
-            where track_id = %(track_id)s
-            order by score
-        '''
-        params = {'track_id': track_id}
-        return self.q(sql, params)
-
-    def get_level_details(self, level_id: uuid.UUID):
-        sql = '''
-            select
-                l.id, track_id, title, score, l.ta_description, l.dk_description, l.dq_description, l.tc_description,
-                l.ls_description, l.co_description, l.pp_description, l.ca_description, l.at_description,
-                l.cc_description, ta_details, dk_details, dq_details, tc_details, ls_details, co_details, pp_details,
-                ca_details, at_details, cc_details, t.name track_name
-            from competency_levels l
-            left join competency_tracks t on t.id = l.track_id
-            where l.id = %(id)s
-        '''
-        params = {
-            'id': level_id
-        }
-        return self.q_one(sql, params)
-
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
@@ -1145,6 +1039,185 @@ class Database(fort.PostgresDatabase):
         '''
         params = {'manager_email': manager_email}
         return self.q(sql, params)
+
+    ## competency tracks
+
+    def get_all_tracks(self):
+        sql = '''
+            select t.id, t.name, t.description, array_remove(array_agg(l.title order by l.score), null) levels
+            from competency_tracks t
+            left join competency_levels l on l.track_id = t.id
+            group by t.id, t.name, t.description
+            order by t.name
+        '''
+        return self.q(sql)
+
+    def create_track(self, name: str, description: str) -> uuid.UUID:
+        sql = '''
+            insert into competency_tracks (id, name, description) values (%(id)s, %(name)s, %(description)s)
+        '''
+        params = {
+            'id': uuid.uuid4(),
+            'name': name,
+            'description': description
+        }
+        self.u(sql, params)
+        return params.get('id')
+
+    def delete_track(self, track_id: uuid.UUID):
+        sql = '''
+            delete from competency_tracks
+            where id = %(id)s
+        '''
+        params = {
+            'id': track_id
+        }
+        self.u(sql, params)
+
+    def update_track(self, params: Dict):
+        sql = '''
+            update competency_tracks
+            set name = %(name)s, description = %(description)s
+            where id = %(id)s
+        '''
+        self.u(sql, params)
+
+    def get_track_details(self, track_id: uuid.UUID):
+        sql = '''
+            select id, name, description
+            from competency_tracks
+            where id = %(id)s
+        '''
+        params = {
+            'id': track_id
+        }
+        return self.q_one(sql, params)
+
+    ## competency competencies
+
+    def create_competency(self, track_id: uuid.UUID, name: str, definition: str = None):
+        sql = '''
+            insert into competency_competencies (id, track_id, name, definition)
+            values (%(id)s, %(track_id)s, %(name)s, %(definition)s)
+        '''
+        params = {
+            'id': uuid.uuid4(),
+            'track_id': track_id,
+            'name': name,
+            'definition': definition
+        }
+        self.u(sql, params)
+        return params.get('id')
+
+    def get_track_competencies(self, track_id: uuid.UUID):
+        sql = '''
+            select id, track_id, name, definition
+            from competency_competencies
+            where track_id = %(track_id)s
+        '''
+        params = {'track_id': track_id}
+        return self.q(sql, params)
+
+    def get_competency_details(self, competency_id: uuid.UUID):
+        sql = '''
+            select c.id, track_id, c.name, definition, t.name track_name
+            from competency_competencies c
+            left join competency_tracks t on t.id = c.track_id
+            where c.id = %(id)s
+        '''
+        params = {
+            'id': competency_id
+        }
+        return self.q_one(sql, params)
+
+    ## competency levels
+
+    def create_level(self, track_id: uuid.UUID, title: str, score: int) -> uuid.UUID:
+        sql = '''
+            insert into competency_levels (id, track_id, title, score)
+            values (%(id)s, %(track_id)s, %(title)s, %(score)s)
+        '''
+        params = {
+            'id': uuid.uuid4(),
+            'track_id': track_id,
+            'title': title,
+            'score': score
+        }
+        self.u(sql, params)
+        return params.get('id')
+
+    def delete_level(self, level_id: uuid.UUID):
+        sql = '''
+            delete from competency_levels
+            where id = %(id)s
+        '''
+        params = {
+            'id': level_id
+        }
+        self.u(sql, params)
+
+    def update_level(self, level_id: uuid.UUID, title: str, score: int):
+        sql = '''
+            update competency_levels
+            set title = %(title)s, score = %(score)s
+            where id = %(id)s
+        '''
+        params = {
+            'id': level_id,
+            'title': title,
+            'score': score
+        }
+        self.u(sql, params)
+
+    def get_track_levels(self, track_id: uuid.UUID):
+        sql = '''
+            select id, title, score
+            from competency_levels
+            where track_id = %(track_id)s
+            order by score
+        '''
+        params = {'track_id': track_id}
+        return self.q(sql, params)
+
+    def get_level_details(self, level_id: uuid.UUID):
+        sql = '''
+            select l.id, track_id, title, score, t.name track_name
+            from competency_levels l
+            left join competency_tracks t on t.id = l.track_id
+            where l.id = %(id)s
+        '''
+        params = {
+            'id': level_id
+        }
+        return self.q_one(sql, params)
+
+    def get_competencies_for_level(self, level_id: uuid.UUID):
+        sql = '''
+            select c.id, name, description, details
+            from competency_competencies c
+            left join competency_level_comp_details d on d.competency_id = c.id and level_id = %(id)s
+            where track_id = (select track_id from competency_levels where id = %(id)s)
+            and (level_id = %(id)s or level_id is null)
+        '''
+        params = {
+            'id': level_id
+        }
+        return self.q(sql, params)
+
+    def update_level_comp_details(self, level_id: uuid.UUID, competency_id: uuid.UUID, description: str, details: str):
+        sql = '''
+            insert into competency_level_comp_details (level_id, competency_id, description, details)
+            values (%(level_id)s, %(competency_id)s, %(description)s, %(details)s)
+            on conflict (level_id, competency_id) do update
+            set description = %(description)s, details = %(details)s
+        '''
+        params = {
+            'level_id': level_id,
+            'competency_id': competency_id,
+            'description': description,
+            'details': details
+        }
+        self.u(sql, params)
 
     # opportunity debrief surveys
 
@@ -2771,19 +2844,6 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(62)
         if self.version < 63:
             self.log.info('Migrating to database schema version 63')
-            self.u('''
-                alter table competency_levels
-                add ta_details text,
-                add dk_details text,
-                add dq_details text,
-                add tc_details text,
-                add ls_details text,
-                add co_details text,
-                add pp_details text,
-                add ca_details text,
-                add at_details text,
-                add cc_details text
-            ''')
             # noinspection SqlResolve
             self.u('''
                 drop table competency_level_details;
@@ -2791,6 +2851,51 @@ class Database(fort.PostgresDatabase):
             self.u('''
                 alter table employees
                 add manager_id text
+            ''')
+            self.u('''
+                create table competency_competencies (
+                    id uuid primary key,
+                    track_id uuid not null references competency_tracks on delete cascade,
+                    name text not null,
+                    definition text
+                )
+            ''')
+            # noinspection SqlResolve
+            self.u('''
+                alter table competency_tracks
+                drop ta_description,
+                drop dk_description,
+                drop dq_description,
+                drop tc_description,
+                drop ls_description,
+                drop co_description,
+                drop pp_description,
+                drop ca_description,
+                drop at_description,
+                drop cc_description
+            ''')
+            # noinspection SqlResolve
+            self.u('''
+                alter table competency_levels
+                drop ta_description,
+                drop dk_description,
+                drop dq_description,
+                drop tc_description,
+                drop ls_description,
+                drop co_description,
+                drop pp_description,
+                drop ca_description,
+                drop at_description,
+                drop cc_description
+            ''')
+            self.u('''
+                create table competency_level_comp_details (
+                    level_id uuid references competency_levels on delete cascade,
+                    competency_id uuid references competency_competencies on delete cascade,
+                    description text,
+                    details text,
+                    primary key (level_id, competency_id)
+                )
             ''')
             self.add_schema_version(63)
 

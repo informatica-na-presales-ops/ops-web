@@ -24,10 +24,12 @@
                    href="{{ url_for('competency_tracks_detail', track_id=t.id) }}">
                     <h5>{{ t.name }}</h5>
                     <p>{{ t.description }}</p>
-                    <p>
+                    <p>Levels:
                     {% for level in t.levels %}
                         {{ level if level }}
                         {{ '&rarr;'|safe if not loop.last }}
+                    {% else %}
+                        no levels defined
                     {% endfor %}
                     </p>
                 </a>
