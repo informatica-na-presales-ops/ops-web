@@ -1109,6 +1109,28 @@ class Database(fort.PostgresDatabase):
         self.u(sql, params)
         return params.get('id')
 
+    def delete_competency(self, competency_id: uuid.UUID):
+        sql = '''
+            delete from competency_competencies where id = %(id)s
+        '''
+        params = {
+            'id': competency_id
+        }
+        self.u(sql, params)
+
+    def update_competency(self, competency_id: uuid.UUID, name: str, definition: str):
+        sql = '''
+            update competency_competencies
+            set name = %(name)s, definition = %(definition)s
+            where id = %(id)s
+        '''
+        params = {
+            'id': competency_id,
+            'name': name,
+            'definition': definition
+        }
+        self.u(sql, params)
+
     def get_track_competencies(self, track_id: uuid.UUID):
         sql = '''
             select id, track_id, name, definition
@@ -1130,6 +1152,18 @@ class Database(fort.PostgresDatabase):
         }
         return self.q_one(sql, params)
 
+    def get_levels_for_competency(self, competency_id: uuid.UUID):
+        sql = '''
+            select id, title, score, description, details
+            from competency_levels l
+            left join competency_level_comp_details d on d.level_id = l.id and competency_id = %(id)s
+            where track_id = (select track_id from competency_competencies where id = %(id)s)
+        '''
+        params = {
+            'id': competency_id
+        }
+        return self.q(sql, params)
+
     ## competency levels
 
     def create_level(self, track_id: uuid.UUID, title: str, score: int) -> uuid.UUID:
@@ -1148,8 +1182,7 @@ class Database(fort.PostgresDatabase):
 
     def delete_level(self, level_id: uuid.UUID):
         sql = '''
-            delete from competency_levels
-            where id = %(id)s
+            delete from competency_levels where id = %(id)s
         '''
         params = {
             'id': level_id
@@ -1193,11 +1226,10 @@ class Database(fort.PostgresDatabase):
 
     def get_competencies_for_level(self, level_id: uuid.UUID):
         sql = '''
-            select c.id, name, description, details
+            select id, name, description, details
             from competency_competencies c
             left join competency_level_comp_details d on d.competency_id = c.id and level_id = %(id)s
             where track_id = (select track_id from competency_levels where id = %(id)s)
-            and (level_id = %(id)s or level_id is null)
         '''
         params = {
             'id': level_id

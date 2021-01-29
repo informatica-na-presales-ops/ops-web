@@ -1,0 +1,124 @@
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('competency_tracks_detail', track_id=g.competency.track_id) }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>{{ g.competency.track_name }}</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <h1>{{ g.competency.track_name }} / {{ g.competency.name }}</h1>
+            <p class="lead">Competency details</p>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <button type="button" class="btn btn-outline-light mr-2" data-toggle="modal" data-target="#modal-edit-competency">
+                <span class="oi oi-pencil"></span>
+                Edit this competency
+            </button>
+            <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#modal-delete-competency">
+                <span class="oi oi-trash"></span>
+                Delete this competency
+            </button>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <p>Enter level descriptions and details for this competency below. Use the buttons to toggle the form fields.</p>
+            {% for l in g.levels | sort(attribute='score') %}
+                <button type="button" class="btn btn-outline-light mb-2" data-toggle="collapse" data-target="#card-{{ l.id }}">
+                    {{ l.title }}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <form action="{{ url_for('competency_competencies_update_levels') }}" method="post">
+                <input type="hidden" name="id" value="{{ g.competency.id }}">
+
+                {% for l in g.levels | sort(attribute='score') %}
+                <div class="collapse" id="card-{{ l.id }}">
+                    <div class="card card-body bg-dark text-light border-light mb-3">
+                        <h5>{{ l.title }}</h5>
+                        <div class="form-group">
+                            <label for="description-{{ l.id }}">Description</label>
+                            <textarea class="form-control" id="description-{{ l.id }}" name="{{ l.id }}/description">
+                                {{- l.description if l.description -}}
+                            </textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="details-{{ l.id }}">Details</label>
+                            <textarea class="form-control" id="details-{{ l.id }}" name="{{ l.id }}/details">
+                                {{- l.details if l.details -}}
+                            </textarea>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-outline-success">Save</button>
+
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-edit-competency">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit this competency</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-edit-competency" action="{{ url_for('competency_competencies_update') }}" method="post">
+                        <input type="hidden" name="id" value="{{ g.competency.id }}">
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ g.competency.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="definition">Definition</label>
+                            <textarea class="form-control" id="definition" name="definition">
+                                {{- g.competency.definition if g.competency.definition -}}
+                            </textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-outline-success" form="form-edit-competency">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-delete-competency">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete this competency</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this competency?
+                </div>
+                <div class="modal-footer">
+                    <form action="{{ url_for('competency_competencies_delete') }}" method="post">
+                        <input type="hidden" name="id" value="{{ g.competency.id }}">
+                        <input type="hidden" name="track-id" value="{{ g.competency.track_id }}">
+                        <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

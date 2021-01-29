@@ -380,6 +380,48 @@ def competency_competencies_create():
     return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
 
 
+@app.route('/competency/competencies/delete', methods=['POST'])
+@permission_required('admin')
+def competency_competencies_delete():
+    competency_id = flask.request.values.get('id')
+    track_id = flask.request.values.get('track-id')
+    db.delete_competency(competency_id)
+    db.add_log_entry(flask.g.email, f'Delete competency {competency_id} for track {track_id}')
+    return flask.redirect(flask.url_for('competency_tracks_detail', track_id=track_id))
+
+
+@app.route('/competency/competencies/update', methods=['POST'])
+@permission_required('admin')
+def competency_competencies_update():
+    competency_id = flask.request.values.get('id')
+    name = flask.request.values.get('name')
+    definition = flask.request.values.get('definition')
+    db.update_competency(competency_id, name, definition)
+    db.add_log_entry(flask.g.email, f'Update name and definition for competency {competency_id}')
+    return flask.redirect(flask.url_for('competency_competencies_detail', competency_id=competency_id))
+
+
+@app.route('/competency/competencies/update-levels', methods=['POST'])
+@permission_required('admin')
+def competency_competencies_update_levels():
+    competency_id = flask.request.values.get('id')
+    for l in db.get_levels_for_competency(competency_id):
+        level_id = l.get('id')
+        description = flask.request.values.get(f'{level_id}/description')
+        details = flask.request.values.get(f'{level_id}/details')
+        db.update_level_comp_details(level_id, competency_id, description, details)
+    db.add_log_entry(flask.g.email, f'Update level descriptions for competency {competency_id}')
+    return flask.redirect(flask.url_for('competency_competencies_detail', competency_id=competency_id))
+
+
+@app.route('/competency/competencies/<uuid:competency_id>')
+@permission_required('admin')
+def competency_competencies_detail(competency_id: uuid.UUID):
+    flask.g.competency = db.get_competency_details(competency_id)
+    flask.g.levels = db.get_levels_for_competency(competency_id)
+    return flask.render_template('competency/competencies-detail.html')
+
+
 @app.route('/competency/levels/create', methods=['POST'])
 @permission_required('admin')
 def competency_levels_create():
@@ -428,7 +470,7 @@ def competency_levels_update_competencies():
 
 @app.route('/competency/levels/<uuid:level_id>')
 @permission_required('admin')
-def competency_levels_detail(level_id: uuid):
+def competency_levels_detail(level_id: uuid.UUID):
     flask.g.level = db.get_level_details(level_id)
     flask.g.competencies = db.get_competencies_for_level(level_id)
     return flask.render_template('competency/levels-detail.html')

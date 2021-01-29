@@ -30,7 +30,7 @@
 
     <div class="row pt-3 text-light">
 
-        <div class="col-12 col-sm-6">
+        <div class="col-12 col-sm-6 pb-4">
             <h2 class="mb-3">Levels</h2>
             <button type="button" class="btn btn-outline-success mb-3" data-toggle="modal" data-target="#modal-create-level">
                 <span class="oi oi-plus"></span>
@@ -38,8 +38,8 @@
             </button>
             <div class="list-group">
             {% for l in g.levels %}
-                <a class="list-group-item bg-dark border-light text-light text-decoration-none" href="{{ url_for('competency_levels_detail', level_id=l.id) }}"
-                   data-score="{{ l.score }}">
+                <a class="list-group-item bg-dark border-light text-light text-decoration-none"
+                   href="{{ url_for('competency_levels_detail', level_id=l.id) }}" data-score="{{ l.score }}">
                     <h5>{{ l.score }} / {{ l.title }}</h5>
                 </a>
             {% endfor %}
@@ -54,9 +54,10 @@
             </button>
             <div class="list-group">
             {% for c in g.competencies | sort(attribute='name') %}
-                <a class="list-group-item bg-dark border-light text-light text-decoration-none">
+                <a class="list-group-item bg-dark border-light text-light text-decoration-none"
+                   href="{{ url_for('competency_competencies_detail', competency_id=c.id) }}">
                     <h5>{{ c.name }}</h5>
-                    <p>{{ c.definition }}</p>
+                    {{ c.definition }}
                 </a>
             {% endfor %}
             </div>
