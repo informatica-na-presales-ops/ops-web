@@ -1,0 +1,8 @@
+{
+    "extensions": [
+        "ms-python.python"
+    ],
+    "image": "ghcr.io/informatica-na-presales-ops/ops-web:latest",
+    "name": "ops-web",
+    "postAttachCommand": ".devcontainer/post-attach-command.sh"
+}
