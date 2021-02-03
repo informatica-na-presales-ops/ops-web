@@ -368,6 +368,7 @@ def az_launch():
 @login_required
 def competency():
     flask.g.employees = db.get_subordinates(flask.g.email)
+    flask.g.tracks = db.get_all_tracks()
     return flask.render_template('competency/index.html')
 
 
@@ -585,6 +586,13 @@ def competency_scoring_employee(employee_id: str):
 def competency_tracks():
     flask.g.tracks = db.get_all_tracks()
     return flask.render_template('competency/tracks.html')
+
+
+@app.route('/competency/tracks/choose', methods=['POST'])
+@login_required
+def competency_tracks_choose():
+    employee_id = flask.request.values.get('employee-id')
+    return flask.redirect(flask.url_for('competency_scoring_employee', employee_id=employee_id))
 
 
 @app.route('/competency/tracks/create', methods=['POST'])
