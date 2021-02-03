@@ -1,8 +1,12 @@
 {
     "extensions": [
+        "ckolkman.vscode-postgres",
         "ms-python.python"
     ],
     "image": "ghcr.io/informatica-na-presales-ops/ops-web:latest",
     "name": "ops-web",
-    "postAttachCommand": ".devcontainer/post-attach-command.sh"
+    "postAttachCommand": ".devcontainer/post-attach-command.sh",
+    "settings": {
+        "python.pythonPath": "/usr/local/bin/python"
+    }
 }
