@@ -30,11 +30,13 @@ import werkzeug.middleware.proxy_fix
 import whitenoise
 import xlsxwriter
 
+log = logging.getLogger('ops_web')
+
 config = ops_web.config.Config()
 db = ops_web.db.Database(config)
 scheduler = apscheduler.schedulers.background.BackgroundScheduler(job_defaults={'misfire_grace_time': 900})
 
-app = flask.Flask(__name__)
+app = flask.Flask('ops_web')
 app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_port=1)
 
 whitenoise_root = pathlib.Path(__file__).resolve().with_name('static')
@@ -51,24 +53,24 @@ app.config['SERVER_NAME'] = config.server_name
 if config.scheme == 'https':
     app.config['SESSION_COOKIE_SECURE'] = True
 
-md = markdown.Markdown()
-app.jinja_env.filters['markdown'] = lambda text: jinja2.Markup(md.convert(text))
 
+@app.template_filter(name='markdown')
+def convert_markdown(t: str):
+    md = markdown.Markdown()
+    return jinja2.Markup(md.convert(t))
 
+@app.template_filter(name='hms')
 def format_timedelta(t: datetime.timedelta) -> str:
     hours, remainder = divmod(t.total_seconds(), 3600)
     minutes, seconds = divmod(remainder, 60)
     return f'{int(hours):02}:{int(minutes):02}:{int(seconds):02}'
 
 
-app.jinja_env.filters['hms'] = format_timedelta
-
-
 def permission_required(permission: str):
     def decorator(f):
         @functools.wraps(f)
         def decorated_function(*args, **kwargs):
-            app.logger.debug(f'Checking permission for {flask.g.email}')
+            log.debug(f'Checking permission for {flask.g.email}')
             if flask.g.email is None:
                 flask.session['sign-in-target-url'] = flask.request.url
                 return flask.redirect(flask.url_for('sign_in'))
@@ -85,7 +87,7 @@ def permission_required(permission: str):
 def login_required(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
-        app.logger.debug(f'Checking login, flask.g.email: {flask.g.email}')
+        log.debug(f'Checking login, flask.g.email: {flask.g.email}')
         if flask.g.email is None:
             flask.session['sign-in-target-url'] = flask.request.url
             return flask.redirect(flask.url_for('sign_in'))
@@ -96,7 +98,7 @@ def login_required(f):
 
 @app.before_request
 def log_request():
-    app.logger.debug(f'{flask.request.method} {flask.request.path}')
+    log.debug(f'{flask.request.method} {flask.request.path}')
 
 
 @app.before_request
@@ -149,7 +151,7 @@ def admin_cloud_credentials_delete():
 @permission_required('admin')
 def admin_cloud_credentials_edit():
     params = flask.request.values.to_dict()
-    app.logger.debug(params)
+    log.debug(params)
     cred_id = params.get('id')
     if cred_id:
         if 'set-password' not in params:
@@ -295,21 +297,21 @@ def audit_log():
 @app.route('/authorize', methods=['POST'])
 def authorize():
     for key, value in flask.request.values.items():
-        app.logger.debug(f'{key}: {value}')
+        log.debug(f'{key}: {value}')
     id_token = flask.request.values.get('id_token')
     claim = jwt.decode(id_token, verify=False, algorithms='RS256')
-    app.logger.debug(claim)
+    log.debug(claim)
     state = flask.request.values.get('state')
     if state is None or state != flask.session.get('state'):
-        app.logger.info('Authorization failure due to state mismatch')
+        log.info('Authorization failure due to state mismatch')
         return flask.redirect(flask.url_for('index'))
     flask.session.pop('state')
 
     email = claim.get('email').lower()
     flask.session['email'] = email
-    app.logger.info(f'Successful sign in for {email}')
+    log.info(f'Successful sign in for {email}')
     target = flask.session.pop('sign-in-target-url', flask.url_for('index'))
-    app.logger.debug(f'sign-in-target-url: {target}')
+    log.debug(f'sign-in-target-url: {target}')
     return flask.redirect(target)
 
 
@@ -317,7 +319,7 @@ def authorize():
 @login_required
 def az_launch():
     cdwversion = flask.request.values.get("cdwversion")
-    app.logger.info(cdwversion)
+    log.info(cdwversion)
     quantity = flask.request.values.get('count')
     name = flask.request.values.get('name')
     owner = flask.request.values.get('owner').lower()
@@ -350,15 +352,15 @@ def az_launch():
 
             az_idlist.append(windows_result)
             az_idlist.append(infa_result)
-            app.logger.info(az_idlist)
+            log.info(az_idlist)
             for i in az_idlist:
                 virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
                 instance_info.append(virtualmachine_info)
                 idlist.append(virtualmachine_info['id'])
                 virtualmachine_info['account_id'] = account.get('id')
                 db.add_machine(virtualmachine_info)
-            app.logger.info(idlist)
-            app.logger.info(instance_info)
+            log.info(idlist)
+            log.info(instance_info)
         return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
 
 
@@ -458,7 +460,7 @@ def competency_levels_update():
 @permission_required('admin')
 def competency_levels_update_competencies():
     level_id = flask.request.values.get('id')
-    app.logger.debug(flask.request.values.to_dict())
+    log.debug(flask.request.values.to_dict())
     for c in db.get_competencies_for_level(level_id):
         competency_id = c.get('id')
         description = flask.request.values.get(f'{competency_id}/description')
@@ -538,7 +540,7 @@ def competency_scoring():
 @login_required
 def competency_scoring_add():
     for name, value in flask.request.values.lists():
-        app.logger.debug(f'{name}: {value}')
+        log.debug(f'{name}: {value}')
     if 'sc-employee-id' in flask.request.values:
         sc_employee_id = flask.request.values.get('sc-employee-id')
         params = {
@@ -630,8 +632,8 @@ def ecosystem_certification():
 @app.route('/ecosystem-certification/add', methods=['POST'])
 @login_required
 def ecosystem_certification_add():
-    app.logger.debug(f'Adding a new ecosystem certification for {flask.g.email}')
-    app.logger.debug(list(flask.request.values.items()))
+    log.debug(f'Adding a new ecosystem certification for {flask.g.email}')
+    log.debug(list(flask.request.values.items()))
     ecosystem = flask.request.values.get('ecosystem')
     title = flask.request.values.get('title')
     params = {
@@ -742,7 +744,7 @@ def environments():
 @app.route('/environments/<environment>')
 @login_required
 def environment_detail(environment):
-    app.logger.debug(f'Getting information for environment {environment!r}')
+    log.debug(f'Getting information for environment {environment!r}')
     flask.g.environment = environment
     _machines = db.get_machines_for_env(flask.g.email, environment)
     flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
@@ -762,7 +764,7 @@ def environment_detail(environment):
 @app.route('/environments/<environment>/delete', methods=['POST'])
 @login_required
 def environment_delete(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to delete machines in environment {environment!r}')
+    log.info(f'Got a request from {flask.g.email} to delete machines in environment {environment!r}')
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
@@ -775,16 +777,16 @@ def environment_delete(environment):
                 db.set_machine_state(machine_id, 'terminating')
                 scheduler.add_job(delete_machine, args=[machine_id])
         else:
-            app.logger.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
+            log.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/environments/<environment>/start', methods=['POST'])
 @login_required
 def environment_start(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to start machines in environment {environment!r}')
+    log.info(f'Got a request from {flask.g.email} to start machines in environment {environment!r}')
     machines = db.get_machines_for_env(flask.g.email, environment)
-    app.logger.info(machines)
+    log.info(machines)
     for machine in machines:
         machine_id = machine.get('id')
         if machine.get('can_control'):
@@ -796,14 +798,14 @@ def environment_start(environment):
             else:
                 scheduler.add_job(start_machine, args=[machine_id])
         else:
-            app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
+            log.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
 @app.route('/environments/<environment>/stop', methods=['POST'])
 @login_required
 def environment_stop(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to stop machines in environment {environment!r}')
+    log.info(f'Got a request from {flask.g.email} to stop machines in environment {environment!r}')
     machines = db.get_machines_for_env(flask.g.email, environment)
     for machine in machines:
         machine_id = machine.get('id')
@@ -817,7 +819,7 @@ def environment_stop(environment):
             else:
                 scheduler.add_job(stop_machine, args=[machine_id])
         else:
-            app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
+            log.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
 
 
@@ -825,11 +827,11 @@ def environment_stop(environment):
 @login_required
 def excel_sheet():
     idlist = flask.request.values.get('instance')
-    app.logger.info(idlist)
+    log.info(idlist)
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         idlist2 = aws.convert_instanceidstr_list(idlist)
-        app.logger.info(idlist2)
+        log.info(idlist2)
         instance_list = []
         valdir = {}
         for i in idlist2:
@@ -838,11 +840,11 @@ def excel_sheet():
             instance_name = instance_info['name']
             instance_ip = instance_info['public_ip']
 
-            app.logger.info(instance_name)
+            log.info(instance_name)
             if "Windows" in instance_name:
                 valdir[instance_name] = instance_ip
                 instance_list.append(valdir)
-            app.logger.info(valdir)
+            log.info(valdir)
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         worksheet = workbook.add_worksheet()
@@ -1086,7 +1088,7 @@ def images():
 @login_required
 def images_create():
     machine_id = flask.request.values.get('machine-id')
-    app.logger.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
+    log.info(f'Got a request from {flask.g.email} to create an image from {machine_id}')
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Create image from machine {machine_id}')
@@ -1099,7 +1101,7 @@ def images_create():
         application_env = flask.request.values.get('application-env', '')
         application_role = flask.request.values.get('application-role', '')
         if cloud == 'az':
-            app.logger.warning(f'Unable to create images for cloud {cloud}')
+            log.warning(f'Unable to create images for cloud {cloud}')
             environment = flask.request.values.get('environment')
             return flask.redirect(flask.url_for('environment_detail', environment=environment))
         elif cloud == 'aws':
@@ -1127,7 +1129,7 @@ def images_create():
             return flask.redirect(flask.url_for('images'))
         elif cloud == 'gcp':
             ops_web.gcp.create_machine_image(machine.get('name'), machine.get('region'), name)
-            app.logger.info(name)
+            log.info(name)
             params = {
                 'id': 'pending',
                 'cloud': cloud,
@@ -1145,7 +1147,7 @@ def images_create():
             return flask.redirect(flask.url_for('images'))
 
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to create an image from {machine_id}')
+        log.warning(f'{flask.g.email} does not have permission to create an image from {machine_id}')
         return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
@@ -1155,7 +1157,7 @@ def images_delete():
     settings: ops_web.db.Settings = flask.g.settings
     image_id = flask.request.values.get('image-id')
     next_view = flask.request.values.get('next-view')
-    app.logger.info(f'Got a request from {flask.g.email} to delete image {image_id}')
+    log.info(f'Got a request from {flask.g.email} to delete image {image_id}')
 
     image = db.get_image(image_id)
     if image is None:
@@ -1191,7 +1193,7 @@ def images_delete():
 @login_required
 def images_edit():
     image_id = flask.request.values.get('image-id')
-    app.logger.info(f'Got a request from {flask.g.email} to edit image {image_id}')
+    log.info(f'Got a request from {flask.g.email} to edit image {image_id}')
     image = db.get_image(image_id)
     if 'admin' in flask.g.permissions or image.get('owner') == flask.g.email:
         db.add_log_entry(flask.g.email, f'Update tags on image {image_id}')
@@ -1231,7 +1233,7 @@ def images_edit():
             az.update_image_tags(image_id, tags)
         flask.flash(f'Successfully updated image {image_name}', 'success')
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to edit {image_id}')
+        log.warning(f'{flask.g.email} does not have permission to edit {image_id}')
         flask.flash('You do not have permission to edit this image', 'danger')
     return flask.redirect(flask.url_for('images'))
 
@@ -1267,7 +1269,7 @@ def launch():
     env_role = flask.request.values.get('env')
     subnet = flask.request.values.get('subnet')
     whitelist = flask.request.values.get('whitelist')
-    app.logger.info(whitelist)
+    log.info(whitelist)
     region = 'us-west-2'
 
     infodict = {
@@ -1305,7 +1307,7 @@ def launch():
 @login_required
 def machine_create():
     image_id = flask.request.values.get('image-id')
-    app.logger.info(f'Got a request from {flask.g.email} to create machine from image {image_id}')
+    log.info(f'Got a request from {flask.g.email} to create machine from image {image_id}')
     image = db.get_image(image_id)
     if 'admin' in flask.g.permissions or image.get('public') or image.get('owner') == flask.g.email:
         db.add_log_entry(flask.g.email, f'Create machine from image {image_id}')
@@ -1361,7 +1363,7 @@ def machine_create():
                 elif vpc == 'PresalesDemo':
                     response = aws.create_instance(region, image_id, instance_id, name, owner, environment,
                                                    'presalesdemo')
-                    app.logger.info(response)
+                    log.info(response)
                     if response == 'Unsuccessful':
                         response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment,
                                                                     'presalesdemo')
@@ -1378,7 +1380,7 @@ def machine_create():
                     pass
 
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
+        log.warning(f'{flask.g.email} does not have permission to create machine from image {image_id}')
         return flask.redirect(flask.url_for('images'))
 
 
@@ -1386,7 +1388,7 @@ def machine_create():
 @login_required
 def launchmachine_default_specs():
     image_id = flask.request.values.get('image_id')
-    app.logger.info(image_id)
+    log.info(image_id)
     owner = flask.request.values.get('owner').lower()
     name = flask.request.values.get('name')
     region = flask.request.values.get('region')
@@ -1395,7 +1397,7 @@ def launchmachine_default_specs():
     for account in db.get_all_credentials_for_use('aws'):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         response = aws.create_instance_defaultspecs(region, image_id, name, owner, environment, 'default')
-        app.logger.info(response[0])
+        log.info(response[0])
         instance = aws.get_single_instance(region, response[0].id)
         instance['account_id'] = account.get('id')
         db.add_machine(instance)
@@ -1406,7 +1408,7 @@ def launchmachine_default_specs():
 @login_required
 def machine_delete():
     machine_id = flask.request.values.get('machine-id')
-    app.logger.info(f'Got a request from {flask.g.email} to delete machine {machine_id}')
+    log.info(f'Got a request from {flask.g.email} to delete machine {machine_id}')
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_modify'):
         cloud = machine.get('cloud')
@@ -1417,7 +1419,7 @@ def machine_delete():
             db.set_machine_state(machine_id, 'terminating')
             scheduler.add_job(delete_machine, args=[machine_id])
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
+        log.warning(f'{flask.g.email} does not have permission to delete machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
@@ -1425,7 +1427,7 @@ def machine_delete():
 @login_required
 def machine_edit():
     machine_id = flask.request.values.get('machine-id')
-    app.logger.info(f'Got a request from {flask.g.email} to edit machine {machine_id}')
+    log.info(f'Got a request from {flask.g.email} to edit machine {machine_id}')
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_modify'):
         db.add_log_entry(flask.g.email, f'Update tags on machine {machine_id}')
@@ -1442,7 +1444,7 @@ def machine_edit():
             'dns_names': flask.request.values.get('dns-names')
         })
         cloud = machine.get('cloud')
-        app.logger.info(cloud)
+        log.info(cloud)
         if cloud == 'gcp':
             contributor_tag = flask.request.values.get('contributors').replace("@informatica.com", '-')
             contributor = contributor_tag.replace(' ', '')
@@ -1485,7 +1487,7 @@ def machine_edit():
             zone = machine.get('region')
             ops_web.gcp.update_machine_tags(machine_id, zone, tags)
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to edit machine {machine_id}')
+        log.warning(f'{flask.g.email} does not have permission to edit machine {machine_id}')
     environment = flask.request.values.get('environment')
     if environment:
         return flask.redirect(flask.url_for('environment_detail', environment=environment))
@@ -1496,14 +1498,14 @@ def machine_edit():
 @login_required
 def machine_start():
     machine_id = flask.request.values.get('machine-id')
-    app.logger.info(f'Got a request from {flask.g.email} to start machine {machine_id}')
+    log.info(f'Got a request from {flask.g.email} to start machine {machine_id}')
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_control'):
         db.add_log_entry(flask.g.email, f'Start machine {machine_id}')
         db.set_machine_state(machine_id, 'starting')
         scheduler.add_job(start_machine, args=[machine_id])
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
+        log.warning(f'{flask.g.email} does not have permission to start machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
@@ -1511,14 +1513,14 @@ def machine_start():
 @login_required
 def machine_stop():
     machine_id = flask.request.values.get('machine-id')
-    app.logger.info(f'Got a request from {flask.g.email} to stop machine {machine_id}')
+    log.info(f'Got a request from {flask.g.email} to stop machine {machine_id}')
     machine = db.get_machine(machine_id, flask.g.email)
     if machine.get('can_control'):
         db.add_log_entry(flask.g.email, f'Stop machine {machine_id}')
         db.set_machine_state(machine_id, 'stopping')
         scheduler.add_job(stop_machine, args=[machine_id])
     else:
-        app.logger.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
+        log.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=machine.get('env_group')))
 
 
@@ -1554,7 +1556,7 @@ def op_debrief_configure():
 @permission_required('survey-admin')
 def op_debrief_configure_roles():
     selected_roles = flask.request.values.getlist('selected-roles')
-    app.logger.debug(f'Selected roles: {selected_roles}')
+    log.debug(f'Selected roles: {selected_roles}')
     db.update_roles(selected_roles)
     return flask.redirect(flask.url_for('op_debrief_configure'))
 
@@ -1575,7 +1577,7 @@ def op_debrief_survey(survey_id: uuid.UUID):
             return flask.render_template('op-debrief/survey.html')
         elif flask.request.method == 'POST':
             for k, v in flask.request.form.lists():
-                app.logger.debug(f'{k}: {v}')
+                log.debug(f'{k}: {v}')
             params = ops_web.op_debrief_surveys.convert_form_to_record(flask.request.form)
             params['survey_id'] = survey_id
             params['completed'] = datetime.datetime.utcnow()
@@ -1621,7 +1623,7 @@ def sap_access():
 @app.route('/sap_access/<environment>')
 @login_required
 def sap_access_detail(environment):
-    app.logger.debug(f'Getting information for environment {environment!r}')
+    log.debug(f'Getting information for environment {environment!r}')
     flask.g.environment = environment
     _machines = db.get_machines_for_env(flask.g.email, environment)
     flask.g.machines = ops_web.util.human_time.add_running_time_human(_machines)
@@ -1633,17 +1635,17 @@ def sap_access_detail(environment):
 @app.route('/sap_access/<environment>/attach_sap_sg', methods=['GET', 'POST'])
 @login_required
 def attach_sap_sg(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
+    log.info(f'Got a request from {flask.g.email} to give SAP access to {environment}')
     machines = db.get_machines_for_env(flask.g.email, environment)
     final_result = []
     for machine in machines:
-        app.logger.info(machine.get('id'))
+        log.info(machine.get('id'))
         region = machine.get('region')
         machine_id = machine.get('id')
         vpc = machine.get('vpc')
         account = db.get_one_credential_for_use(machine.get('account_id'))
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        app.logger.info(machine_id)
+        log.info(machine_id)
         result = aws.add_sap_sg(region, machine_id, vpc)
         final_result.append(result)
     if all(c == 'Successful' for c in final_result):
@@ -1657,7 +1659,7 @@ def attach_sap_sg(environment):
 @app.route('/sap_access/<environment>/detach_sap_sg', methods=['GET', 'POST'])
 @login_required
 def detach_sap_sg(environment):
-    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
+    log.info(f'Got a request from {flask.g.email} to remove SAP access from {environment}')
     machines = db.get_machines_for_env(flask.g.email, environment)
     final_result = []
     for machine in machines:
@@ -1666,7 +1668,7 @@ def detach_sap_sg(environment):
         vpc = machine.get('vpc')
         account = db.get_one_credential_for_use(machine.get('account_id'))
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        app.logger.info(machine_id)
+        log.info(machine_id)
         result = aws.remove_sap_sg(region, machine_id, vpc)
         final_result.append(result)
     if all(c == 'Successful' for c in final_result):
@@ -1682,7 +1684,7 @@ def detach_sap_sg(environment):
 def attach_sap_sg_machine():
     machine_id = flask.request.values.get('machine-id')
     environment = flask.request.values.get('environment')
-    app.logger.info(f'Got a request from {flask.g.email} to give SAP access to {machine_id}')
+    log.info(f'Got a request from {flask.g.email} to give SAP access to {machine_id}')
     machine = db.get_machine(machine_id, flask.g.email)
     region = machine.get('region')
     vpc = machine.get('vpc')
@@ -1701,7 +1703,7 @@ def attach_sap_sg_machine():
 def detach_sap_sg_machine():
     machine_id = flask.request.values.get('machine-id')
     environment = flask.request.values.get('environment')
-    app.logger.info(f'Got a request from {flask.g.email} to remove SAP access from {machine_id}')
+    log.info(f'Got a request from {flask.g.email} to remove SAP access from {machine_id}')
     machine_id = flask.request.values.get('machine-id')
     machine = db.get_machine(machine_id, flask.g.email)
     region = machine.get('region')
@@ -1709,7 +1711,7 @@ def detach_sap_sg_machine():
     vpc = machine.get('vpc')
     account = db.get_one_credential_for_use(machine.get('account_id'))
     aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-    app.logger.info(machine_id)
+    log.info(machine_id)
     result = aws.remove_sap_sg(region, machine_id, vpc)
     if result == "Successful":
         return flask.redirect(flask.url_for('sap_access_detail', environment=environment))
@@ -1751,7 +1753,7 @@ def sc_assignments_sales_reps():
 def sc_assignments_sales_reps_edit():
     territory_name = flask.request.values.get('territory_name')
     sc_employee_id = flask.request.values.get('sc_employee_id')
-    app.logger.debug(f'sc assignment territory: {territory_name}, employee_id: {sc_employee_id}')
+    log.debug(f'sc assignment territory: {territory_name}, employee_id: {sc_employee_id}')
     db.add_log_entry(flask.g.email, f'Update SC assignment to sales rep: {territory_name} / {sc_employee_id}')
     if sc_employee_id == 'none':
         sc_employee_id = None
@@ -1805,7 +1807,7 @@ def seas_request():
 @app.route('/seas/request/submit', methods=['POST'])
 @login_required
 def seas_request_submit():
-    app.logger.debug(flask.request.values.to_dict())
+    log.debug(flask.request.values.to_dict())
     tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
     scheduler.add_job(ops_web.tasks.create_zendesk_ticket_seas, args=[tc, flask.g.email, flask.request.values])
     flask.flash('Thank you for submitting this request', 'success')
@@ -1846,7 +1848,7 @@ def security_groups_add_rule():
         flask.flash(f'You can\'t add this internal IP address: {ip}', 'danger')
         return redir
 
-    app.logger.info(f'Adding IP address {ip} to {sg_id}')
+    log.info(f'Adding IP address {ip} to {sg_id}')
     db.add_log_entry(flask.g.email, f'Add IP address {ip} to {sg_id}')
     sg = db.get_security_group(sg_id)
     account = db.get_one_credential_for_use(sg.get('account_id'))
@@ -1878,7 +1880,7 @@ def security_groups_delete_rule():
         flask.flash('You do not have permission to modify this security group.', 'danger')
         return redir
 
-    app.logger.debug(f'Removing IP address range {ip_range} from {group_id}')
+    log.debug(f'Removing IP address range {ip_range} from {group_id}')
     security_group = db.get_security_group(group_id)
     account = db.get_one_credential_for_use(security_group.get('account_id'))
     aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
@@ -1894,7 +1896,7 @@ def sign_in():
     nonce = str(uuid.uuid4())
     flask.session['nonce'] = nonce
     redirect_uri = flask.url_for('authorize', _external=True)
-    app.logger.debug(f'redirect_uri: {redirect_uri}')
+    log.debug(f'redirect_uri: {redirect_uri}')
     query = {
         'client_id': config.az_client_id,
         'nonce': nonce,
@@ -1905,7 +1907,7 @@ def sign_in():
         'state': state,
     }
     authorization_url = f'{config.az_auth_endpoint}?{urllib.parse.urlencode(query)}'
-    app.logger.debug(f'Redirecting to {authorization_url}')
+    log.debug(f'Redirecting to {authorization_url}')
     return flask.redirect(authorization_url, 307)
 
 
@@ -1962,7 +1964,7 @@ def synchosts():
 @app.route('/synchosts_az', methods=['GET', 'POST'])
 @login_required
 def synchosts_az():
-    app.logger.info("entered in for updating hosts")
+    log.info("entered in for updating hosts")
     idliststr = flask.request.values.get('instance')
     instance_info = flask.request.values.get('instance_info')
     id_list = idliststr
@@ -1973,17 +1975,17 @@ def synchosts_az():
     id_list6 = id_list5.replace("\'", "")
     id_list8 = id_list6.replace(' ', '')
     id_list7 = id_list8.split(',')
-    app.logger.info(instance_info)
+    log.info(instance_info)
     instance_info2 = []
     for account in db.get_all_credentials_for_use('az'):
         az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
                                  account.get('azure_tenant_id'))
-        app.logger.info(idliststr)
+        log.info(idliststr)
         if '104' in idliststr:
-            app.logger.info("found new cdw image")
-            result = az.sync_hosts_104(idliststr)
+            log.info("found new cdw image")
+            az.sync_hosts_104(idliststr)
         else:
-            result = az.sync_hosts(idliststr)
+            az.sync_hosts(idliststr)
         for i in id_list7:
             i = "'" + i + "'"
             instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
@@ -2053,7 +2055,7 @@ def wscreator():
 @login_required
 def wsimage():
     ws = flask.request.values.get("ws")
-    app.logger.info(ws)
+    log.info(ws)
     if (ws != 'CDW-AZ' and ws != 'CDW104-AZ'):
         for account in db.get_all_credentials_for_use('aws'):
             aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
@@ -2065,14 +2067,14 @@ def wsimage():
                 wsidlist.append(i['id'])
         return flask.render_template('ws_creator.html', ws2=ws, ws=wslist, id=wsidlist)
     else:
-        app.logger.info("entered in ops-web")
-        app.logger.info(ws)
+        log.info("entered in ops-web")
+        log.info(ws)
         return flask.render_template('ws_creator.html', ws2=ws, ws=['ami1'])
 
 
 def delete_machine(machine_id):
     apm.client.begin_transaction('task')
-    app.logger.info(f'Attempting to delete machine {machine_id}')
+    log.info(f'Attempting to delete machine {machine_id}')
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
     account = db.get_one_credential_for_use(machine.get('account_id'))
@@ -2091,7 +2093,7 @@ def delete_machine(machine_id):
 
 def start_machine(machine_id):
     apm.client.begin_transaction('task')
-    app.logger.info(f'Attempting to start machine {machine_id}')
+    log.info(f'Attempting to start machine {machine_id}')
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
     account = db.get_one_credential_for_use(machine.get('account_id'))
@@ -2099,9 +2101,9 @@ def start_machine(machine_id):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         region = machine.get('region')
         instance = aws.start_machine(region, machine_id)
-        app.logger.debug(f'Waiting for {machine_id} to be running')
+        log.debug(f'Waiting for {machine_id} to be running')
         instance.wait_until_running()
-        app.logger.debug(f'{machine_id} is now running')
+        log.debug(f'{machine_id} is now running')
         db.set_machine_state(machine_id, 'running')
         db.set_machine_public_ip(machine_id, instance.public_ip_address)
         db.set_machine_created(machine_id, instance.launch_time)
@@ -2118,7 +2120,7 @@ def start_machine(machine_id):
 
 def stop_machine(machine_id):
     apm.client.begin_transaction('task')
-    app.logger.info(f'Attempting to stop machine {machine_id}')
+    log.info(f'Attempting to stop machine {machine_id}')
     machine = db.get_machine(machine_id)
     cloud = machine.get('cloud')
     account = db.get_one_credential_for_use(machine.get('account_id'))
@@ -2126,9 +2128,9 @@ def stop_machine(machine_id):
         aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
         region = machine.get('region')
         instance = aws.stop_machine(region, machine_id)
-        app.logger.debug(f'Waiting for {machine_id} to be stopped')
+        log.debug(f'Waiting for {machine_id} to be stopped')
         instance.wait_until_stopped()
-        app.logger.debug(f'{machine_id} is now stopped')
+        log.debug(f'{machine_id} is now stopped')
         db.set_machine_state(machine_id, 'stopped')
         db.set_machine_public_ip(machine_id, instance.public_ip_address)
         db.set_machine_created(machine_id, instance.launch_time)
@@ -2145,24 +2147,24 @@ def stop_machine(machine_id):
 
 def check_sync():
     apm.client.begin_transaction('task')
-    app.logger.debug('Checking for a stuck sync ...')
+    log.debug('Checking for a stuck sync ...')
     sync_data = db.get_sync_data()
     if sync_data['syncing_now']:
         now = datetime.datetime.utcnow()
         duration = now - sync_data['last_sync_start']
         if duration > datetime.timedelta(minutes=config.auto_sync_max_duration):
-            app.logger.warning(f'Sync has been running for {duration}, aborting now ...')
+            log.warning(f'Sync has been running for {duration}, aborting now ...')
             db.end_sync()
     apm.client.end_transaction('check-sync')
 
 
 def sync_machines():
     apm.client.begin_transaction('task')
-    app.logger.info('Syncing information from cloud providers now ...')
+    log.info('Syncing information from cloud providers now ...')
 
     sync_data = db.get_sync_data()
     if sync_data['syncing_now']:
-        app.logger.warning('Aborting because there is another sync happening right now')
+        log.warning('Aborting because there is another sync happening right now')
         return
 
     db.start_sync()
@@ -2187,12 +2189,12 @@ def sync_machines():
                     db.add_image(image)
             except Exception as e:
                 apm.capture_exception()
-                app.logger.exception(e)
+                log.exception(e)
         db.post_sync('aws')
         tc = ops_web.tasks.TaskContext(app, apm.client, config, db)
         scheduler.add_job(ops_web.tasks.update_termination_protection, args=[tc])
     else:
-        app.logger.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')
+        log.info(f'Skipping AWS because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     aws_duration = datetime.datetime.utcnow() - aws_start
 
     az_start = datetime.datetime.utcnow()
@@ -2211,7 +2213,7 @@ def sync_machines():
                 db.add_image(image)
         db.post_sync('az')
     else:
-        app.logger.info(f'Skipping Azure because CLOUDS_TO_SYNC={config.clouds_to_sync}')
+        log.info(f'Skipping Azure because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     az_duration = datetime.datetime.utcnow() - az_start
 
     gcp_start = datetime.datetime.utcnow()
@@ -2232,18 +2234,18 @@ def sync_machines():
         #     db.add_image(image)
         db.post_sync('gcp')
     else:
-        app.logger.info(f'Skipping GCP because CLOUDS_TO_SYNC={config.clouds_to_sync}')
+        log.info(f'Skipping GCP because CLOUDS_TO_SYNC={config.clouds_to_sync}')
     gcp_duration = datetime.datetime.utcnow() - gcp_start
 
     sync_duration = datetime.datetime.utcnow() - sync_start
-    app.logger.info(f'Done syncing virtual machines / '
+    log.info(f'Done syncing virtual machines / '
                     f'AWS {aws_duration} / Azure {az_duration} / GCP {gcp_duration} / total {sync_duration}')
     db.end_sync()
     apm.client.end_transaction('sync-machines')
 
 
 def run_tasks():
-    app.logger.debug('Checking for tasks to run...')
+    log.debug('Checking for tasks to run...')
 
     tasks = {
         'check-for-images-to-delete': {
@@ -2285,15 +2287,15 @@ def run_tasks():
 
 def main():
     logging.basicConfig(format=config.log_format, level='DEBUG', stream=sys.stdout)
-    app.logger.debug(f'ops-web {config.version}')
+    log.debug(f'ops-web {config.version}')
     if not config.log_level == 'DEBUG':
-        app.logger.debug(f'Changing log level to {config.log_level}')
+        log.debug(f'Changing log level to {config.log_level}')
     logging.getLogger().setLevel(config.log_level)
     for logger, level in config.other_log_levels.items():
-        app.logger.debug(f'Changing log level for {logger} to {level}')
+        log.debug(f'Changing log level for {logger} to {level}')
         logging.getLogger(logger).setLevel(level)
 
-    app.logger.info(f'The following feature flags are set: {config.feature_flags}')
+    log.info(f'The following feature flags are set: {config.feature_flags}')
 
     if config.reset_database:
         db.reset()
@@ -2303,14 +2305,14 @@ def main():
 
     scheduler.start()
 
-    app.logger.info(f'RUNNER: {config.runner}')
+    log.info(f'RUNNER: {config.runner}')
     if config.runner:
         sync_data = db.get_sync_data()
         if sync_data['syncing_now']:
-            app.logger.warning('A previous sync task was aborted, cleaning up ...')
+            log.warning('A previous sync task was aborted, cleaning up ...')
             db.end_sync()
 
-        app.logger.info(f'AUTO_SYNC: {config.auto_sync}')
+        log.info(f'AUTO_SYNC: {config.auto_sync}')
         if config.auto_sync:
             scheduler.add_job(sync_machines, 'interval', minutes=config.auto_sync_interval)
             scheduler.add_job(sync_machines)
