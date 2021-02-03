@@ -48,7 +48,9 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <a class="btn btn-sm btn-outline-light {{ 'disabled' if not e.track_id }}"
-                                   href="{{ url_for('competency_scoring_employee', employee_id=e.employee_id) }}"></a>
+                                   href="{{ url_for('competency_scoring_employee', employee_id=e.employee_id) }}">
+                                    <span class="oi oi-arrow-thick-right"></span>
+                                </a>
                                 <button type="button" class="btn btn-sm btn-outline-light" title="Choose a track"
                                         data-toggle="modal" data-target="#modal-choose-track"
                                         data-employee-id="{{ e.employee_id }}" data-employee-name="{{ e.employee_name }}"
@@ -84,7 +86,8 @@
                         <input type="hidden" id="employee-id" name="employee-id">
                         {% for t in g.tracks %}
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="radio-{{ t.id }}" name="track-id" value="{{ t.id }}" class="custom-control-input" required>
+                                <input type="radio" id="radio-{{ t.id }}" name="track-id" value="{{ t.id }}"
+                                       class="custom-control-input" autocomplete="off" required>
                                 <label class="custom-control-label" for="radio-{{ t.id }}">{{ t.name }}</label>
                             </div>
                         {% endfor %}
@@ -102,5 +105,5 @@
 
 {% block end_of_body %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='data-href-clickable.js') }}"></script>
+    <script src="{{ url_for('static', filename='competency/index.js') }}"></script>
 {% endblock %}
