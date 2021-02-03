@@ -514,6 +514,12 @@ def competency_planning_save():
 
 
 
+@app.route('/competency/planning/<employee_id>')
+@login_required
+def competency_planning_employee(employee_id: str):
+    return f'OK {employee_id}'
+
+
 @app.route('/sc-competency')
 @app.route('/sc-competency/scoring')
 def sc_competency_redirect():
@@ -559,7 +565,17 @@ def competency_scoring_add():
 @app.route('/competency/scoring/<employee_id>')
 @login_required
 def competency_scoring_employee(employee_id: str):
-    return f'OK {employee_id}'
+    flask.g.subordinates = db.get_subordinates(flask.g.email)
+    for s in flask.g.subordinates:
+        if s.get('employee_id') == employee_id:
+            flask.g.employee = s
+            track_id = s.get('track_id')
+            if track_id is None:
+                return flask.render_template('competency/choose-track.html')
+            flask.g.competencies = db.get_track_competencies(track_id)
+            flask.g.levels = db.get_track_levels(track_id)
+            return flask.render_template('competency/scoring-new.html')
+    return flask.redirect(flask.url_for('competency'))
 
 
 @app.route('/competency/tracks')

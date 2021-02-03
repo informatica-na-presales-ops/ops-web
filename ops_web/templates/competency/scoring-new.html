@@ -1,0 +1,42 @@
+{% extends 'index.html' %}
+
+{% block breadcrumb %}
+    <a class="btn btn-outline-light" href="{{ url_for('competency') }}">
+        <span class="oi oi-chevron-left"></span>
+        <strong>Competency</strong>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row pt-3 text-light">
+        <div class="col-4 col-xl-3">
+            <h1 class="mb-4">Competency</h1>
+
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('competency_scoring_employee') }}">Scoring</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="{{ url_for('competency_planning_employee') }}">Planning</a>
+                </li>
+            </ul>
+
+            <form class="form-inline mb-3" id="form" method="post">
+                <div class="form-group mb-2 mr-2">
+                    <label for="select-employee" class="sr-only">Choose an employee</label>
+                    <select class="custom-select" id="select-employee" name="employee-id" required>
+                    {% for e in g.subordinates | sort(attribute='employee_name') %}
+                        <option value="{{ e.employee_id }}" {{ 'selected' if e.employe_id == g.employee.employee_id }}>
+                            {{ e.employee_name }}
+                        </option>
+                    {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-outline-success mb-2 mr-2">Add score</button>
+            </form>
+            <div>
+                <p class="text font-italic">{{ g.employee.job_title }}</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

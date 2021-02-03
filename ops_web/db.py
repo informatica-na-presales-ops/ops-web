@@ -1033,12 +1033,20 @@ class Database(fort.PostgresDatabase):
                 from employees e
                 join subordinates s on s.employee_id = e.manager_id
             )
-            select employee_id, employee_name, employee_email, job_code, job_title, business_title
-            from subordinates
+            select
+                s.employee_id, employee_name, employee_email, job_code, job_title, business_title, t.id track_id,
+                t.name track_name
+            from subordinates s
+            left join competency_employee_track et on et.employee_id = s.employee_id
+            left join competency_tracks t on t.id = et.track_id
             where visible is true
         '''
         params = {'manager_email': manager_email}
         return self.q(sql, params)
+
+    # def get_employee_scores(self, employee_id: str):
+    #     sql = '''
+    #     '''
 
     ## competency tracks
 
@@ -2927,6 +2935,21 @@ class Database(fort.PostgresDatabase):
                     description text,
                     details text,
                     primary key (level_id, competency_id)
+                )
+            ''')
+            self.u('''
+                create table competency_employee_track (
+                    employee_id text primary key references employees,
+                    track_id uuid references competency_tracks on delete cascade
+                )
+            ''')
+            self.u('''
+                create table competency_employee_scores (
+                    id uuid primary key,
+                    employee_id text not null references employees,
+                    competency_id uuid not null references competency_competencies on delete cascade,
+                    timestamp timestamp not null,
+                    score integer not null
                 )
             ''')
             self.add_schema_version(63)

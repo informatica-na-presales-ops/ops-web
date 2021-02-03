@@ -33,6 +33,7 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Job title</th>
+                    <th>Track</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -42,6 +43,7 @@
                         <td>{{ e.employee_name }}</td>
                         <td>{{ e.employee_email }}</td>
                         <td>{{ e.job_title }}</td>
+                        <td>{{ e.track_name if e.track_name }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
