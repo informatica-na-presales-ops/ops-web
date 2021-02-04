@@ -551,6 +551,7 @@ class AWSClient:
             instance_tags['machine__environment_group'] = environment
 
             try:
+                log.debug(f'Trying to create an instance from {imageid}')
                 response = ec2.create_instances(
                     ImageId=imageid,
                     InstanceType=instance.instance_type,
@@ -571,6 +572,7 @@ class AWSClient:
                         }
                     ]
                 )
+                log.debug(response)
                 return response
             except:
                 return "launch_error"
