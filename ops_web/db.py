@@ -2882,77 +2882,77 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(62)
-        if self.version < 63:
-            self.log.info('Migrating to database schema version 63')
-            # noinspection SqlResolve
-            self.u('''
-                drop table competency_level_details;
-            ''')
-            self.u('''
-                alter table employees
-                add manager_id text
-            ''')
-            self.u('''
-                create table competency_competencies (
-                    id uuid primary key,
-                    track_id uuid not null references competency_tracks on delete cascade,
-                    name text not null,
-                    definition text
-                )
-            ''')
-            # noinspection SqlResolve
-            self.u('''
-                alter table competency_tracks
-                drop ta_description,
-                drop dk_description,
-                drop dq_description,
-                drop tc_description,
-                drop ls_description,
-                drop co_description,
-                drop pp_description,
-                drop ca_description,
-                drop at_description,
-                drop cc_description
-            ''')
-            # noinspection SqlResolve
-            self.u('''
-                alter table competency_levels
-                drop ta_description,
-                drop dk_description,
-                drop dq_description,
-                drop tc_description,
-                drop ls_description,
-                drop co_description,
-                drop pp_description,
-                drop ca_description,
-                drop at_description,
-                drop cc_description
-            ''')
-            self.u('''
-                create table competency_level_comp_details (
-                    level_id uuid references competency_levels on delete cascade,
-                    competency_id uuid references competency_competencies on delete cascade,
-                    description text,
-                    details text,
-                    primary key (level_id, competency_id)
-                )
-            ''')
-            self.u('''
-                create table competency_employee_track (
-                    employee_id text primary key references employees,
-                    track_id uuid references competency_tracks on delete cascade
-                )
-            ''')
-            self.u('''
-                create table competency_employee_scores (
-                    id uuid primary key,
-                    employee_id text not null references employees,
-                    competency_id uuid not null references competency_competencies on delete cascade,
-                    timestamp timestamp not null,
-                    score integer not null
-                )
-            ''')
-            self.add_schema_version(63)
+        # if self.version < 63:
+        #     self.log.info('Migrating to database schema version 63')
+        #     # noinspection SqlResolve
+        #     self.u('''
+        #         drop table competency_level_details;
+        #     ''')
+        #     self.u('''
+        #         alter table employees
+        #         add manager_id text
+        #     ''')
+        #     self.u('''
+        #         create table competency_competencies (
+        #             id uuid primary key,
+        #             track_id uuid not null references competency_tracks on delete cascade,
+        #             name text not null,
+        #             definition text
+        #         )
+        #     ''')
+        #     # noinspection SqlResolve
+        #     self.u('''
+        #         alter table competency_tracks
+        #         drop ta_description,
+        #         drop dk_description,
+        #         drop dq_description,
+        #         drop tc_description,
+        #         drop ls_description,
+        #         drop co_description,
+        #         drop pp_description,
+        #         drop ca_description,
+        #         drop at_description,
+        #         drop cc_description
+        #     ''')
+        #     # noinspection SqlResolve
+        #     self.u('''
+        #         alter table competency_levels
+        #         drop ta_description,
+        #         drop dk_description,
+        #         drop dq_description,
+        #         drop tc_description,
+        #         drop ls_description,
+        #         drop co_description,
+        #         drop pp_description,
+        #         drop ca_description,
+        #         drop at_description,
+        #         drop cc_description
+        #     ''')
+        #     self.u('''
+        #         create table competency_level_comp_details (
+        #             level_id uuid references competency_levels on delete cascade,
+        #             competency_id uuid references competency_competencies on delete cascade,
+        #             description text,
+        #             details text,
+        #             primary key (level_id, competency_id)
+        #         )
+        #     ''')
+        #     self.u('''
+        #         create table competency_employee_track (
+        #             employee_id text primary key references employees,
+        #             track_id uuid references competency_tracks on delete cascade
+        #         )
+        #     ''')
+        #     self.u('''
+        #         create table competency_employee_scores (
+        #             id uuid primary key,
+        #             employee_id text not null references employees,
+        #             competency_id uuid not null references competency_competencies on delete cascade,
+        #             timestamp timestamp not null,
+        #             score integer not null
+        #         )
+        #     ''')
+        #     self.add_schema_version(63)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
