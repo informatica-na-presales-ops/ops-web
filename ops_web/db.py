@@ -2821,7 +2821,7 @@ class Database(fort.PostgresDatabase):
             self.u('''
                 update settings
                 set setting_id = 'unity-support-group-id'
-                where postgres.public.settings.setting_id = 'monolith-support-group-id'
+                where setting_id = 'monolith-support-group-id'
             ''')
             self.add_schema_version(60)
         if self.version < 61:
