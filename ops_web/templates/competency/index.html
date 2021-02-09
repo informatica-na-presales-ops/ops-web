@@ -82,7 +82,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Choose a track for <span id="choose-track-employee-name">Subject Name Here</span>.</p>
-                    <form id="form-choose-track" method="post">
+                    <form id="form-choose-track" action="{{ url_for('competency_tracks_choose') }}" method="post">
                         <input type="hidden" id="employee-id" name="employee-id">
                         {% for t in g.tracks %}
                             <div class="custom-control custom-radio">

@@ -1,3 +1,4 @@
+import collections
 import datetime
 import decimal
 import fort
@@ -965,6 +966,28 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
+    def add_competency_scores(self, params_list: List):
+        sql = '''
+            insert into competency_employee_scores (id, employee_id, competency_id, timestamp, score)
+            values (%(id)s, %(employee_id)s, %(competency_id)s, %(timestamp)s, %(score)s)
+        '''
+        for params in params_list:
+            self.u(sql, params)
+
+    def get_competency_scores(self, employee_id: str):
+        sql = '''
+            select timestamp, competency_id, score
+            from competency_employee_scores
+            where employee_id = %(employee_id)s
+            and timestamp = (
+                select max(timestamp) from competency_employee_scores where employee_id = %(employee_id)s
+            )
+        '''
+        params = {
+            'employee_id': employee_id
+        }
+        return self.q(sql, params)
+
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
@@ -1044,6 +1067,17 @@ class Database(fort.PostgresDatabase):
         params = {'manager_email': manager_email}
         return self.q(sql, params)
 
+    def choose_track(self, employee_id: str, track_id: uuid.UUID):
+        sql = '''
+            insert into competency_employee_track (employee_id, track_id) values (%(employee_id)s, %(track_id)s)
+            on conflict (employee_id) do update set track_id = %(track_id)s
+        '''
+        params = {
+            'employee_id': employee_id,
+            'track_id': track_id
+        }
+        self.u(sql, params)
+
     # def get_employee_scores(self, employee_id: str):
     #     sql = '''
     #     '''
@@ -1100,6 +1134,24 @@ class Database(fort.PostgresDatabase):
             'id': track_id
         }
         return self.q_one(sql, params)
+
+    def get_level_comp_details_for_track(self, track_id: uuid.UUID):
+        sql = '''
+            select d.level_id, d.competency_id, d.description, d.details, l.track_id
+            from competency_level_comp_details d
+            join competency_levels l on l.id = d.level_id
+            where l.track_id = %(track_id)s
+        '''
+        params = {
+            'track_id': track_id
+        }
+        result = collections.defaultdict(dict)
+        for r in self.q(sql, params):
+            result[r.get('level_id')][r.get('competency_id')] = {
+                'description': r.get('description'),
+                'details':  r.get('details').splitlines()
+            }
+        return result
 
     ## competency competencies
 
@@ -2882,77 +2934,77 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(62)
-        # if self.version < 63:
-        #     self.log.info('Migrating to database schema version 63')
-        #     # noinspection SqlResolve
-        #     self.u('''
-        #         drop table competency_level_details;
-        #     ''')
-        #     self.u('''
-        #         alter table employees
-        #         add manager_id text
-        #     ''')
-        #     self.u('''
-        #         create table competency_competencies (
-        #             id uuid primary key,
-        #             track_id uuid not null references competency_tracks on delete cascade,
-        #             name text not null,
-        #             definition text
-        #         )
-        #     ''')
-        #     # noinspection SqlResolve
-        #     self.u('''
-        #         alter table competency_tracks
-        #         drop ta_description,
-        #         drop dk_description,
-        #         drop dq_description,
-        #         drop tc_description,
-        #         drop ls_description,
-        #         drop co_description,
-        #         drop pp_description,
-        #         drop ca_description,
-        #         drop at_description,
-        #         drop cc_description
-        #     ''')
-        #     # noinspection SqlResolve
-        #     self.u('''
-        #         alter table competency_levels
-        #         drop ta_description,
-        #         drop dk_description,
-        #         drop dq_description,
-        #         drop tc_description,
-        #         drop ls_description,
-        #         drop co_description,
-        #         drop pp_description,
-        #         drop ca_description,
-        #         drop at_description,
-        #         drop cc_description
-        #     ''')
-        #     self.u('''
-        #         create table competency_level_comp_details (
-        #             level_id uuid references competency_levels on delete cascade,
-        #             competency_id uuid references competency_competencies on delete cascade,
-        #             description text,
-        #             details text,
-        #             primary key (level_id, competency_id)
-        #         )
-        #     ''')
-        #     self.u('''
-        #         create table competency_employee_track (
-        #             employee_id text primary key references employees,
-        #             track_id uuid references competency_tracks on delete cascade
-        #         )
-        #     ''')
-        #     self.u('''
-        #         create table competency_employee_scores (
-        #             id uuid primary key,
-        #             employee_id text not null references employees,
-        #             competency_id uuid not null references competency_competencies on delete cascade,
-        #             timestamp timestamp not null,
-        #             score integer not null
-        #         )
-        #     ''')
-        #     self.add_schema_version(63)
+        if self.version < 63:
+            self.log.info('Migrating to database schema version 63')
+            # noinspection SqlResolve
+            self.u('''
+                drop table competency_level_details;
+            ''')
+            self.u('''
+                alter table employees
+                add manager_id text
+            ''')
+            self.u('''
+                create table competency_competencies (
+                    id uuid primary key,
+                    track_id uuid not null references competency_tracks on delete cascade,
+                    name text not null,
+                    definition text
+                )
+            ''')
+            # noinspection SqlResolve
+            self.u('''
+                alter table competency_tracks
+                drop ta_description,
+                drop dk_description,
+                drop dq_description,
+                drop tc_description,
+                drop ls_description,
+                drop co_description,
+                drop pp_description,
+                drop ca_description,
+                drop at_description,
+                drop cc_description
+            ''')
+            # noinspection SqlResolve
+            self.u('''
+                alter table competency_levels
+                drop ta_description,
+                drop dk_description,
+                drop dq_description,
+                drop tc_description,
+                drop ls_description,
+                drop co_description,
+                drop pp_description,
+                drop ca_description,
+                drop at_description,
+                drop cc_description
+            ''')
+            self.u('''
+                create table competency_level_comp_details (
+                    level_id uuid references competency_levels on delete cascade,
+                    competency_id uuid references competency_competencies on delete cascade,
+                    description text,
+                    details text,
+                    primary key (level_id, competency_id)
+                )
+            ''')
+            self.u('''
+                create table competency_employee_track (
+                    employee_id text primary key references employees,
+                    track_id uuid references competency_tracks on delete cascade
+                )
+            ''')
+            self.u('''
+                create table competency_employee_scores (
+                    id uuid primary key,
+                    employee_id text not null references employees,
+                    competency_id uuid not null references competency_competencies on delete cascade,
+                    timestamp timestamp not null,
+                    score integer not null
+                )
+            ''')
+            self.add_schema_version(63)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

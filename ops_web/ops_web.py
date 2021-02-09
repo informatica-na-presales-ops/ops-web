@@ -520,7 +520,20 @@ def competency_planning_save():
 @app.route('/competency/planning/<employee_id>')
 @login_required
 def competency_planning_employee(employee_id: str):
-    return f'OK {employee_id}'
+    flask.g.subordinates = db.get_subordinates(flask.g.email)
+    for s in flask.g.subordinates:
+        if s.get('employee_id') == employee_id:
+            flask.g.employee = s
+            track_id = s.get('track_id')
+            if track_id is None:
+                employee_name = s.get('employee_name')
+                flask.flash(f'Please choose a track for {employee_name} first.', 'success')
+                return flask.redirect(flask.url_for('competency'))
+            flask.g.competencies = db.get_track_competencies(track_id)
+            flask.g.levels = db.get_track_levels(track_id)
+            flask.g.level_comp_details = db.get_level_comp_details_for_track(track_id)
+            return flask.render_template('competency/planning-new.html')
+    return flask.redirect(flask.url_for('competency'))
 
 
 @app.route('/sc-competency')
@@ -535,6 +548,30 @@ def competency_scoring():
     flask.g.employees = db.get_employees_for_manager(flask.g.email)
     flask.g.competencies = ops_web.sc_competency.data.get('competencies')
     return flask.render_template('competency/scoring.html')
+
+
+@app.route('/competency/scoring/add/new', methods=['POST'])
+@login_required
+def competency_scoring_add_new():
+    for name, value in flask.request.values.lists():
+        log.debug(f'{name}: {value}')
+    employee_id = flask.request.values.get('employee-id')
+    subordinates = db.get_subordinates(flask.g.email)
+    for s in subordinates:
+        if s.get('employee_id') == employee_id:
+            now = datetime.datetime.utcnow()
+            new_scores = []
+            for name, value in flask.request.values.items():
+                if name.startswith('competency-'):
+                    new_scores.append({
+                        'id': uuid.uuid4(),
+                        'employee_id': employee_id,
+                        'competency_id': name[11:],
+                        'timestamp': now,
+                        'score': value
+                    })
+            db.add_competency_scores(new_scores)
+    return flask.redirect(flask.url_for('competency_scoring_employee', employee_id=employee_id))
 
 
 @app.route('/competency/scoring/add', methods=['POST'])
@@ -574,9 +611,19 @@ def competency_scoring_employee(employee_id: str):
             flask.g.employee = s
             track_id = s.get('track_id')
             if track_id is None:
-                return flask.render_template('competency/choose-track.html')
+                employee_name = s.get('employee_name')
+                flask.flash(f'Please choose a track for {employee_name} first.', 'success')
+                return flask.redirect(flask.url_for('competency'))
             flask.g.competencies = db.get_track_competencies(track_id)
             flask.g.levels = db.get_track_levels(track_id)
+            flask.g.level_comp_details = db.get_level_comp_details_for_track(track_id)
+            db_scores = db.get_competency_scores(employee_id)
+            if db_scores:
+                flask.g.score_timestamp = db_scores[0].get('timestamp')
+                flask.g.competency_scores = {r.get('competency_id'): r.get('score') for r in db_scores}
+            else:
+                flask.g.score_timestamp = None
+                flask.g.competency_scores = {}
             return flask.render_template('competency/scoring-new.html')
     return flask.redirect(flask.url_for('competency'))
 
@@ -592,6 +639,9 @@ def competency_tracks():
 @login_required
 def competency_tracks_choose():
     employee_id = flask.request.values.get('employee-id')
+    track_id = flask.request.values.get('track-id')
+    db.choose_track(employee_id, track_id)
+    db.add_log_entry(flask.g.email, f'Set competency track for {employee_id} to {track_id}')
     return flask.redirect(flask.url_for('competency_scoring_employee', employee_id=employee_id))
 
 
