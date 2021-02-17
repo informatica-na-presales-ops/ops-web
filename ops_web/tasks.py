@@ -50,6 +50,9 @@ def get_zendesk_user(email: str, settings: ops_web.db.Settings) -> int:
             'user': {
                 'email': email,
                 'name': email.split('@')[0],
+                'tags': [
+                    'user-created-by-ops-web'
+                ],
                 'verified': True
             }
         }
