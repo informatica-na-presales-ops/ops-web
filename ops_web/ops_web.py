@@ -516,6 +516,26 @@ def competency_planning_save():
     return flask.redirect(flask.url_for('competency_planning'))
 
 
+@app.route('/competency/planning/save/new', methods=['POST'])
+@login_required
+def competency_planning_save_new():
+    employee_id = flask.request.values.get('employee-id')
+    for name, value in flask.request.values.lists():
+        log.debug(f'{name}: {value}')
+    subordinates = db.get_subordinates(flask.g.email)
+    for s in subordinates:
+        if s.get('employee_id') == employee_id:
+            new_plans = []
+            for name, value in flask.request.values.items():
+                if name.startswith('plan-'):
+                    new_plans.append({
+                        'employee_id': employee_id,
+                        'competency_id': name[5:],
+                        'plan': value
+                    })
+            db.add_competency_plans(new_plans)
+    return flask.redirect(flask.url_for('competency_planning_employee', employee_id=employee_id))
+
 
 @app.route('/competency/planning/<employee_id>')
 @login_required
@@ -532,6 +552,8 @@ def competency_planning_employee(employee_id: str):
             flask.g.competencies = db.get_track_competencies(track_id)
             flask.g.levels = db.get_track_levels(track_id)
             flask.g.level_comp_details = db.get_level_comp_details_for_track(track_id)
+            db_plans = db.get_competency_plans(employee_id, track_id)
+            flask.g.competency_plans = {r.get('competency_id'): r.get('plan') for r in db_plans}
             return flask.render_template('competency/planning-new.html')
     return flask.redirect(flask.url_for('competency'))
 

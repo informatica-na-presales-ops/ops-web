@@ -988,6 +988,29 @@ class Database(fort.PostgresDatabase):
         }
         return self.q(sql, params)
 
+    def add_competency_plans(self, params_list: list[dict]):
+        sql = '''
+            insert into competency_employee_plans (employee_id, competency_id, plan)
+            values (%(employee_id)s, %(competency_id)s, %(plan)s)
+            on conflict (employee_id, competency_id) do update set plan = %(plan)s
+        '''
+        for params in params_list:
+            self.u(sql, params)
+
+    def get_competency_plans(self, employee_id: str, track_id: uuid.UUID):
+        sql = '''
+            select competency_id, plan
+            from competency_employee_plans p
+            join competency_competencies c on c.id = p.competency_id
+            where employee_id = %(employee_id)s
+            and track_id = %(track_id)s
+        '''
+        params = {
+            'employee_id': employee_id,
+            'track_id': track_id
+        }
+        return self.q(sql, params)
+
     def get_employees_for_manager(self, manager_email: str):
         sql = '''
             select
@@ -3002,6 +3025,14 @@ class Database(fort.PostgresDatabase):
                     competency_id uuid not null references competency_competencies on delete cascade,
                     timestamp timestamp not null,
                     score integer not null
+                )
+            ''')
+            self.u('''
+                create table competency_employee_plans (
+                    employee_id text not null references employees,
+                    competency_id uuid not null references competency_competencies on delete cascade,
+                    plan text,
+                    primary key (employee_id, competency_id)
                 )
             ''')
             self.add_schema_version(63)

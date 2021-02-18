@@ -25,7 +25,7 @@
                 </li>
             </ul>
 
-            <form class="form-inline mb-3" id="form" method="post">
+            <form class="form-inline mb-3" id="form" action="{{ url_for('competency_planning_save_new') }}" method="post">
                 <div class="form-group mb-2 mr-2">
                     <label for="select-employee" class="sr-only">Choose an employee</label>
                     <select class="custom-select" id="select-employee" name="employee-id" required>
@@ -86,7 +86,9 @@
                     <h4 class="pb-2">Progression plan</h4>
                     <div class="form-group">
                         <label for="plan-{{ c.id }}" class="sr-only">Progression plan</label>
-                        <textarea form="form" class="form-control" id="plan-{{ c.id }}" name="plan-{{ c.id }}" rows="10"></textarea>
+                        <textarea form="form" class="form-control" id="plan-{{ c.id }}" name="plan-{{ c.id }}" rows="10">
+                            {{- g.competency_plans[c.id] -}}
+                        </textarea>
                     </div>
                 </div>
             {% endfor %}
