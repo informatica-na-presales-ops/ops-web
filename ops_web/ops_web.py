@@ -621,7 +621,7 @@ def competency_scoring_add():
         flask.flash('Competency score added successfully.', 'success')
     else:
         flask.flash('Please choose an employee.', 'danger')
-    return flask.redirect(flask.url_for('competency'))
+    return flask.redirect(flask.url_for('competency_scoring'))
 
 
 @app.route('/competency/scoring/<employee_id>')
