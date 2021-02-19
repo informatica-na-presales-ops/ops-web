@@ -41,7 +41,9 @@
             </form>
 
             <div>
-                <p class="text font-italic">{{ g.employee.job_title }}</p>
+                <p class="text font-italic">
+                    {{ g.employee.job_title }}{% if g.score_timestamp %}, last scored {{ g.score_timestamp.date() }}{% endif %}
+                </p>
             </div>
 
             <nav class="nav nav-pills flex-column sticky-top pt-3">
@@ -50,7 +52,7 @@
                    data-toggle="pill" href="#competency-{{ c.id }}">
                     {{ c.name }}
                     <div>
-                        <span class="badge"></span>
+                        <span class="badge badge-light">{{ g.competency_scores[c.id] }}</span>
                     </div>
                 </a>
             {% endfor %}
@@ -60,19 +62,22 @@
         <div class="col">
             <div class="tab-content">
             {% for c in g.competencies | sort(attribute='name') %}
+                {% set left_col = [g.competency_scores.get(c.id, -1), 4] | min %}
                 <div class="tab-pane {{ 'show active' if loop.first }}" id="competency-{{ c.id }}">
                     <h2>{{ c.name }}</h2>
                     <p>{{ c.definition }}</p>
                     {%  for l in g.levels %}
                         <div class="custom-control custom-checkbox custom-control-inline">
                             <input class="custom-control-input show-column-checkbox" type="checkbox"
-                                   id="show-{{ c.id }}-{{ l.id }}" data-column-id="col-{{ c.id }}-{{ l.id }}">
+                                   id="show-{{ c.id }}-{{ l.id }}" data-column-id="col-{{ c.id }}-{{ l.id }}"
+                                   {{ 'checked' if l.score in (left_col, left_col + 1) }}>
                             <label class="custom-control-label" for="show-{{ c.id }}-{{ l.id }}">{{ l.title }}</label>
                         </div>
                     {% endfor %}
                     <div class="row pt-3">
                     {% for l in g.levels %}
-                        <div class="col collapse score-column" id="col-{{ c.id }}-{{ l.id }}">
+                        <div class="col collapse score-column {{ 'show' if l.score in (left_col, left_col + 1) }}"
+                             id="col-{{ c.id }}-{{ l.id }}">
                             <h3>{{ l.title }}</h3>
                             <p>{{ g.level_comp_details[l.id][c.id].description }}</p>
                             <ul>
@@ -100,4 +105,5 @@
 {% block end_of_body %}
     {{ super() }}
     <script src="{{ url_for('static', filename='competency/select-employee.js') }}"></script>
+    <script src="{{ url_for('static', filename='competency/planning-new.js') }}"></script>
 {% endblock %}
