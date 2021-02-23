@@ -79,9 +79,9 @@
                         <div class="col collapse score-column {{ 'show' if l.score in (left_col, left_col + 1) }}"
                              id="col-{{ c.id }}-{{ l.id }}">
                             <h3>{{ l.title }}</h3>
-                            <p>{{ g.level_comp_details[l.id][c.id].description }}</p>
+                            <p>{{ g.level_comp_details.get(l.id, {}).get(c.id, {}).description }}</p>
                             <ul>
-                            {% for d in g.level_comp_details[l.id][c.id].details %}
+                            {% for d in g.level_comp_details.get(l.id, {}).get(c.id, {}).details %}
                                 <li>{{ d }}</li>
                             {% endfor %}
                             </ul>

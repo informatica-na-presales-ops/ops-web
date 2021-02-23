@@ -79,7 +79,7 @@
                                     <strong>{{ l.title }} ({{ l.score }})</strong>
                                 </label>
                                 <ul class="ml-n4">
-                                {% for d in g.level_comp_details[l.id][c.id].details %}
+                                {% for d in g.level_comp_details.get(l.id, {}).get(c.id, {}).details %}
                                     <li>{{ d }}</li>
                                 {% endfor %}
                                 </ul>
