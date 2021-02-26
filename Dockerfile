@@ -6,7 +6,7 @@ COPY requirements.txt /ops-web/requirements.txt
 
 RUN /usr/local/bin/pip install --no-cache-dir --requirement /ops-web/requirements.txt
 
-ENV APP_VERSION="2021.10" \
+ENV APP_VERSION="2021.11" \
     ELASTIC_APM_ENABLED="false" \
     PYTHONUNBUFFERED="1" \
     TZ="Etc/UTC"
