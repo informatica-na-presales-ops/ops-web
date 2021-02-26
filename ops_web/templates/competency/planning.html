@@ -14,30 +14,30 @@
 
             <ul class="nav nav-tabs mb-4">
                 <li class="nav-item">
-                    <a class="nav-link active" href="{{ url_for('competency_scoring_employee', employee_id=g.employee.employee_id) }}">
+                    <a class="nav-link text-light" href="{{ url_for('competency_scoring_employee', employee_id=g.employee.employee_id) }}">
                         Scoring
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-light" href="{{ url_for('competency_planning_employee', employee_id=g.employee.employee_id) }}">
+                    <a class="nav-link active" href="{{ url_for('competency_planning_employee', employee_id=g.employee.employee_id) }}">
                         Planning
                     </a>
                 </li>
             </ul>
 
-            <form class="form-inline mb-3" id="form" action="{{ url_for('competency_scoring_add_new') }}" method="post">
+            <form class="form-inline mb-3" id="form" action="{{ url_for('competency_planning_save_new') }}" method="post">
                 <div class="form-group mb-2 mr-2">
                     <label for="select-employee" class="sr-only">Choose an employee</label>
                     <select class="custom-select" id="select-employee" name="employee-id" required>
                     {% for e in g.subordinates | sort(attribute='employee_name') %}
                         <option value="{{ e.employee_id }}" {{ 'selected' if e.employee_id == g.employee.employee_id }}
-                                data-target="{{ url_for('competency_scoring_employee', employee_id=e.employee_id) }}">
+                                data-target="{{ url_for('competency_planning_employee', employee_id=e.employee_id) }}">
                             {{ e.employee_name }}
                         </option>
                     {% endfor %}
                     </select>
                 </div>
-                <button type="submit" class="btn btn-outline-success mb-2 mr-2">Add score</button>
+                <button type="submit" class="btn btn-outline-success mb-2 mr-2">Save plan</button>
             </form>
 
             <div>
@@ -52,11 +52,7 @@
                    data-toggle="pill" href="#competency-{{ c.id }}">
                     {{ c.name }}
                     <div>
-                        <span class="badge badge-light current-score" id="badge-{{ c.id }}-current">{{ g.competency_scores[c.id] }}</span>
-                        <span class="badge new-score collapse" id="badge-{{ c.id }}-new">
-                            <span class="collapse oi" id="delta-{{ c.id }}"></span>
-                            <span id="score-{{ c.id }}"></span>
-                        </span>
+                        <span class="badge badge-light">{{ g.competency_scores[c.id] }}</span>
                     </div>
                 </a>
             {% endfor %}
@@ -66,27 +62,39 @@
         <div class="col">
             <div class="tab-content">
             {% for c in g.competencies | sort(attribute='name') %}
+                {% set left_col = [g.competency_scores.get(c.id, -1), 4] | min %}
                 <div class="tab-pane {{ 'show active' if loop.first }}" id="competency-{{ c.id }}">
                     <h2>{{ c.name }}</h2>
                     <p>{{ c.definition }}</p>
                     {%  for l in g.levels %}
-                        <div class="score-selection px-2 score-{{ l.score }}">
-                            <div class="custom-control custom-radio">
-                                <input class="custom-control-input" type="radio" id="radio-{{ c.id }}-{{ l.score }}"
-                                       name="competency-{{ c.id }}" value="{{ l.score }}" form="form" required
-                                        {{ 'checked' if g.competency_scores[c.id] == l.score }} data-competency-id="{{ c.id }}">
-                                <label class="custom-control-label" for="radio-{{ c.id }}-{{ l.score }}">
-                                    <strong>{{ l.title }} ({{ l.score }})</strong>
-                                </label>
-                                <ul class="ml-n4">
-                                {% for d in g.level_comp_details.get(l.id, {}).get(c.id, {}).details %}
-                                    <li>{{ d }}</li>
-                                {% endfor %}
-                                </ul>
-                            </div>
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                            <input class="custom-control-input show-column-checkbox" type="checkbox"
+                                   id="show-{{ c.id }}-{{ l.id }}" data-column-id="col-{{ c.id }}-{{ l.id }}"
+                                   {{ 'checked' if l.score in (left_col, left_col + 1) }}>
+                            <label class="custom-control-label" for="show-{{ c.id }}-{{ l.id }}">{{ l.title }}</label>
                         </div>
-                    {% if not loop.last %}<hr class="border-light">{% endif %}
                     {% endfor %}
+                    <div class="row pt-3">
+                    {% for l in g.levels %}
+                        <div class="col collapse score-column {{ 'show' if l.score in (left_col, left_col + 1) }}"
+                             id="col-{{ c.id }}-{{ l.id }}">
+                            <h3>{{ l.title }}</h3>
+                            <p>{{ g.level_comp_details.get(l.id, {}).get(c.id, {}).description }}</p>
+                            <ul>
+                            {% for d in g.level_comp_details.get(l.id, {}).get(c.id, {}).details %}
+                                <li>{{ d }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                    </div>
+                    <h4 class="pb-2">Progression plan</h4>
+                    <div class="form-group">
+                        <label for="plan-{{ c.id }}" class="sr-only">Progression plan</label>
+                        <textarea form="form" class="form-control" id="plan-{{ c.id }}" name="plan-{{ c.id }}" rows="10">
+                            {{- g.competency_plans[c.id] -}}
+                        </textarea>
+                    </div>
                 </div>
             {% endfor %}
             </div>
@@ -97,5 +105,5 @@
 {% block end_of_body %}
     {{ super() }}
     <script src="{{ url_for('static', filename='competency/select-employee.js') }}"></script>
-    <script src="{{ url_for('static', filename='competency/scoring-new.js') }}"></script>
+    <script src="{{ url_for('static', filename='competency/planning.js') }}"></script>
 {% endblock %}

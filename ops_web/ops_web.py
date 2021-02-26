@@ -531,7 +531,7 @@ def competency_planning_employee(employee_id: str):
             else:
                 flask.g.score_timestamp = None
                 flask.g.competency_scores = {}
-            return flask.render_template('competency/planning-new.html')
+            return flask.render_template('competency/planning.html')
     return flask.redirect(flask.url_for('competency'))
 
 
@@ -593,7 +593,7 @@ def competency_scoring_employee(employee_id: str):
             else:
                 flask.g.score_timestamp = None
                 flask.g.competency_scores = {}
-            return flask.render_template('competency/scoring-new.html')
+            return flask.render_template('competency/scoring.html')
     return flask.redirect(flask.url_for('competency'))
 
 
