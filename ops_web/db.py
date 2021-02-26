@@ -927,45 +927,6 @@ class Database(fort.PostgresDatabase):
 
     # competency
 
-    def add_competency_plan(self, params: Dict):
-        sql = '''
-            insert into competency_plans (
-                sc_employee_id, technical_acumen, domain_knowledge, discovery_and_qualification,
-                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
-                customer_advocacy, attitude, corporate_citizenship
-            ) values (
-                %(sc_employee_id)s, %(technical_acumen)s, %(domain_knowledge)s, %(discovery_and_qualification)s,
-                %(teamwork_and_collaboration)s, %(leadership_skills)s, %(communication)s,
-                %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s, %(corporate_citizenship)s
-            ) on conflict (sc_employee_id) do update set
-                technical_acumen = %(technical_acumen)s, domain_knowledge = %(domain_knowledge)s,
-                discovery_and_qualification = %(discovery_and_qualification)s,
-                teamwork_and_collaboration = %(teamwork_and_collaboration)s, leadership_skills = %(leadership_skills)s,
-                communication = %(communication)s, planning_and_prioritization = %(planning_and_prioritization)s,
-                customer_advocacy = %(customer_advocacy)s, attitude = %(attitude)s,
-                corporate_citizenship = %(corporate_citizenship)s
-        '''
-        self.u(sql, params)
-
-    def add_competency_score(self, params: Dict):
-        sql = '''
-            insert into competency_scores (
-                id, sc_employee_id, score_timestamp, technical_acumen, domain_knowledge, discovery_and_qualification,
-                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
-                customer_advocacy, attitude, corporate_citizenship
-            ) values (
-                %(id)s, %(sc_employee_id)s, %(score_timestamp)s, %(technical_acumen)s, %(domain_knowledge)s,
-                %(discovery_and_qualification)s, %(teamwork_and_collaboration)s, %(leadership_skills)s,
-                %(communication)s, %(planning_and_prioritization)s, %(customer_advocacy)s, %(attitude)s,
-                %(corporate_citizenship)s
-            )
-        '''
-        params.update({
-            'id': uuid.uuid4(),
-            'score_timestamp': datetime.datetime.utcnow()
-        })
-        self.u(sql, params)
-
     def add_competency_scores(self, params_list: List):
         sql = '''
             insert into competency_employee_scores (id, employee_id, competency_id, timestamp, score)
@@ -1010,58 +971,6 @@ class Database(fort.PostgresDatabase):
             'track_id': track_id
         }
         return self.q(sql, params)
-
-    def get_employees_for_manager(self, manager_email: str):
-        sql = '''
-            select
-                e.employee_id, e.employee_email, e.is_manager, e.job_code, e.job_title,
-                replace(e.employee_name, ' (On Leave)', '') employee_name, 
-                case e.job_code
-                    when 'S412' then 2
-                    when 'S413' then 3
-                    when 'S414' then 4
-                    when 'S2416' then 5
-                    when 'S415' then 5
-                end expected_score,
-                s.score_timestamp,
-                s.technical_acumen, s.domain_knowledge, s.discovery_and_qualification, s.teamwork_and_collaboration,
-                s.leadership_skills, s.communication, s.planning_and_prioritization, s.customer_advocacy, s.attitude,
-                s.corporate_citizenship
-            from employees e
-            join employees m on replace(m.employee_name, ' (On Leave)', '') = e.manager_name
-            left join (
-                select sc_employee_id, max(score_timestamp) score_timestamp
-                from competency_scores
-                group by sc_employee_id
-            ) latest_scores on latest_scores.sc_employee_id = e.employee_id
-            left join competency_scores s on s.sc_employee_id = latest_scores.sc_employee_id
-                and s.score_timestamp = latest_scores.score_timestamp
-            where e.visible is true
-            and m.employee_email = %(manager_email)s
-            order by e.employee_name
-        '''
-        params = {'manager_email': manager_email}
-        result = list(self.q(sql, params))
-        more = []
-        for e in result:
-            if e.get('is_manager'):
-                more.extend(self.get_employees_for_manager(e.get('employee_email')))
-        result.extend(more)
-        return result
-
-    def get_plans_for_employees(self, employee_ids: List[str]) -> Dict:
-        sql = '''
-            select
-                sc_employee_id, technical_acumen, domain_knowledge, discovery_and_qualification,
-                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
-                customer_advocacy, attitude, corporate_citizenship
-            from competency_plans
-            where sc_employee_id = any (%(employee_ids)s)
-        '''
-        params = {
-            'employee_ids': employee_ids
-        }
-        return {r.get('sc_employee_id'): r for r in self.q(sql, params)}
 
     def get_subordinates(self, manager_email: str) -> List:
         sql = '''
@@ -1141,7 +1050,6 @@ class Database(fort.PostgresDatabase):
                     'plan': row.get(new_competency.get('name').lower().replace(' ', '_'))
                 })
         self.add_competency_plans(new_plans)
-
 
     ## competency tracks
 
