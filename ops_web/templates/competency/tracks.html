@@ -13,6 +13,10 @@
                 <span class="oi oi-plus"></span>
                 Create a new track
             </button>
+            <button type="button" class="btn btn-outline-light" data-toggle="modal" data-target="#modal-migrate">
+                <span class="oi oi-project"></span>
+                Migrate old scores and plans
+            </button>
         </div>
     </div>
 
@@ -60,6 +64,33 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-light" data-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-outline-success" form="form-create-track">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-migrate">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Migrate old scores and plans</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Choose a track to migrate old scores and plans to.</p>
+                    <form id="form-migrate" action="{{ url_for('competency_migrate') }}" method="post">
+                    {% for t in g.tracks %}
+                        <div class="custom-control custom-radio">
+                            <input type="radio" id="radio-{{ t.id }}" name="track-id" value="{{ t.id }}"
+                                   class="custom-control-input" autocomplete="off" required>
+                            <label class="custom-control-label" for="radio-{{ t.id }}">{{ t.name }}</label>
+                        </div>
+                    {% endfor %}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-dismiss="modal">Cancel</button>
+                    <button type="submit" form="form-migrate" class="btn btn-outline-success">Migrate</button>
                 </div>
             </div>
         </div>

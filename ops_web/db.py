@@ -1101,9 +1101,47 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    # def get_employee_scores(self, employee_id: str):
-    #     sql = '''
-    #     '''
+    def migrate_scores(self, target_track_id: uuid.UUID):
+        new_competencies = self.get_track_competencies(target_track_id)
+        sql = '''
+            select
+                id, sc_employee_id, score_timestamp, technical_acumen, domain_knowledge, discovery_and_qualification,
+                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
+                customer_advocacy, attitude, corporate_citizenship
+            from competency_scores
+        '''
+        old_scores = self.q(sql)
+        new_scores = []
+        for row in old_scores:
+            self.choose_track(row.get('sc_employee_id'), target_track_id)
+            for new_competency in new_competencies:
+                new_scores.append({
+                    'id': uuid.uuid4(),
+                    'employee_id': row.get('sc_employee_id'),
+                    'competency_id': new_competency.get('id'),
+                    'timestamp': row.get('score_timestamp'),
+                    'score': row.get(new_competency.get('name').lower().replace(' ', '_'))
+                })
+        self.add_competency_scores(new_scores)
+
+        sql = '''
+            select
+                sc_employee_id, technical_acumen, domain_knowledge, discovery_and_qualification,
+                teamwork_and_collaboration, leadership_skills, communication, planning_and_prioritization,
+                customer_advocacy, attitude, corporate_citizenship
+            from competency_plans
+        '''
+        old_plans = self.q(sql)
+        new_plans = []
+        for row in old_plans:
+            for new_competency in new_competencies:
+                new_plans.append({
+                    'employee_id': row.get('sc_employee_id'),
+                    'competency_id': new_competency.get('id'),
+                    'plan': row.get(new_competency.get('name').lower().replace(' ', '_'))
+                })
+        self.add_competency_plans(new_plans)
+
 
     ## competency tracks
 
@@ -3036,6 +3074,12 @@ class Database(fort.PostgresDatabase):
                 )
             ''')
             self.add_schema_version(63)
+        if self.version < 64:
+            self.log.info('Migrating to database schema version 64')
+            self.u('''
+                create extension if not exists tablefunc
+            ''')
+            self.add_schema_version(64)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'

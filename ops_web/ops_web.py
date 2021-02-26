@@ -479,6 +479,13 @@ def competency_levels_detail(level_id: uuid.UUID):
     return flask.render_template('competency/levels-detail.html')
 
 
+@app.route('/competency/migrate', methods=['POST'])
+@permission_required('admin')
+def competency_migrate():
+    db.migrate_scores(flask.request.values.get('track-id'))
+    return flask.redirect(flask.url_for('competency_tracks'))
+
+
 @app.route('/sc-competency/planning')
 def sc_competency_planning_redirect():
     return flask.redirect(flask.url_for('competency_planning'))
