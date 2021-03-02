@@ -16,7 +16,6 @@ import ops_web.gcp
 import ops_web.config
 import ops_web.db
 import ops_web.op_debrief_surveys
-import ops_web.sc_competency
 import ops_web.send_email
 import ops_web.tasks
 import ops_web.util.human_time
