@@ -653,7 +653,7 @@ class Database(fort.PostgresDatabase):
                     state = 'available' can_modify, state = 'available' and i.cloud in ('aws', 'gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
-                    coalesce(instanceid, '') instanceid, delete_requested,
+                    coalesce(instanceid, '') as instanceid, delete_requested,
                     lower(concat_ws(' ', i.cloud, cc.description, name, owner)) filter_value 
                 from images i
                 join cloud_credentials cc on i.account_id = cc.id
@@ -669,7 +669,7 @@ class Database(fort.PostgresDatabase):
                     state = 'available' and i.cloud in ('aws', 'gcp') can_launch,
                     left(name, %(name_limit)s) || case when length(name) > %(name_limit)s then '...' else '' end
                     as truncated_name,
-                    coalesce(instanceid, '') instanceid, delete_requested,
+                    coalesce(instanceid, '') as instanceid, delete_requested,
                     lower(concat_ws(' ', i.cloud, cc.description, name, owner)) filter_value 
                 from images i
                 join cloud_credentials cc on cc.id = i.account_id
@@ -842,7 +842,7 @@ class Database(fort.PostgresDatabase):
         sql = '''
             select
                 r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name, r.sales_rep rep_name,
-                coalesce(e.employee_name, '') sc_name, e.employee_id sc_employee_id,
+                coalesce(e.employee_name, '') sc_name, e.employee_id  as sc_employee_id,
                 lower(concat_ws(
                     ' ', r.geo, r.area, r.sub_area, r.region, r.sub_region, r.territory_name, r.sales_rep,
                     coalesce(e.employee_name, '')
@@ -900,8 +900,8 @@ class Database(fort.PostgresDatabase):
     def get_sc_ra_assignments(self):
         sql = '''
             select
-                sc.employee_id sc_employee_id, sc.employee_name sc_employee_name, sc.manager_name sc_manager_name,
-                ra.employee_id ra_employee_id, ra.employee_name ra_employee_name,
+                sc.employee_id as sc_employee_id, sc.employee_name sc_employee_name, sc.manager_name sc_manager_name,
+                ra.employee_id as ra_employee_id, ra.employee_name ra_employee_name,
                 lower(concat_ws(' ', sc.employee_name, sc.manager_name, ra.employee_name)) filter_value
             from employees sc
             left join sc_ra_assignments a on a.sc_employee_id = sc.employee_id
