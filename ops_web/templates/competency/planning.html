@@ -47,8 +47,11 @@
             </div>
 
             <nav class="nav nav-pills flex-column sticky-top pt-3">
+                <a class="nav-link text-light active" data-toggle="pill" href="#summary">
+                    <strong>Summary</strong>
+                </a>
             {% for c in g.competencies | sort(attribute='name') %}
-                <a class="nav-link text-light d-flex justify-content-between align-items-center {{ 'active' if loop.first }}"
+                <a class="nav-link text-light d-flex justify-content-between align-items-center"
                    data-toggle="pill" href="#competency-{{ c.id }}">
                     {{ c.name }}
                     <div>
@@ -61,9 +64,21 @@
 
         <div class="col">
             <div class="tab-content">
+                <div class="tab-pane show active" id="summary">
+                    <h2>Summary</h2>
+                    {% for c in g.competencies | sort(attribute='name') %}
+                        <h4>{{ c.name }}</h4>
+                        {% if g.competency_plans[c.id] %}
+                            {{ g.competency_plans[c.id] | markdown }}
+                        {% else %}
+                            <p class="text-muted">(no plan)</p>
+                        {% endif %}
+                        {% if not loop.last %}<hr class="border-light">{% endif %}
+                    {% endfor %}
+                </div>
             {% for c in g.competencies | sort(attribute='name') %}
                 {% set left_col = [g.competency_scores.get(c.id, -1), 4] | min %}
-                <div class="tab-pane {{ 'show active' if loop.first }}" id="competency-{{ c.id }}">
+                <div class="tab-pane" id="competency-{{ c.id }}">
                     <h2>{{ c.name }}</h2>
                     <p>{{ c.definition }}</p>
                     {%  for l in g.levels %}
