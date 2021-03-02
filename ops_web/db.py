@@ -951,7 +951,6 @@ class Database(fort.PostgresDatabase):
             ts_groups.update({row.get('timestamp'): group})
         return [{'timestamp': ts} | comps for ts, comps in ts_groups.items()]
 
-
     def add_competency_plans(self, params_list: list[dict]):
         sql = '''
             insert into competency_employee_plans (employee_id, competency_id, plan)
@@ -2952,11 +2951,17 @@ class Database(fort.PostgresDatabase):
             self.add_schema_version(64)
         if self.version < 65:
             self.log.info('Migrating to database schema version 65')
+            # noinspection SqlResolve
             self.u('''
                 drop table competency_plans
             ''')
+            # noinspection SqlResolve
             self.u('''
                 drop table competency_scores
+            ''')
+            self.u('''
+                alter table competency_employee_plans
+                add column modified_at timestamp not null default current_timestamp
             ''')
             self.add_schema_version(65)
 
