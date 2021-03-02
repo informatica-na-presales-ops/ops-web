@@ -524,13 +524,7 @@ def competency_planning_employee(employee_id: str):
             flask.g.level_comp_details = db.get_level_comp_details_for_track(track_id)
             db_plans = db.get_competency_plans(employee_id, track_id)
             flask.g.competency_plans = {r.get('competency_id'): r.get('plan') for r in db_plans}
-            db_scores = db.get_competency_scores(employee_id)
-            if db_scores:
-                flask.g.score_timestamp = db_scores[0].get('timestamp')
-                flask.g.competency_scores = {r.get('competency_id'): r.get('score') for r in db_scores}
-            else:
-                flask.g.score_timestamp = None
-                flask.g.competency_scores = {}
+            flask.g.competency_scores = db.get_competency_scores(employee_id)
             return flask.render_template('competency/planning.html')
     return flask.redirect(flask.url_for('competency'))
 
@@ -586,13 +580,7 @@ def competency_scoring_employee(employee_id: str):
             flask.g.competencies = db.get_track_competencies(track_id)
             flask.g.levels = db.get_track_levels(track_id)
             flask.g.level_comp_details = db.get_level_comp_details_for_track(track_id)
-            db_scores = db.get_competency_scores(employee_id)
-            if db_scores:
-                flask.g.score_timestamp = db_scores[0].get('timestamp')
-                flask.g.competency_scores = {r.get('competency_id'): r.get('score') for r in db_scores}
-            else:
-                flask.g.score_timestamp = None
-                flask.g.competency_scores = {}
+            flask.g.competency_scores = db.get_competency_scores(employee_id)
             return flask.render_template('competency/scoring.html')
     return flask.redirect(flask.url_for('competency'))
 

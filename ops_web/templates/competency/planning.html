@@ -8,6 +8,12 @@
 {% endblock %}
 
 {% block main_content %}
+    {% if (g.competency_scores | length) > 0 %}
+        {% set last_score = g.competency_scores | sort(attribute='timestamp') | last %}
+    {% else %}
+        {% set last_score = {} %}
+    {% endif %}
+
     <div class="row pt-3 text-light">
         <div class="col-4 col-xl-3">
             <h1 class="mb-4">Competency</h1>
@@ -42,7 +48,7 @@
 
             <div>
                 <p class="text font-italic">
-                    {{ g.employee.job_title }}{% if g.score_timestamp %}, last scored {{ g.score_timestamp.date() }}{% endif %}
+                    {{ g.employee.job_title }}{% if last_score %}, last scored {{ last_score.timestamp.date() }}{% endif %}
                 </p>
             </div>
 
@@ -55,7 +61,16 @@
                    data-toggle="pill" href="#competency-{{ c.id }}">
                     {{ c.name }}
                     <div>
-                        <span class="badge badge-light">{{ g.competency_scores[c.id] }}</span>
+                    {% for score in g.competency_scores | sort(reverse=True, attribute='timestamp') %}
+                    {% if loop.first %}
+                        {% if loop.nextitem %}
+                            <span class="badge badge-secondary" title="{{ loop.nextitem.timestamp.date() }}">
+                                {{ loop.nextitem.get(c.id) }}
+                            </span>
+                        {% endif %}
+                        <span class="badge badge-light" title="{{ score.timestamp.date() }}">{{ score.get(c.id) }}</span>
+                    {% endif %}
+                    {% endfor %}
                     </div>
                 </a>
             {% endfor %}
@@ -77,7 +92,7 @@
                     {% endfor %}
                 </div>
             {% for c in g.competencies | sort(attribute='name') %}
-                {% set left_col = [g.competency_scores.get(c.id, -1), 4] | min %}
+                {% set left_col = [last_score.get(c.id, -1), 4] | min %}
                 <div class="tab-pane" id="competency-{{ c.id }}">
                     <h2>{{ c.name }}</h2>
                     <p>{{ c.definition }}</p>

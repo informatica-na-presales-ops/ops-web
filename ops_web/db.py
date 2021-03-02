@@ -936,18 +936,21 @@ class Database(fort.PostgresDatabase):
             self.u(sql, params)
 
     def get_competency_scores(self, employee_id: str):
+        ts_groups = {}
         sql = '''
             select timestamp, competency_id, score
             from competency_employee_scores
             where employee_id = %(employee_id)s
-            and timestamp = (
-                select max(timestamp) from competency_employee_scores where employee_id = %(employee_id)s
-            )
         '''
         params = {
             'employee_id': employee_id
         }
-        return self.q(sql, params)
+        for row in self.q(sql, params):
+            group = ts_groups.get(row.get('timestamp'), {})
+            group.update({row.get('competency_id'): row.get('score')})
+            ts_groups.update({row.get('timestamp'): group})
+        return [{'timestamp': ts} | comps for ts, comps in ts_groups.items()]
+
 
     def add_competency_plans(self, params_list: list[dict]):
         sql = '''
