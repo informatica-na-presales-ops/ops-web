@@ -2950,6 +2950,15 @@ class Database(fort.PostgresDatabase):
                 create extension if not exists tablefunc
             ''')
             self.add_schema_version(64)
+        if self.version < 65:
+            self.log.info('Migrating to database schema version 65')
+            self.u('''
+                drop table competency_plans
+            ''')
+            self.u('''
+                drop table competency_scores
+            ''')
+            self.add_schema_version(65)
 
     def _table_exists(self, table_name: str) -> bool:
         sql = 'select count(*) table_count from information_schema.tables where table_name = %(table_name)s'
