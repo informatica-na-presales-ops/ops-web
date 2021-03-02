@@ -479,13 +479,6 @@ def competency_levels_detail(level_id: uuid.UUID):
     return flask.render_template('competency/levels-detail.html')
 
 
-@app.route('/competency/migrate', methods=['POST'])
-@permission_required('admin')
-def competency_migrate():
-    db.migrate_scores(flask.request.values.get('track-id'))
-    return flask.redirect(flask.url_for('competency_tracks'))
-
-
 @app.route('/competency/planning/save/new', methods=['POST'])
 @login_required
 def competency_planning_save_new():
