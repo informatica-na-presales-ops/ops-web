@@ -5,7 +5,7 @@ import fort
 import ops_web.config
 import uuid
 
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 
 class Settings(dict):
@@ -25,7 +25,7 @@ class Settings(dict):
         self.db.set_setting('allow-users-to-delete-images', str_value)
 
     @property
-    def app_env_values(self) -> List:
+    def app_env_values(self) -> list:
         default = (
             'DEMO',
             'DEV',
@@ -41,7 +41,7 @@ class Settings(dict):
         return sorted(set(self.get('app-env-values', str_default).splitlines()))
 
     @app_env_values.setter
-    def app_env_values(self, value: List):
+    def app_env_values(self, value: list):
         str_value = '\n'.join(sorted(set(value)))
         self.update({'app-env-values': str_value})
         self.db.set_setting('app-env-values', str_value)
@@ -56,11 +56,11 @@ class Settings(dict):
         self.db.set_setting('cloudability-auth-token', value)
 
     @property
-    def cloudability_vendor_account_ids(self) -> Set:
+    def cloudability_vendor_account_ids(self) -> set:
         return set(self.get('cloudability-vendor-account-ids', '').split())
 
     @cloudability_vendor_account_ids.setter
-    def cloudability_vendor_account_ids(self, value: Set):
+    def cloudability_vendor_account_ids(self, value: set):
         str_value = ' '.join(value)
         self.update({'cloudability-vendor-account-ids': str_value})
         self.db.set_setting('cloudability-vendor-account-ids', str_value)
@@ -234,7 +234,7 @@ class Database(fort.PostgresDatabase):
         self.log.info(f'Adding a bootstrap admin: {self.config.bootstrap_admin}')
         self.add_permission(self.config.bootstrap_admin, 'admin')
 
-    def get_all_permissions(self) -> Dict[str, Set]:
+    def get_all_permissions(self) -> dict[str, set]:
         sql = 'select email, permissions from permissions order by email'
         return {r.get('email'): set(r.get('permissions').split()) for r in self.q(sql)}
 
@@ -245,11 +245,11 @@ class Database(fort.PostgresDatabase):
         current_permissions.add(permission)
         self.set_permissions(email, current_permissions)
 
-    def get_permissions(self, email: str) -> Set[str]:
+    def get_permissions(self, email: str) -> set[str]:
         _all_permissions = self.get_all_permissions()
         return _all_permissions.get(email, set())
 
-    def set_permissions(self, email: str, permissions: Set[str]):
+    def set_permissions(self, email: str, permissions: set[str]):
         current_permissions = self.get_permissions(email)
         if current_permissions == permissions:
             return
@@ -303,7 +303,7 @@ class Database(fort.PostgresDatabase):
 
     # cloud credentials
 
-    def add_cloud_credentials(self, params: Dict) -> uuid.UUID:
+    def add_cloud_credentials(self, params: dict) -> uuid.UUID:
         sql = '''
             insert into cloud_credentials (
                 id, cloud, description, username, password, azure_tenant_id, default_environment_name
@@ -334,7 +334,7 @@ class Database(fort.PostgresDatabase):
         '''
         return self.q(sql)
 
-    def get_all_credentials_for_use(self, cloud: str) -> List[Dict]:
+    def get_all_credentials_for_use(self, cloud: str) -> list[dict]:
         sql = '''
             select id, username, password, azure_tenant_id, default_environment_name
             from cloud_credentials
@@ -343,7 +343,7 @@ class Database(fort.PostgresDatabase):
         params = {'cloud': cloud}
         return self.q(sql, params)
 
-    def get_one_credential_for_use(self, account_id: uuid.UUID) -> Dict:
+    def get_one_credential_for_use(self, account_id: uuid.UUID) -> dict:
         sql = '''
             select id, username, password, azure_tenant_id, default_environment_name
             from cloud_credentials
@@ -352,7 +352,7 @@ class Database(fort.PostgresDatabase):
         params = {'id': account_id}
         return self.q_one(sql, params)
 
-    def update_cloud_credentials(self, params: Dict):
+    def update_cloud_credentials(self, params: dict):
         if 'password' in params:
             sql = '''
                 update cloud_credentials
@@ -371,7 +371,7 @@ class Database(fort.PostgresDatabase):
 
     # environments and machines
 
-    def get_env_list(self) -> List[str]:
+    def get_env_list(self) -> list[str]:
         sql = '''
             select distinct env_group
             from virtual_machines
@@ -380,7 +380,7 @@ class Database(fort.PostgresDatabase):
         '''
         return [r['env_group'] for r in self.q(sql)]
 
-    def get_environments(self) -> List[Dict]:
+    def get_environments(self) -> list[dict]:
         sql = '''
             select
                 cloud,
@@ -399,7 +399,7 @@ class Database(fort.PostgresDatabase):
         '''
         return self.q(sql)
 
-    def get_own_environments(self, email: str) -> List[Dict]:
+    def get_own_environments(self, email: str) -> list[dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
@@ -443,7 +443,7 @@ class Database(fort.PostgresDatabase):
         sql = 'select region from virtual_machines where id = %(id)s'
         return self.q_one(sql, {'id': machine_id})
 
-    def get_all_visible_machines(self) -> List[Dict]:
+    def get_all_visible_machines(self) -> list[dict]:
         sql = '''
             select account_id, cloud, region, id
             from virtual_machines
@@ -451,7 +451,7 @@ class Database(fort.PostgresDatabase):
         '''
         return self.q(sql)
 
-    def get_machines_for_env(self, email: str, env_group: str) -> List[Dict]:
+    def get_machines_for_env(self, email: str, env_group: str) -> list[dict]:
         if self.has_permission(email, 'admin'):
             sql = '''
                 select
@@ -487,7 +487,7 @@ class Database(fort.PostgresDatabase):
             '''
         return self.q(sql, {'email': email, 'env_group': env_group})
 
-    def get_machine(self, machine_id: str, email: str = None) -> Dict:
+    def get_machine(self, machine_id: str, email: str = None) -> dict:
         if email is None or self.has_permission(email, 'admin'):
             sql = '''
                 select
@@ -526,7 +526,7 @@ class Database(fort.PostgresDatabase):
         sql = 'update virtual_machines set state = %(state)s where id = %(id)s'
         self.u(sql, params)
 
-    def set_machine_tags(self, params: Dict):
+    def set_machine_tags(self, params: dict):
         sql = '''
             update virtual_machines
             set running_schedule = %(running_schedule)s, name = %(name)s, owner = %(owner)s,
@@ -567,7 +567,7 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    def get_security_group(self, group_id: str) -> Optional[Dict]:
+    def get_security_group(self, group_id: str) -> Optional[dict]:
         sql = 'select id, cloud, owner, group_name, account_id, region from security_group where id = %(id)s'
         params = {'id': group_id}
         sg = self.q_one(sql, params)
@@ -578,7 +578,7 @@ class Database(fort.PostgresDatabase):
             sg['rules'] = sg_rules
         return sg
 
-    def get_security_groups(self, email: str) -> List[Dict]:
+    def get_security_groups(self, email: str) -> list[dict]:
         rules_for_group = self.get_all_security_group_rules()
         if self.has_permission(email, 'admin'):
             sql = '''
@@ -629,7 +629,7 @@ class Database(fort.PostgresDatabase):
 
     # images
 
-    def get_image(self, image_id: str) -> Dict:
+    def get_image(self, image_id: str) -> dict:
         sql = '''
             select
                 id, cloud, region, name, owner, public, state, created, visible, synced, instanceid, account_id, cost,
@@ -643,7 +643,7 @@ class Database(fort.PostgresDatabase):
         sql = 'select coalesce(max(length(name)), 0) from images where visible is true'
         return self.q_val(sql)
 
-    def get_images(self, email: str) -> List[Dict]:
+    def get_images(self, email: str) -> list[dict]:
         settings = Settings(self)
         if self.has_permission(email, 'admin'):
             sql = '''
@@ -681,7 +681,7 @@ class Database(fort.PostgresDatabase):
         params = {'email': email, 'name_limit': settings.image_name_display_length}
         return self.q(sql, params)
 
-    def get_images_to_delete(self) -> List[Dict]:
+    def get_images_to_delete(self) -> list[dict]:
         name_limit = Settings(self).image_name_display_length
         sql = '''
             select
@@ -715,7 +715,7 @@ class Database(fort.PostgresDatabase):
         params = {'id': image_id, 'state': state}
         self.u(sql, params)
 
-    def set_image_tags(self, params: Dict):
+    def set_image_tags(self, params: dict):
         sql = '''
             update images
             set name = %(name)s, owner = %(owner)s, application_env = %(application_env)s,
@@ -761,7 +761,7 @@ class Database(fort.PostgresDatabase):
             sql = f'update {table} set visible = false where synced is false and cloud = %(cloud)s'
             self.u(sql, params)
 
-    def add_machine(self, params: Dict):
+    def add_machine(self, params: dict):
         sql = '''
             insert into virtual_machines (
                 id, cloud, region, env_group, name, owner, state, private_ip, public_ip, type, running_schedule,
@@ -783,7 +783,7 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def add_image(self, params: Dict):
+    def add_image(self, params: dict):
         sql = '''
             insert into images (
                 id, cloud, region, name, owner, public, state, created, instanceid, account_id, cost, business_unit,
@@ -799,7 +799,7 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def add_security_group(self, params: Dict):
+    def add_security_group(self, params: dict):
         sql = '''
             insert into security_group (
                 id, cloud, region, owner, group_name, account_id, visible, synced
@@ -818,7 +818,7 @@ class Database(fort.PostgresDatabase):
                 'description': rule.get('description')
             })
 
-    def add_security_group_rule(self, params: Dict):
+    def add_security_group_rule(self, params: dict):
         sql = 'select sg_id from security_group_rules where sg_id = %(sg_id)s and ip_range = %(ip_range)s'
         if self.q(sql, params):
             sql = '''
@@ -927,7 +927,7 @@ class Database(fort.PostgresDatabase):
 
     # competency
 
-    def add_competency_scores(self, params_list: List):
+    def add_competency_scores(self, params_list: list):
         sql = '''
             insert into competency_employee_scores (id, employee_id, competency_id, timestamp, score)
             values (%(id)s, %(employee_id)s, %(competency_id)s, %(timestamp)s, %(score)s)
@@ -974,7 +974,7 @@ class Database(fort.PostgresDatabase):
         }
         return self.q(sql, params)
 
-    def get_subordinates(self, manager_email: str) -> List:
+    def get_subordinates(self, manager_email: str) -> list:
         sql = '''
             with recursive subordinates as (
                 select
@@ -1046,7 +1046,7 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    def update_track(self, params: Dict):
+    def update_track(self, params: dict):
         sql = '''
             update competency_tracks
             set name = %(name)s, description = %(description)s
@@ -1268,7 +1268,7 @@ class Database(fort.PostgresDatabase):
         params = {'id': survey_id, 'completed': datetime.datetime.utcnow()}
         self.u(sql, params)
 
-    def complete_survey(self, params: Dict):
+    def complete_survey(self, params: dict):
         sql = '''
             update op_debrief_surveys
             set completed = %(completed)s,
@@ -1309,7 +1309,7 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def get_active_surveys(self, email: str) -> List[Dict]:
+    def get_active_surveys(self, email: str) -> list[dict]:
         sql = '''
             select
                 s.id, s.opportunity_number, s.email, s.role, s.generated,
@@ -1325,7 +1325,7 @@ class Database(fort.PostgresDatabase):
         params = {'email': email}
         return self.q(sql, params)
 
-    def get_completed_surveys(self, email: str) -> List[Dict]:
+    def get_completed_surveys(self, email: str) -> list[dict]:
         sql = '''
             select
                 s.id, s.opportunity_number, s.email, s.role, s.generated, s.completed, s.cancelled,
@@ -1345,7 +1345,7 @@ class Database(fort.PostgresDatabase):
         sql = 'select last_check from op_debrief_tracking'
         return self.q_val(sql)
 
-    def get_modified_opportunities(self, since: datetime.datetime) -> List[Dict]:
+    def get_modified_opportunities(self, since: datetime.datetime) -> list[dict]:
         sql = '''
             select
                 opportunity_key, id, opportunity_number, name, account_name, stage_name, close_date, last_modified_date,
@@ -1358,7 +1358,7 @@ class Database(fort.PostgresDatabase):
         params = {'since': since}
         return self.q(sql, params)
 
-    def get_op_contacts(self, opportunity_number: str) -> List[Dict]:
+    def get_op_contacts(self, opportunity_number: str) -> list[dict]:
         sql = '''
             select distinct c.opportunity_key, c.contact_key, c.name, c.title, c.phone, c.email, c.is_primary
             from sf_opportunity_contacts c
@@ -1368,11 +1368,11 @@ class Database(fort.PostgresDatabase):
         params = {'opportunity_number': opportunity_number}
         return self.q(sql, params)
 
-    def get_op_numbers_for_existing_surveys(self) -> Set[str]:
+    def get_op_numbers_for_existing_surveys(self) -> set[str]:
         sql = 'select distinct opportunity_number from op_debrief_surveys'
         return set([r.get('opportunity_number') for r in self.q(sql)])
 
-    def get_op_team_members(self, opportunity_key: int) -> List[Dict]:
+    def get_op_team_members(self, opportunity_key: int) -> list[dict]:
         sql = '''
             select distinct opportunity_key, name, email, role
             from sf_opportunity_team_members
@@ -1394,7 +1394,7 @@ class Database(fort.PostgresDatabase):
         sql = 'select id, role_name, generate_survey, ignore from op_debrief_roles'
         return self.q(sql)
 
-    def get_survey(self, survey_id: uuid.UUID) -> Optional[Dict]:
+    def get_survey(self, survey_id: uuid.UUID) -> Optional[dict]:
         sql = '''
             select
                 s.id, s.opportunity_number, s.email, s.generated, s.completed, s.role, s.primary_loss_reason,
@@ -1416,7 +1416,7 @@ class Database(fort.PostgresDatabase):
         params = {'survey_id': survey_id}
         return self.q_one(sql, params)
 
-    def get_surveys_for_reminding(self, generated_before: datetime.datetime = None) -> List[Dict]:
+    def get_surveys_for_reminding(self, generated_before: datetime.datetime = None) -> list[dict]:
         if generated_before is None:
             generated_before = datetime.datetime.utcnow() - datetime.timedelta(days=7)
         params = {'generated_before': generated_before}
@@ -1456,7 +1456,7 @@ class Database(fort.PostgresDatabase):
         params = {'last_check': last_check}
         self.u(sql, params)
 
-    def update_roles(self, selected_roles: List):
+    def update_roles(self, selected_roles: list):
         sql = 'update op_debrief_roles set generate_survey = false where generate_survey is true'
         self.u(sql)
         sql = 'update op_debrief_roles set generate_survey = true where id = %(id)s'
@@ -1496,7 +1496,7 @@ class Database(fort.PostgresDatabase):
 
     # environment usage events
 
-    def add_environment_usage_event(self, params: Dict):
+    def add_environment_usage_event(self, params: dict):
         sql = '''
             insert into environment_usage_events (
                 id, environment_name, event_name, user_name, event_time
@@ -1558,7 +1558,7 @@ class Database(fort.PostgresDatabase):
 
     # ecosystem certification
 
-    def add_ecosystem_certification(self, params: Dict):
+    def add_ecosystem_certification(self, params: dict):
         sql = '''
             insert into ecosystem_certification (
                 id, user_login, ecosystem, title, certification_date, expiration_date, aws_partner_portal_updated,
@@ -1640,7 +1640,7 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    def get_scheduled_task_with_name(self, task_name: str) -> Optional[Dict]:
+    def get_scheduled_task_with_name(self, task_name: str) -> Optional[dict]:
         sql = '''
             select task_id, task_name, task_interval, task_last_run, task_active
             from scheduled_tasks
@@ -1693,7 +1693,7 @@ class Database(fort.PostgresDatabase):
 
     # games
 
-    def add_step(self, params: Dict):
+    def add_step(self, params: dict):
         sql = '''
             select max(step_number) from game_steps where game_id = %(game_id)s
         '''
@@ -1713,7 +1713,7 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
-    def add_game_player(self, params: Dict):
+    def add_game_player(self, params: dict):
         # record team number and team name for this player
         sql = '''
             insert into game_players (
@@ -1727,7 +1727,7 @@ class Database(fort.PostgresDatabase):
         })
         self.u(sql, params)
 
-    def create_game(self, params: Dict) -> uuid.UUID:
+    def create_game(self, params: dict) -> uuid.UUID:
         sql = '''
             insert into game_details (
                 game_id, game_name, game_intro, game_outro, skip_code, game_points_per_step
@@ -1766,7 +1766,7 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def get_game(self, game_id: uuid.UUID) -> Dict:
+    def get_game(self, game_id: uuid.UUID) -> dict:
         sql = '''
             select game_id, game_name, game_intro, game_outro, skip_code, game_points_per_step
             from game_details
@@ -1783,7 +1783,7 @@ class Database(fort.PostgresDatabase):
         '''
         return self.q(sql)
 
-    def get_player_team(self, game_id: uuid.UUID, player_email: str) -> Dict:
+    def get_player_team(self, game_id: uuid.UUID, player_email: str) -> dict:
         sql = '''
             select team_name, team_number
             from game_players
@@ -1843,7 +1843,7 @@ class Database(fort.PostgresDatabase):
         }
         return self.q(sql, params)
 
-    def get_step(self, step_id: uuid.UUID) -> Dict:
+    def get_step(self, step_id: uuid.UUID) -> dict:
         sql = '''
             select step_id, game_id, step_number, step_text, step_answer
             from game_steps
@@ -1854,7 +1854,7 @@ class Database(fort.PostgresDatabase):
         }
         return self.q_one(sql, params)
 
-    def get_steps(self, game_id: uuid.UUID) -> List[Dict]:
+    def get_steps(self, game_id: uuid.UUID) -> list[dict]:
         sql = '''
             select step_id, step_number, step_text, step_answer
             from game_steps
@@ -1866,7 +1866,7 @@ class Database(fort.PostgresDatabase):
         }
         return self.q(sql, params)
 
-    def reset_progress(self, params: Dict):
+    def reset_progress(self, params: dict):
         sql = '''
             delete from game_step_results
             where player_email = %(player_email)s
@@ -1911,7 +1911,7 @@ class Database(fort.PostgresDatabase):
         }
         self.u(sql, params)
 
-    def update_game_overview(self, params: Dict):
+    def update_game_overview(self, params: dict):
         sql = '''
             update game_details
             set game_name = %(game_name)s, game_intro = %(game_intro)s, game_outro = %(game_outro)s,
@@ -1920,7 +1920,7 @@ class Database(fort.PostgresDatabase):
         '''
         self.u(sql, params)
 
-    def update_step(self, params: Dict):
+    def update_step(self, params: dict):
         sql = '''
             update game_steps
             set step_text = %(step_text)s, step_answer = %(step_answer)s
