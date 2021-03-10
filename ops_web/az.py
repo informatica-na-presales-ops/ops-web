@@ -1,12 +1,11 @@
-import azure.common.credentials
-import azure.mgmt.compute
-import azure.mgmt.network
-import azure.mgmt.subscription
 import logging
-import msrestazure.azure_exceptions
 import ops_web.config
 import ops_web.db
 
+from azure.identity import ClientSecretCredential
+from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.network import NetworkManagementClient
+from azure.mgmt.subscription import SubscriptionClient
 from typing import Dict
 
 log = logging.getLogger(__name__)
@@ -25,16 +24,18 @@ class AZClient:
     def __init__(self, config: ops_web.config.Config, client_id: str, secret: str, tenant: str):
         self.config = config
         self.db = ops_web.db.Database(config)
-        self.credentials = azure.common.credentials.ServicePrincipalCredentials(
-            client_id=client_id, secret=secret, tenant=tenant
-        )
+        self.credential = ClientSecretCredential(tenant_id=tenant, client_id=client_id, client_secret=secret)
+
         self.subscriptions = {}
-        with azure.mgmt.subscription.SubscriptionClient(self.credentials) as client:
+        with SubscriptionClient(credential=self.credential) as client:
             for sub in client.subscriptions.list():
                 self.subscriptions[sub.subscription_id] = sub.display_name
 
-    def get_compute_client(self, subscription_id: str) -> azure.mgmt.compute.ComputeManagementClient:
-        return azure.mgmt.compute.ComputeManagementClient(credentials=self.credentials, subscription_id=subscription_id)
+    def get_compute_client(self, subscription_id: str) -> ComputeManagementClient:
+        return ComputeManagementClient(credential=self.credential, subscription_id=subscription_id)
+
+    def get_network_client(self, subscription_id: str) -> NetworkManagementClient:
+        return NetworkManagementClient(credential=self.credential, subscription_id=subscription_id)
 
     def get_all_images(self):
         for subscription_id in self.subscriptions:
@@ -68,9 +69,7 @@ class AZClient:
             log.info(f'Getting all virtual machines in subscription {subscription_id}')
             compute_client = self.get_compute_client(subscription_id)
 
-            network_client = azure.mgmt.network.NetworkManagementClient(
-                credentials=self.credentials, subscription_id=subscription_id
-            )
+            network_client = self.get_network_client(subscription_id)
             network_interfaces = {nic.id: nic for nic in network_client.network_interfaces.list_all()}
             log.debug(network_interfaces)
             public_ips = {public_ip.id: public_ip for public_ip in network_client.public_ip_addresses.list_all()}
@@ -160,7 +159,7 @@ class AZClient:
         resource_group_name = tokens[4]
         vm_name = tokens[8]
         compute_client = self.get_compute_client(subscription_id)
-        compute_client.virtual_machines.start(resource_group_name, vm_name)
+        compute_client.virtual_machines.begin_start(resource_group_name, vm_name)
         compute_client.close()
 
     def stop_machine(self, machine_id: str):
@@ -170,7 +169,7 @@ class AZClient:
         resource_group_name = tokens[4]
         vm_name = tokens[8]
         compute_client = self.get_compute_client(subscription_id)
-        compute_client.virtual_machines.deallocate(resource_group_name, vm_name)
+        compute_client.virtual_machines.begin_deallocate(resource_group_name, vm_name)
         compute_client.close()
 
     def update_machine_tags(self, machine_id: str, tags: Dict):
@@ -186,9 +185,7 @@ class AZClient:
         vm.tags.update(tags)
         vm.plan = None
         try:
-            compute_client.virtual_machines.update(resource_group_name, vm_name, vm)
-        except msrestazure.azure_exceptions.CloudError as e:
-            log.critical(e.error)
+            compute_client.virtual_machines.begin_update(resource_group_name, vm_name, vm)
         finally:
             compute_client.close()
 
@@ -207,8 +204,8 @@ def delete_machine(az: AZClient, machine_id: str):
     resource_group_name = tokens[4]
     vm_name = tokens[8]
 
-    compute_client = azure.mgmt.compute.ComputeManagementClient(az.credentials, subscription_id)
-    network_client = azure.mgmt.network.NetworkManagementClient(az.credentials, subscription_id)
+    compute_client = ComputeManagementClient(az.credential, subscription_id)
+    network_client = NetworkManagementClient(az.credential, subscription_id)
     vm = compute_client.virtual_machines.get(resource_group_name, vm_name)
 
     # collect the names for all disks attached to the machine
