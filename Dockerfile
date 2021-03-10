@@ -1,6 +1,6 @@
 FROM python:3.9.2-alpine3.13
 
-RUN /sbin/apk add --no-cache libpq openssl-dev samba-client
+RUN /sbin/apk add --no-cache libpq openssl-dev
 
 COPY requirements.txt /ops-web/requirements.txt
 
