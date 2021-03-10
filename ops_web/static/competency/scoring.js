@@ -9,9 +9,13 @@ document.querySelectorAll('input[type=radio]').forEach(function (el) {
         const competency_id = this.dataset.competencyId;
 
         // get the current score
-        let current_score = parseInt(document.getElementById(`badge-${competency_id}-current`).textContent);
-        if (isNaN(current_score)) {
-            current_score = 0;
+        let current_score = 0;
+        const current_badge = document.getElementById(`badge-${competency_id}-current`);
+        if (current_badge) {
+            current_score = parseInt(current_badge.textContent);
+            if (isNaN(current_score)) {
+                current_score = 0;
+            }
         }
 
         // get the new score

@@ -68,12 +68,12 @@
                         <span class="badge badge-light current-score" id="badge-{{ c.id }}-current" title="{{ score.timestamp.date() }}">
                             {{ score.get(c.id) }}
                         </span>
+                    {% endif %}
+                    {% endfor %}
                         <span class="badge new-score collapse" id="badge-{{ c.id }}-new">
                             <span class="collapse oi" id="delta-{{ c.id }}"></span>
                             <span id="score-{{ c.id }}"></span>
                         </span>
-                    {% endif %}
-                    {% endfor %}
                     </div>
                 </a>
             {% endfor %}
