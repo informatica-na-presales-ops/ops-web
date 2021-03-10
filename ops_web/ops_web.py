@@ -314,55 +314,6 @@ def authorize():
     return flask.redirect(target)
 
 
-@app.route('/az_launch', methods=['POST'])
-@login_required
-def az_launch():
-    cdwversion = flask.request.values.get("cdwversion")
-    log.info(cdwversion)
-    quantity = flask.request.values.get('count')
-    name = flask.request.values.get('name')
-    owner = flask.request.values.get('owner').lower()
-    q = int(quantity)
-    idlist = []
-    instance_info = []
-    for account in db.get_all_credentials_for_use('az'):
-        for i in range(q):
-            az_idlist = []
-            az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
-                                     account.get('azure_tenant_id'))
-            if cdwversion == 'CDW104-AZ':
-                vmbase = name + str("104") + "-" + str(i)
-                infa_result = az.launch_infa104(account.get('username'), account.get('password'),
-                                                account.get('azure_tenant_id'), vmbase, owner)
-                windows_result = az.launch_windows104(account.get('username'), account.get('password'),
-                                                      account.get('azure_tenant_id'), vmbase, owner)
-
-            else:
-                vmbase = name + "-" + str(i)
-
-                cdh_result = az.launch_cdh_instance(account.get('username'), account.get('password'),
-                                                    account.get('azure_tenant_id'), vmbase, owner)
-
-                windows_result = az.launch_windows(account.get('username'), account.get('password'),
-                                                   account.get('azure_tenant_id'), vmbase, owner)
-                infa_result = az.launch_infa(account.get('username'), account.get('password'),
-                                             account.get('azure_tenant_id'), vmbase, owner)
-                az_idlist.append(cdh_result)
-
-            az_idlist.append(windows_result)
-            az_idlist.append(infa_result)
-            log.info(az_idlist)
-            for i in az_idlist:
-                virtualmachine_info = az.get_virtualmachine_info(i, "rg-cdw-workshops-201904")
-                instance_info.append(virtualmachine_info)
-                idlist.append(virtualmachine_info['id'])
-                virtualmachine_info['account_id'] = account.get('id')
-                db.add_machine(virtualmachine_info)
-            log.info(idlist)
-            log.info(instance_info)
-        return flask.render_template('postdep_az.html', instance=instance_info, idlist=idlist)
-
-
 @app.route('/competency')
 @login_required
 def competency():
@@ -711,22 +662,6 @@ def ecosystem_certification_document(document_id):
     return flask.send_file(data, as_attachment=True, attachment_filename=filename)
 
 
-@app.route('/elasticip', methods=['GET', 'POST'])
-@login_required
-def elasticip():
-    idlist_str = flask.request.values.get('instance')
-    region = 'us-west-2'
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        aws.allocate_elasticip(idlist_str)
-        instances_list = []
-        idlist = aws.convert_instanceidstr_list(idlist_str)
-        for i in idlist:
-            result = aws.get_single_instance(region, i)
-            instances_list.append(result)
-    return flask.render_template('postdep.html', idlist=idlist_str, instance=instances_list)
-
-
 @app.route('/environment-usage-events', methods=['POST'])
 def environment_usage_events():
     request_secret = flask.request.values.get('secret')
@@ -828,49 +763,6 @@ def environment_stop(environment):
         else:
             log.warning(f'{flask.g.email} does not have permission to stop machine {machine_id}')
     return flask.redirect(flask.url_for('environment_detail', environment=environment))
-
-
-@app.route('/excel_sheet', methods=['GET', 'POST'])
-@login_required
-def excel_sheet():
-    idlist = flask.request.values.get('instance')
-    log.info(idlist)
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        idlist2 = aws.convert_instanceidstr_list(idlist)
-        log.info(idlist2)
-        instance_list = []
-        valdir = {}
-        for i in idlist2:
-
-            instance_info = aws.get_single_instance('us-west-2', i)
-            instance_name = instance_info['name']
-            instance_ip = instance_info['public_ip']
-
-            log.info(instance_name)
-            if "Windows" in instance_name:
-                valdir[instance_name] = instance_ip
-                instance_list.append(valdir)
-            log.info(valdir)
-        output = io.BytesIO()
-        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-        worksheet = workbook.add_worksheet()
-
-        headers = ['Instance name', 'Public IP']
-        worksheet.write_row(0, 0, headers)
-        row = 0
-        col = 0
-
-        for key in valdir.keys():
-            row = row + 1
-            worksheet.write(row, col, key)
-            worksheet.write(row, col + 1, valdir[key])
-
-        workbook.close()
-        response = flask.make_response(output.getvalue())
-        response.headers['Content-Disposition'] = 'attachment; filename="workshop_CDW.csv"'
-        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        return response
 
 
 @app.route('/external-links')
@@ -1262,52 +1154,6 @@ def images_restore():
 def images_trash():
     flask.g.images = db.get_images_to_delete()
     return flask.render_template('images/trash.html')
-
-
-@app.route('/launch', methods=['GET', 'POST'])
-@login_required
-def launch():
-    ws_details = flask.request.values.get('id')
-    security_group = flask.request.values.get('security_groups')
-    quantity = flask.request.values.get('quantity')
-    event_type = flask.request.values.get('event_type')
-    customer = flask.request.values.get('customer')
-    owner_email = flask.request.values.get('owner_email').lower()
-    env_role = flask.request.values.get('env')
-    subnet = flask.request.values.get('subnet')
-    whitelist = flask.request.values.get('whitelist')
-    log.info(whitelist)
-    region = 'us-west-2'
-
-    infodict = {
-        "securitygrp": security_group,
-        "quantity": quantity,
-        "eventtype": event_type,
-        "customer": customer,
-        "owneremail": owner_email,
-        "envrole": env_role,
-        "subnet": subnet,
-        "whitelist": whitelist
-    }
-
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        idlist = aws.create_instances(ws_details, infodict)
-        instanceslist = []
-        instanceidlist = []
-        for i in idlist:
-            result = aws.get_single_instance(region, i)
-            state = aws.get_instance_attr(region, i, 'state')
-            idlist2 = result['id']
-            instanceslist.append(result)
-            instanceidlist.append(idlist2)
-            result['account_id'] = account.get('id')
-            while state['Name'] == 'pending':
-                state = aws.get_instance_attr(region, i, 'state')
-                if state['Name'] == 'running':
-                    break
-            db.add_machine(result)
-        return flask.render_template('postdep.html', instance=instanceslist, idlist=instanceidlist)
 
 
 @app.route('/machines/create', methods=['POST'])
@@ -1949,57 +1795,6 @@ def sync_now():
     return flask.redirect(flask.url_for('sync_info'))
 
 
-@app.route('/synchosts', methods=['GET', 'POST'])
-@login_required
-def synchosts():
-    idliststr = flask.request.values.get('instance')
-    region = 'us-west-2'
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        result = aws.sync_hosts(idliststr)
-        idlist = aws.convert_instanceidstr_list(idliststr)
-        instanceslist = []
-        for i in idlist:
-            instance = aws.get_single_instance(region, i)
-            instanceslist.append(instance)
-        if result is None:
-            return flask.render_template('postdep.html', idlist=idlist, instance=instanceslist)
-        else:
-            return flask.render_template('500.html', error=result)
-
-
-@app.route('/synchosts_az', methods=['GET', 'POST'])
-@login_required
-def synchosts_az():
-    log.info("entered in for updating hosts")
-    idliststr = flask.request.values.get('instance')
-    instance_info = flask.request.values.get('instance_info')
-    id_list = idliststr
-    id_list2 = id_list[1:]
-    id_list3 = id_list2[:-1]
-    id_list4 = id_list3[1:]
-    id_list5 = id_list4[:-1]
-    id_list6 = id_list5.replace("\'", "")
-    id_list8 = id_list6.replace(' ', '')
-    id_list7 = id_list8.split(',')
-    log.info(instance_info)
-    instance_info2 = []
-    for account in db.get_all_credentials_for_use('az'):
-        az = ops_web.az.AZClient(config, account.get('username'), account.get('password'),
-                                 account.get('azure_tenant_id'))
-        log.info(idliststr)
-        if '104' in idliststr:
-            log.info("found new cdw image")
-            az.sync_hosts_104(idliststr)
-        else:
-            az.sync_hosts(idliststr)
-        for i in id_list7:
-            i = "'" + i + "'"
-            instance_info2.append(az.get_virtualmachine_info(i, 'rg-cdw-workshops-201904'))
-
-        return flask.render_template('postdep_az.html', instance=instance_info2, idlist=id_list7)
-
-
 @app.route('/toolbox')
 @permission_required('admin')
 def toolbox():
@@ -2024,59 +1819,6 @@ def unity_request_submit():
     scheduler.add_job(ops_web.tasks.create_zendesk_ticket_unity, args=[tc, flask.g.email, flask.request.values])
     flask.flash('Thank you for submitting this request', 'success')
     return flask.redirect(flask.url_for('unity_request'))
-
-
-@app.route('/workshop-tools')
-@login_required
-def workshop_tools():
-    return flask.render_template('workshop_tools.html')
-
-
-@app.route('/ws_postdep', methods=['GET', 'POST'])
-@login_required
-def ws_postdep():
-    return flask.render_template('postdep.html')
-
-
-@app.route('/ws_postdep_filter', methods=['GET', 'POST'])
-@login_required
-def ws_postdep_filter():
-    env_group = flask.request.values.get("env_group_name")
-    for account in db.get_all_credentials_for_use('aws'):
-        aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-        instance_list = aws.get_instance_of_envgrp(env_group)
-        instances_list2 = []
-        for i in instance_list:
-            result = aws.get_single_instance('us-west-2', i)
-            instances_list2.append(result)
-        return flask.render_template('postdep.html', idlist=str(instance_list), instance=instances_list2)
-
-
-@app.route('/wscreator')
-@login_required
-def wscreator():
-    return flask.render_template('ws_creator.html')
-
-
-@app.route('/wsimage', methods=['GET', 'POST'])
-@login_required
-def wsimage():
-    ws = flask.request.values.get("ws")
-    log.info(ws)
-    if (ws != 'CDW-AZ' and ws != 'CDW104-AZ'):
-        for account in db.get_all_credentials_for_use('aws'):
-            aws = ops_web.aws.AWSClient(config, account.get('username'), account.get('password'))
-            result = aws.workshop_images(ws)
-            wslist = []
-            wsidlist = []
-            for i in result:
-                wslist.append(i)
-                wsidlist.append(i['id'])
-        return flask.render_template('ws_creator.html', ws2=ws, ws=wslist, id=wsidlist)
-    else:
-        log.info("entered in ops-web")
-        log.info(ws)
-        return flask.render_template('ws_creator.html', ws2=ws, ws=['ami1'])
 
 
 def delete_machine(machine_id):
