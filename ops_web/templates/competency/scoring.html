@@ -91,7 +91,7 @@
                             <div class="custom-control custom-radio">
                                 <input class="custom-control-input" type="radio" id="radio-{{ c.id }}-{{ l.score }}"
                                        name="competency-{{ c.id }}" value="{{ l.score }}" form="form" required
-                                        {{ 'checked' if g.competency_scores[c.id] == l.score }} data-competency-id="{{ c.id }}">
+                                        {{ 'checked' if last_score[c.id] == l.score }} data-competency-id="{{ c.id }}">
                                 <label class="custom-control-label" for="radio-{{ c.id }}-{{ l.score }}">
                                     <strong>{{ l.title }} ({{ l.score }})</strong>
                                 </label>
