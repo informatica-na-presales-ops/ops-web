@@ -74,6 +74,23 @@
                     </div>
                 </a>
             {% endfor %}
+                <a class="nav-link text-light d-flex justify-content-between align-items-center">
+                    <strong>Averages</strong>
+                    <div>
+                    {% for score in g.competency_scores | sort(reverse=True, attribute='timestamp') %}
+                    {% if loop.first %}
+                        {% if loop.nextitem %}
+                            <span class="badge badge-secondary" title="{{ loop.nextitem.timestamp.date() }}">
+                                {{ loop.nextitem.mean_score }}
+                            </span>
+                        {% endif %}
+                        <span class="badge badge-light" title="{{ score.timestamp.date() }}">
+                            {{ score.mean_score }}
+                        </span>
+                    {% endif %}
+                    {% endfor %}
+                    </div>
+                </a>
             </nav>
         </div>
 

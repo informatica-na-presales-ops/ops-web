@@ -516,7 +516,7 @@ def competency_planning_employee(employee_id: str):
             flask.g.level_comp_details = db.get_level_comp_details_for_track(track_id)
             db_plans = db.get_competency_plans(employee_id, track_id)
             flask.g.competency_plans = {r.get('competency_id'): r.get('plan') for r in db_plans}
-            flask.g.competency_scores = db.get_competency_scores(employee_id)
+            flask.g.competency_scores = db.get_competency_scores(employee_id, track_id)
             return flask.render_template('competency/planning.html')
     return flask.redirect(flask.url_for('competency'))
 
@@ -572,7 +572,7 @@ def competency_scoring_employee(employee_id: str):
             flask.g.competencies = db.get_track_competencies(track_id)
             flask.g.levels = db.get_track_levels(track_id)
             flask.g.level_comp_details = db.get_level_comp_details_for_track(track_id)
-            flask.g.competency_scores = db.get_competency_scores(employee_id)
+            flask.g.competency_scores = db.get_competency_scores(employee_id, track_id)
             return flask.render_template('competency/scoring.html')
     return flask.redirect(flask.url_for('competency'))
 

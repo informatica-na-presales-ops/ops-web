@@ -3,6 +3,7 @@ import datetime
 import decimal
 import fort
 import ops_web.config
+import statistics
 import uuid
 
 from typing import Optional
@@ -935,21 +936,30 @@ class Database(fort.PostgresDatabase):
         for params in params_list:
             self.u(sql, params)
 
-    def get_competency_scores(self, employee_id: str):
+    def get_competency_scores(self, employee_id: str, track_id: uuid.UUID):
         ts_groups = {}
         sql = '''
-            select timestamp, competency_id, score
-            from competency_employee_scores
-            where employee_id = %(employee_id)s
+            select s.timestamp, s.competency_id, s.score
+            from competency_employee_scores s
+            join competency_competencies c on c.id = s.competency_id
+            where s.employee_id = %(employee_id)s
+            and c.track_id = %(track_id)s
         '''
         params = {
-            'employee_id': employee_id
+            'employee_id': employee_id,
+            'track_id': track_id
         }
         for row in self.q(sql, params):
             group = ts_groups.get(row.get('timestamp'), {})
             group.update({row.get('competency_id'): row.get('score')})
             ts_groups.update({row.get('timestamp'): group})
-        return [{'timestamp': ts} | comps for ts, comps in ts_groups.items()]
+        return [
+            {
+                'timestamp': ts,
+                'mean_score': round(statistics.mean(map(decimal.Decimal, comps.values())), 1)
+            } | comps
+            for ts, comps in ts_groups.items()
+        ]
 
     def add_competency_plans(self, params_list: list[dict]):
         sql = '''
