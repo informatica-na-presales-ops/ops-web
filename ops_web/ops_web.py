@@ -298,7 +298,7 @@ def authorize():
     for key, value in flask.request.values.items():
         log.debug(f'{key}: {value}')
     id_token = flask.request.values.get('id_token')
-    claim = jwt.decode(id_token, verify=False, algorithms='RS256')
+    claim = jwt.decode(id_token, options={'verify_signature': False}, algorithms='RS256')
     log.debug(claim)
     state = flask.request.values.get('state')
     if state is None or state != flask.session.get('state'):
