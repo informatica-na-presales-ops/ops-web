@@ -116,6 +116,14 @@ def load_request_data():
     flask.g.today = datetime.date.today()
 
 
+@app.errorhandler(werkzeug.exceptions.InternalServerError)
+def handle_500(e):
+    original = getattr(e, 'original_exception', None)
+    if original is not None:
+        e = original
+    return flask.render_template('500.html', error=e)
+
+
 @app.route('/')
 def index():
     if flask.g.email is None:

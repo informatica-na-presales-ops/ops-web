@@ -1,17 +1,18 @@
-{% extends 'index.html' %}
-
-{% block breadcrumb %}
-    <a class="btn btn-outline-light" href="#" onclick="history.go(-1)">
-        <span class="oi oi-chevron-left"></span>
-        Go Back
-    </a>
-{% endblock %}
+{% extends 'one-up.html' %}
 
 {% block main_content %}
-    <div class="row pt-3">
+    <div class="row pt-3 text-light">
         <div class="col-12">
-            <h1 class="text-light">Exception!</h1>
-            <p class="text-light">{{ error }}</p>
+            <h1>Error</h1>
+            <p>Ops Web had a problem. Error information is below.</p>
+            <pre class="text-light"><code>{{ error }}</code></pre>
+        </div>
+    </div>
+
+    <div class="row pt-3 text-light">
+        <div class="col">
+            <p>You are signed in as: <code>{{ g.email }}</code></p>
+            <p>Your current permissions are: <code>{{ g.permissions | join(' ') }}</code></p>
         </div>
     </div>
 {% endblock %}
